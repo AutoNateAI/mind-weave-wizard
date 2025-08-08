@@ -65,10 +65,16 @@ export default function SessionPage() {
 
       {/* New 3-Lecture Structure */}
       <Tabs defaultValue="lecture1" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="lecture1">{session.lectures[0]?.title || "Lecture 1"}</TabsTrigger>
-          <TabsTrigger value="lecture2">{session.lectures[1]?.title || "Lecture 2"}</TabsTrigger>
-          <TabsTrigger value="lecture3">{session.lectures[2]?.title || "Lecture 3"}</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 gap-1">
+          <TabsTrigger value="lecture1" className="text-xs sm:text-sm px-2 py-2 min-w-0">
+            <span className="truncate block w-full">{session.lectures[0]?.title || "Lecture 1"}</span>
+          </TabsTrigger>
+          <TabsTrigger value="lecture2" className="text-xs sm:text-sm px-2 py-2 min-w-0">
+            <span className="truncate block w-full">{session.lectures[1]?.title || "Lecture 2"}</span>
+          </TabsTrigger>
+          <TabsTrigger value="lecture3" className="text-xs sm:text-sm px-2 py-2 min-w-0">
+            <span className="truncate block w-full">{session.lectures[2]?.title || "Lecture 3"}</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="lecture1" className="space-y-4">
