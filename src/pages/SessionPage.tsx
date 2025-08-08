@@ -10,6 +10,7 @@ import { PageMeta } from "@/components/UI/PageMeta";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { ArrowLeft, LogOut } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import flowData from "@/flows/session1Flow.json";
 
 export default function SessionPage() {
@@ -40,17 +41,18 @@ export default function SessionPage() {
       
       {/* Navigation Header */}
       <div className="flex justify-between items-center">
-        <Button variant="outline" asChild>
+        <Button variant="outline" asChild className="hover-scale">
           <Link to="/dashboard" className="flex items-center gap-2">
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </Link>
         </Button>
         <div className="flex items-center gap-2">
-          <Button variant="outline" asChild>
+          <ThemeToggle />
+          <Button variant="outline" asChild className="hover-scale">
             <Link to="/profile">Profile</Link>
           </Button>
-          <Button variant="outline" onClick={handleSignOut} className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleSignOut} className="flex items-center gap-2 hover-scale">
             <LogOut className="w-4 h-4" />
             Sign Out
           </Button>
@@ -59,7 +61,7 @@ export default function SessionPage() {
 
       <header className="space-y-2">
         <p className="text-sm text-muted-foreground">Session {n} Theme</p>
-        <h1 className="text-3xl font-bold bg-clip-text text-transparent" style={{ backgroundImage: "var(--gradient-primary)" }}>{session.theme}</h1>
+        <h1 className="text-3xl font-bold gradient-text">{session.theme}</h1>
       </header>
 
       {/* Main Content organized in Tabs as per knowledge base */}

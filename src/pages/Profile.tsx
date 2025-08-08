@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { PageMeta } from "@/components/UI/PageMeta";
 import { ArrowLeft, LogOut, User } from "lucide-react";
 import { GlassCard } from "@/components/UI/GlassCard";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -62,21 +63,24 @@ export default function Profile() {
       
       {/* Navigation Header */}
       <div className="flex justify-between items-center mb-8">
-        <Button variant="outline" asChild>
+        <Button variant="outline" asChild className="hover-scale">
           <Link to="/dashboard" className="flex items-center gap-2">
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </Link>
         </Button>
-        <Button variant="outline" onClick={handleSignOut} className="flex items-center gap-2">
-          <LogOut className="w-4 h-4" />
-          Sign Out
-        </Button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Button variant="outline" onClick={handleSignOut} className="flex items-center gap-2 hover-scale">
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-6">
         <header className="space-y-2">
-          <h1 className="text-3xl font-bold flex items-center gap-2">
+          <h1 className="text-3xl font-bold flex items-center gap-2 gradient-text">
             <User className="w-8 h-8" />
             Profile
           </h1>

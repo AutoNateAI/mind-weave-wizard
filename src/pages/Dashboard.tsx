@@ -7,6 +7,7 @@ import { PageMeta } from "@/components/UI/PageMeta";
 import { supabase } from "@/integrations/supabase/client";
 import { LogOut, User } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default function Dashboard() {
   const { isUnlocked, isCompleted, sessions, checkAdminStatus } = useProgress();
@@ -33,17 +34,18 @@ export default function Dashboard() {
       <PageMeta title="Thinking Wizard — Dashboard" description="Track progress and enter sessions." />
       <header className="mb-8 flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold">Session Dashboard</h1>
+          <h1 className="text-3xl font-bold gradient-text">Session Dashboard</h1>
           <p className="text-muted-foreground">Complete each session to unlock the next.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" asChild>
+          <ThemeToggle />
+          <Button variant="outline" asChild className="hover-scale">
             <Link to="/profile" className="flex items-center gap-2">
               <User className="w-4 h-4" />
               Profile
             </Link>
           </Button>
-          <Button variant="outline" onClick={handleSignOut} className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleSignOut} className="flex items-center gap-2 hover-scale">
             <LogOut className="w-4 h-4" />
             Sign Out
           </Button>
@@ -55,7 +57,7 @@ export default function Dashboard() {
           const locked = !isUnlocked(n);
           const complete = isCompleted(n);
           return (
-            <GlassCard key={n} className={`p-5 animate-enter ${complete ? "ring-1 ring-primary" : ""}`}>
+            <GlassCard key={n} className={`p-5 animate-fade-in hover-scale ${complete ? "ring-1 ring-primary cyber-glow" : ""}`}>
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xl font-semibold">Session {n}</h2>
                 {complete && <span className="text-xs text-accent-foreground bg-accent/30 rounded px-2 py-1">Completed</span>}
