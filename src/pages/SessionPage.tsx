@@ -104,10 +104,10 @@ export default function SessionPage() {
             lectureNumber={2}
             lectureTitle={session.lectures[1]?.title || "Lecture 2"}
             gameComponent={
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Reveal hidden structures through exploration.</p>
+             // <div className="space-y-2">
+                //<p className="text-sm text-muted-foreground">Reveal hidden structures through exploration.</p>
                 <FlowCanvas storageKey={`session-${n}-game-2`} onSave={() => markGame(n)} />
-              </div>
+            //  </div>
             }
             reflectionPrompt={session.reflections[1] || "Reflect on this lesson..."}
             onComplete={() => markReflection(n)}
