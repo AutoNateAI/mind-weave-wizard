@@ -31,9 +31,9 @@ export function LessonStructure({
 
       <Tabs defaultValue="concepts" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="concepts">📚 Concepts</TabsTrigger>
-          <TabsTrigger value="game">🎮 Interactive</TabsTrigger>
-          <TabsTrigger value="reflection">💭 Reflection</TabsTrigger>
+          <TabsTrigger value="concepts" className="text-xs sm:text-sm">📚 <span className="hidden sm:inline">Concepts</span></TabsTrigger>
+          <TabsTrigger value="game" className="text-xs sm:text-sm">🎮 <span className="hidden sm:inline">Interactive</span></TabsTrigger>
+          <TabsTrigger value="reflection" className="text-xs sm:text-sm">💭 <span className="hidden sm:inline">Reflection</span></TabsTrigger>
         </TabsList>
 
         <TabsContent value="concepts" className="space-y-4">

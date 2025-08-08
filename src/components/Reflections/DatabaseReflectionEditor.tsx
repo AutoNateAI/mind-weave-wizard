@@ -1,9 +1,10 @@
 import { useState, useCallback, useEffect } from "react";
-import { useAutosave } from "@/hooks/useAutosave";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { Save } from "lucide-react";
 
 type DatabaseReflectionEditorProps = {
   prompt: string;
@@ -20,6 +21,7 @@ export function DatabaseReflectionEditor({
 }: DatabaseReflectionEditorProps) {
   const [text, setText] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
   // Load existing reflection on mount
@@ -52,7 +54,8 @@ export function DatabaseReflectionEditor({
     loadReflection();
   }, [sessionNumber, lectureNumber]);
 
-  const save = useCallback(async (val: string) => {
+  const handleSave = useCallback(async () => {
+    setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -66,7 +69,7 @@ export function DatabaseReflectionEditor({
           user_id: user.id,
           session_number: sessionNumber,
           lecture_number: lectureNumber,
-          reflection_content: val
+          reflection_content: text
         }, {
           onConflict: 'user_id,session_number,lecture_number'
         });
@@ -74,16 +77,19 @@ export function DatabaseReflectionEditor({
       if (error) {
         console.error('Error saving reflection:', error);
         toast({ title: "Error", description: "Failed to save reflection", variant: "destructive" });
-      } else if (val.trim().length > 10) {
-        onWritten?.();
+      } else {
+        toast({ title: "Success", description: "Reflection saved successfully!" });
+        if (text.trim().length > 10) {
+          onWritten?.();
+        }
       }
     } catch (error) {
       console.error('Error saving reflection:', error);
       toast({ title: "Error", description: "Failed to save reflection", variant: "destructive" });
+    } finally {
+      setSaving(false);
     }
-  }, [sessionNumber, lectureNumber, onWritten, toast]);
-
-  useAutosave(text, save, 700);
+  }, [text, sessionNumber, lectureNumber, onWritten, toast]);
 
   if (loading) {
     return (
@@ -97,7 +103,7 @@ export function DatabaseReflectionEditor({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       <Label className="text-sm text-muted-foreground">{prompt}</Label>
       <Textarea
         value={text}
@@ -105,7 +111,17 @@ export function DatabaseReflectionEditor({
         placeholder="Write your reflection…"
         className="min-h-[120px] glass"
       />
-      <p className="text-xs text-muted-foreground">Automatically saved to database…</p>
+      <div className="flex justify-between items-center">
+        <p className="text-xs text-muted-foreground">Click Save to store your reflection</p>
+        <Button 
+          onClick={handleSave} 
+          disabled={saving || text.trim().length === 0}
+          size="sm"
+        >
+          <Save className="w-4 h-4 mr-2" />
+          {saving ? "Saving..." : "Save"}
+        </Button>
+      </div>
     </div>
   );
 }

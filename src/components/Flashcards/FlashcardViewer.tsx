@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,8 @@ export function FlashcardViewer({ sessionNumber, lectureNumber }: FlashcardViewe
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [loading, setLoading] = useState(true);
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
 
   useEffect(() => {
     const fetchFlashcards = async () => {
@@ -57,6 +59,32 @@ export function FlashcardViewer({ sessionNumber, lectureNumber }: FlashcardViewe
 
   const toggleFlip = () => setIsFlipped(!isFlipped);
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe && flashcards.length > 1) {
+      nextCard();
+    }
+    if (isRightSwipe && flashcards.length > 1) {
+      prevCard();
+    }
+
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -82,18 +110,24 @@ export function FlashcardViewer({ sessionNumber, lectureNumber }: FlashcardViewe
   const currentCard = flashcards[currentIndex];
 
   const FlashcardContent = ({ fullscreen = false }: { fullscreen?: boolean }) => (
-    <Card className={`glass transition-all duration-300 cursor-pointer ${fullscreen ? 'h-96' : 'h-64'} ${isFlipped ? 'neon-border' : ''}`} onClick={toggleFlip}>
-      <CardContent className="flex items-center justify-center h-full p-8">
+    <Card 
+      className={`glass transition-all duration-300 cursor-pointer ${fullscreen ? 'h-96' : 'h-64'} ${isFlipped ? 'neon-border' : ''}`} 
+      onClick={toggleFlip}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      <CardContent className="flex items-center justify-center h-full p-4 sm:p-8">
         <div className="text-center space-y-4">
           {!isFlipped ? (
             <>
-              <h3 className="text-xl font-bold gradient-text">{currentCard.title}</h3>
-              <p className="text-sm text-muted-foreground">Click to reveal concept</p>
+              <h3 className="text-lg sm:text-xl font-bold gradient-text">{currentCard.title}</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">Click or swipe to reveal concept</p>
             </>
           ) : (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-primary">{currentCard.title}</h3>
-              <p className="text-base leading-relaxed">{currentCard.content}</p>
+              <h3 className="text-base sm:text-lg font-semibold text-primary">{currentCard.title}</h3>
+              <p className="text-sm sm:text-base leading-relaxed">{currentCard.content}</p>
             </div>
           )}
         </div>
@@ -104,13 +138,13 @@ export function FlashcardViewer({ sessionNumber, lectureNumber }: FlashcardViewe
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">
+        <h3 className="text-sm sm:text-lg font-semibold">
           Concept {currentIndex + 1} of {flashcards.length}
         </h3>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <Button variant="outline" size="sm" onClick={toggleFlip}>
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Flip
+            <RotateCcw className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Flip</span>
           </Button>
           <Dialog>
             <DialogTrigger asChild>
@@ -128,12 +162,12 @@ export function FlashcardViewer({ sessionNumber, lectureNumber }: FlashcardViewe
       <FlashcardContent />
 
       <div className="flex justify-between items-center">
-        <Button variant="outline" onClick={prevCard} disabled={flashcards.length <= 1}>
-          <ChevronLeft className="w-4 h-4 mr-2" />
-          Previous
+        <Button variant="outline" size="sm" onClick={prevCard} disabled={flashcards.length <= 1}>
+          <ChevronLeft className="w-4 h-4 sm:mr-2" />
+          <span className="hidden sm:inline">Previous</span>
         </Button>
         
-        <div className="flex gap-2">
+        <div className="flex gap-1 sm:gap-2">
           {flashcards.map((_, index) => (
             <div
               key={index}
@@ -148,9 +182,9 @@ export function FlashcardViewer({ sessionNumber, lectureNumber }: FlashcardViewe
           ))}
         </div>
 
-        <Button variant="outline" onClick={nextCard} disabled={flashcards.length <= 1}>
-          Next
-          <ChevronRight className="w-4 h-4 ml-2" />
+        <Button variant="outline" size="sm" onClick={nextCard} disabled={flashcards.length <= 1}>
+          <span className="hidden sm:inline">Next</span>
+          <ChevronRight className="w-4 h-4 sm:ml-2" />
         </Button>
       </div>
     </div>
