@@ -1,7 +1,6 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { sessions } from "@/content/sessions";
-import { LectureList } from "@/components/Lectures/LectureCard";
-import { ReflectionEditor } from "@/components/Reflections/ReflectionEditor";
+import { LessonStructure } from "@/components/Lessons/LessonStructure";
 import { FlowCanvas } from "@/components/GraphEditor/FlowCanvas";
 import { useProgress } from "@/lib/progress";
 import { Button } from "@/components/ui/button";
@@ -64,57 +63,65 @@ export default function SessionPage() {
         <h1 className="text-3xl font-bold gradient-text">{session.theme}</h1>
       </header>
 
-      {/* Main Content organized in Tabs as per knowledge base */}
-      <Tabs defaultValue="lectures" className="w-full">
+      {/* New 3-Lecture Structure */}
+      <Tabs defaultValue="lecture1" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="lectures">Lectures</TabsTrigger>
-          <TabsTrigger value="games">Games</TabsTrigger>
-          <TabsTrigger value="reflections">Reflections</TabsTrigger>
+          <TabsTrigger value="lecture1">{session.lectures[0]?.title || "Lecture 1"}</TabsTrigger>
+          <TabsTrigger value="lecture2">{session.lectures[1]?.title || "Lecture 2"}</TabsTrigger>
+          <TabsTrigger value="lecture3">{session.lectures[2]?.title || "Lecture 3"}</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="lectures" className="space-y-4">
-          <LectureList
-            lectures={session.lectures}
+        <TabsContent value="lecture1" className="space-y-4">
+          <LessonStructure
+            sessionNumber={n}
+            lectureNumber={1}
+            lectureTitle={session.lectures[0]?.title || "Lecture 1"}
+            gameComponent={
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Build, connect, explore.</p>
+                <FlowCanvas
+                  storageKey={`session-${n}-game-1`}
+                  initialNodes={initial.nodes}
+                  initialEdges={initial.edges}
+                  onSave={() => markGame(n)}
+                />
+              </div>
+            }
+            reflectionPrompt={session.reflections[0] || "Reflect on this lesson..."}
             onComplete={() => markLecture(n)}
           />
         </TabsContent>
 
-        <TabsContent value="games" className="space-y-4">
-          <Tabs defaultValue="g1" className="w-full">
-            <TabsList>
-              <TabsTrigger value="g1">Game 1: Link the World</TabsTrigger>
-              <TabsTrigger value="g2">Game 2: Hidden Network</TabsTrigger>
-              <TabsTrigger value="g3">Game 3: Wizard's Web</TabsTrigger>
-            </TabsList>
-            <TabsContent value="g1" className="space-y-2">
-              <p className="text-sm text-muted-foreground">Build, connect, explore.</p>
-              <FlowCanvas
-                storageKey={`session-${n}-game-1`}
-                initialNodes={initial.nodes}
-                initialEdges={initial.edges}
-                onSave={() => markGame(n)}
-              />
-            </TabsContent>
-            <TabsContent value="g2" className="space-y-2">
-              <p className="text-sm text-muted-foreground">Reveal hidden structures through exploration.</p>
-              <FlowCanvas storageKey={`session-${n}-game-2`} onSave={() => markGame(n)} />
-            </TabsContent>
-            <TabsContent value="g3" className="space-y-2">
-              <p className="text-sm text-muted-foreground">Map your personal mental web.</p>
-              <FlowCanvas storageKey={`session-${n}-game-3`} onSave={() => markGame(n)} />
-            </TabsContent>
-          </Tabs>
+        <TabsContent value="lecture2" className="space-y-4">
+          <LessonStructure
+            sessionNumber={n}
+            lectureNumber={2}
+            lectureTitle={session.lectures[1]?.title || "Lecture 2"}
+            gameComponent={
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Reveal hidden structures through exploration.</p>
+                <FlowCanvas storageKey={`session-${n}-game-2`} onSave={() => markGame(n)} />
+              </div>
+            }
+            reflectionPrompt={session.reflections[1] || "Reflect on this lesson..."}
+            onComplete={() => markReflection(n)}
+          />
         </TabsContent>
 
-        <TabsContent value="reflections" className="space-y-4">
-          {session.reflections.map((prompt, i) => (
-            <ReflectionEditor
-              key={i}
-              prompt={prompt}
-              storageKey={`session-${n}-reflection-${i + 1}`}
-              onWritten={() => markReflection(n)}
-            />
-          ))}
+        <TabsContent value="lecture3" className="space-y-4">
+          <LessonStructure
+            sessionNumber={n}
+            lectureNumber={3}
+            lectureTitle={session.lectures[2]?.title || "Lecture 3"}
+            gameComponent={
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Map your personal mental web.</p>
+                <FlowCanvas storageKey={`session-${n}-game-3`} onSave={() => markGame(n)} />
+              </div>
+            }
+            reflectionPrompt={session.reflections[2] || "Reflect on this lesson..."}
+            onComplete={() => markReflection(n)}
+          />
         </TabsContent>
       </Tabs>
 
