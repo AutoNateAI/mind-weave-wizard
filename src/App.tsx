@@ -8,6 +8,9 @@ import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import SessionPage from "./pages/SessionPage";
 import { HelmetProvider } from "react-helmet-async";
+import Auth from "./pages/Auth";
+import LearnMore from "./pages/LearnMore";
+import { RequireAuth } from "./components/Auth/RequireAuth";
 
 const queryClient = new QueryClient();
 
@@ -20,8 +23,10 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/session/:sessionNumber" element={<SessionPage />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/learn-more" element={<LearnMore />} />
+            <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
+            <Route path="/session/:sessionNumber" element={<RequireAuth><SessionPage /></RequireAuth>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

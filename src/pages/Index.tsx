@@ -22,7 +22,7 @@ const Index = () => {
             <Link to="/dashboard">Enter Dashboard</Link>
           </Button>
           <Button variant="secondary" asChild>
-            <a href="#about">Learn More</a>
+            <Link to="/learn-more">Learn More</Link>
           </Button>
         </div>
       </section>
