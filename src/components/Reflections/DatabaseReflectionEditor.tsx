@@ -105,33 +105,33 @@ export function DatabaseReflectionEditor({
   }
 
   return (
-    <div className="h-full flex flex-col space-y-4 overflow-hidden">
-      {/* Quiz Section - Fixed height */}
-      <div className="flex-shrink-0 max-h-[40%] overflow-y-auto">
+    <div className="space-y-6">
+      {/* Quiz Section - No height constraints, shows all questions */}
+      <div>
         <MultipleChoiceQuiz 
           sessionNumber={sessionNumber} 
           lectureNumber={lectureNumber} 
         />
       </div>
 
-      <Separator className="flex-shrink-0" />
+      <Separator />
 
-      {/* Reflection Section - Flexible height */}
-      <div className="flex-1 flex flex-col space-y-3 min-h-0">
-        <div className="flex-shrink-0">
+      {/* Reflection Section */}
+      <div className="space-y-4">
+        <div>
           <h3 className="font-semibold text-base mb-2">Personal Reflection</h3>
           <Label className="text-sm text-muted-foreground">{prompt}</Label>
         </div>
         
-        <div className="flex-1 flex flex-col space-y-3 min-h-0">
+        <div className="space-y-3">
           <Textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Write your reflection…"
-            className="flex-1 glass resize-none min-h-[100px] h-auto"
+            className="glass resize-none min-h-[120px]"
           />
           
-          <div className="flex justify-between items-center flex-shrink-0">
+          <div className="flex justify-between items-center">
             <p className="text-xs text-muted-foreground">Click Save to store your reflection</p>
             <Button 
               onClick={handleSave} 
