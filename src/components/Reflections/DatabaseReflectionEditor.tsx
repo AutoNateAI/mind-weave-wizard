@@ -109,7 +109,8 @@ export function DatabaseReflectionEditor({
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="Write your reflection…"
-        className="flex-1 min-h-[200px] md:min-h-[300px] glass resize-none"
+        className="flex-1 glass resize-none"
+        style={{ minHeight: '200px' }}
       />
       <div className="flex justify-between items-center">
         <p className="text-xs text-muted-foreground">Click Save to store your reflection</p>

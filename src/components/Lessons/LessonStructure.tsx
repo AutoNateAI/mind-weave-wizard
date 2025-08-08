@@ -29,15 +29,15 @@ export function LessonStructure({
         <p className="text-muted-foreground">Explore concepts, play, and reflect</p>
       </div>
 
-      <Tabs defaultValue="concepts" className="w-full h-[calc(100vh-16rem)] md:h-[calc(100vh-20rem)]">
+      <Tabs defaultValue="concepts" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="concepts" className="text-xs sm:text-sm">📚 <span className="hidden sm:inline">Concepts</span></TabsTrigger>
           <TabsTrigger value="game" className="text-xs sm:text-sm">🎮 <span className="hidden sm:inline">Interactive</span></TabsTrigger>
           <TabsTrigger value="reflection" className="text-xs sm:text-sm">💭 <span className="hidden sm:inline">Reflection</span></TabsTrigger>
         </TabsList>
 
-        <TabsContent value="concepts" className="h-full">
-          <div className="glass rounded-lg p-3 sm:p-6 h-full flex flex-col">
+        <TabsContent value="concepts" className="space-y-4">
+          <div className="glass rounded-lg p-3 sm:p-6 h-[calc(100vh-20rem)] sm:h-[calc(100vh-24rem)] flex flex-col">
             <FlashcardViewer 
               sessionNumber={sessionNumber} 
               lectureNumber={lectureNumber} 
@@ -45,8 +45,8 @@ export function LessonStructure({
           </div>
         </TabsContent>
 
-        <TabsContent value="game" className="h-full">
-          <div className="glass rounded-lg p-3 sm:p-6 h-full">
+        <TabsContent value="game" className="space-y-4">
+          <div className="glass rounded-lg p-3 sm:p-6 h-[calc(100vh-20rem)] sm:h-[calc(100vh-24rem)]">
             {gameComponent || (
               <div className="text-center py-12 space-y-4">
                 <Play className="w-16 h-16 mx-auto text-muted-foreground" />
@@ -64,8 +64,8 @@ export function LessonStructure({
           </div>
         </TabsContent>
 
-        <TabsContent value="reflection" className="h-full">
-          <div className="glass rounded-lg p-3 sm:p-6 h-full">
+        <TabsContent value="reflection" className="space-y-4">
+          <div className="glass rounded-lg p-3 sm:p-6 h-[calc(100vh-20rem)] sm:h-[calc(100vh-24rem)]">
             <DatabaseReflectionEditor
               prompt={reflectionPrompt}
               sessionNumber={sessionNumber}
