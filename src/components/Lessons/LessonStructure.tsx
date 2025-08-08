@@ -37,7 +37,7 @@ export function LessonStructure({
         </TabsList>
 
         <TabsContent value="concepts" className="space-y-4">
-          <div className="glass rounded-lg p-6">
+          <div className="glass rounded-lg p-6 min-h-[60vh] sm:min-h-[70vh] lg:min-h-[75vh]">
             <FlashcardViewer 
               sessionNumber={sessionNumber} 
               lectureNumber={lectureNumber} 
@@ -46,7 +46,7 @@ export function LessonStructure({
         </TabsContent>
 
         <TabsContent value="game" className="space-y-4">
-          <div className="glass rounded-lg p-6">
+          <div className="glass rounded-lg p-6 min-h-[60vh] sm:min-h-[70vh] lg:min-h-[75vh]">
             {gameComponent || (
               <div className="text-center py-12 space-y-4">
                 <Play className="w-16 h-16 mx-auto text-muted-foreground" />
@@ -65,7 +65,7 @@ export function LessonStructure({
         </TabsContent>
 
         <TabsContent value="reflection" className="space-y-4">
-          <div className="glass rounded-lg p-6">
+          <div className="glass rounded-lg p-6 min-h-[60vh] sm:min-h-[70vh] lg:min-h-[75vh]">
             <DatabaseReflectionEditor
               prompt={reflectionPrompt}
               sessionNumber={sessionNumber}
