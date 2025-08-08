@@ -3,17 +3,37 @@ import { GlassCard } from "@/components/UI/GlassCard";
 import { useProgress } from "@/lib/progress";
 import { Button } from "@/components/ui/button";
 import { PageMeta } from "@/components/UI/PageMeta";
+import { supabase } from "@/integrations/supabase/client";
+import { LogOut } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function Dashboard() {
   const { isUnlocked, isCompleted, sessions } = useProgress();
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({ title: "Error signing out", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Signed out successfully" });
+      navigate("/");
+    }
+  };
 
   return (
     <main className="container py-10">
       <PageMeta title="Thinking Wizard — Dashboard" description="Track progress and enter sessions." />
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold">Session Dashboard</h1>
-        <p className="text-muted-foreground">Complete each session to unlock the next.</p>
+      <header className="mb-8 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold">Session Dashboard</h1>
+          <p className="text-muted-foreground">Complete each session to unlock the next.</p>
+        </div>
+        <Button variant="outline" onClick={handleSignOut} className="flex items-center gap-2">
+          <LogOut className="w-4 h-4" />
+          Sign Out
+        </Button>
       </header>
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.from({ length: 10 }).map((_, idx) => {
