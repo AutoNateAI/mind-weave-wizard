@@ -103,14 +103,16 @@ export function DatabaseReflectionEditor({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="h-full flex flex-col space-y-4">
       <Label className="text-sm text-muted-foreground">{prompt}</Label>
-      <Textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Write your reflection…"
-        className="min-h-[120px] glass"
-      />
+      <div className="flex-1">
+        <Textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Write your reflection…"
+          className="h-full min-h-[200px] glass resize-none"
+        />
+      </div>
       <div className="flex justify-between items-center">
         <p className="text-xs text-muted-foreground">Click Save to store your reflection</p>
         <Button 

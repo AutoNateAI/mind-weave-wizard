@@ -38,14 +38,14 @@ export function FlowCanvas({ storageKey, initialNodes = [], initialEdges = [], o
   };
 
   return (
-    <div className="rounded-md overflow-hidden border neon-border react-flow-container" style={{ height: "calc(100% - 2rem)" }}>
+    <div className="h-full flex flex-col rounded-md overflow-hidden border neon-border react-flow-container">
       <div className="flex items-center justify-between p-2 bg-background/50 backdrop-blur-sm border-b">
         <div className="flex gap-2">
           <Button size="sm" onClick={save} className="cyber-glow">Save</Button>
           <Button size="sm" variant="secondary" onClick={reset} className="hover-scale">Reset</Button>
         </div>
       </div>
-      <div style={{ height: "calc(100% - 60px)" }} className="react-flow-container">
+      <div className="flex-1 react-flow-container">
         <ReactFlow
           nodes={nodes}
           edges={edges}
