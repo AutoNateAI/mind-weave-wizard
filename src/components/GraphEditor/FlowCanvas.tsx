@@ -38,15 +38,15 @@ export function FlowCanvas({ storageKey, initialNodes = [], initialEdges = [], o
   };
 
   return (
-    <div className="glass rounded-md p-2">
+    <div className="glass rounded-md p-2 neon-border">
       <div className="flex items-center justify-between pb-2">
         <div className="text-sm text-muted-foreground">Build, connect, explore.</div>
         <div className="flex gap-2">
-          <Button size="sm" onClick={save}>Save</Button>
-          <Button size="sm" variant="secondary" onClick={reset}>Reset</Button>
+          <Button size="sm" onClick={save} className="cyber-glow">Save</Button>
+          <Button size="sm" variant="secondary" onClick={reset} className="hover-scale">Reset</Button>
         </div>
       </div>
-      <div style={{ height: 420 }} className="rounded-md overflow-hidden border">
+      <div style={{ height: 420 }} className="rounded-md overflow-hidden border neon-border react-flow-container">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -54,6 +54,7 @@ export function FlowCanvas({ storageKey, initialNodes = [], initialEdges = [], o
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           fitView
+          className="cyber-flow"
         >
           <MiniMap zoomable pannable />
           <Controls />

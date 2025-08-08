@@ -8,7 +8,7 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Base palette - Light Mode */
+    /* Base palette - Enhanced Light Mode */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
@@ -18,10 +18,11 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    /* Brand — cyber‑wizard neon theme */
+    /* Enhanced cyber theme for light mode */
     --primary: 268 83% 58%; /* neon violet */
     --primary-foreground: 210 40% 98%;
     --primary-glow: 280 100% 70%; /* brighter violet for effects */
+    --primary-subtle: 268 50% 85%; /* subtle version for light mode */
 
     --secondary: 240 10% 96%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -31,6 +32,7 @@ All colors MUST be HSL.
 
     --accent: 190 90% 45%; /* cyber teal */
     --accent-foreground: 210 40% 98%;
+    --accent-glow: 190 100% 60%; /* brighter teal for light mode */
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
@@ -51,20 +53,30 @@ All colors MUST be HSL.
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 268 83% 58%;
 
-    /* Premium design tokens */
+    /* Enhanced light mode design tokens */
     --gradient-primary: linear-gradient(135deg, hsl(268 83% 58%), hsl(190 90% 45%));
-    --gradient-secondary: linear-gradient(180deg, hsl(0 0% 100%), hsl(240 5% 96%));
+    --gradient-secondary: linear-gradient(180deg, hsl(240 5% 98%), hsl(240 10% 94%));
     --gradient-accent: linear-gradient(45deg, hsl(190 90% 45%), hsl(280 100% 70%));
+    --gradient-subtle: linear-gradient(135deg, hsl(268 50% 95%), hsl(190 50% 95%));
     
-    --glass-bg: 0 0% 100% / 60%;
-    --glass-border: 220 13% 91% / 60%;
+    --glass-bg: 0 0% 100% / 70%;
+    --glass-border: 268 30% 85% / 40%;
     
-    --shadow-elegant: 0 20px 60px -20px hsl(268 83% 58% / 0.25);
-    --shadow-glow: 0 0 40px hsl(268 83% 58% / 0.3);
-    --shadow-accent: 0 10px 30px -10px hsl(190 90% 45% / 0.4);
+    --shadow-elegant: 0 20px 60px -20px hsl(268 83% 58% / 0.15);
+    --shadow-glow: 0 0 40px hsl(268 83% 58% / 0.2);
+    --shadow-accent: 0 10px 30px -10px hsl(190 90% 45% / 0.3);
+    --shadow-neon: 0 0 20px hsl(268 83% 58% / 0.4), 0 0 40px hsl(190 90% 45% / 0.2);
     
     --transition-smooth: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 200ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    /* React Flow theming for light mode */
+    --rf-node-bg: hsl(0 0% 100%);
+    --rf-node-border: hsl(268 30% 85%);
+    --rf-node-text: hsl(222 84% 5%);
+    --rf-node-selected: hsl(268 83% 58%);
+    --rf-edge-stroke: hsl(268 50% 70%);
+    --rf-background: hsl(240 5% 98%);
   }
 
   .dark {
@@ -82,6 +94,7 @@ All colors MUST be HSL.
     --primary: 280 100% 70%; /* brighter neon in dark */
     --primary-foreground: 222 47% 7%;
     --primary-glow: 268 83% 58%;
+    --primary-subtle: 280 50% 30%;
 
     --secondary: 222 47% 15%;
     --secondary-foreground: 210 40% 98%;
@@ -91,6 +104,7 @@ All colors MUST be HSL.
 
     --accent: 190 100% 55%; /* brighter cyan in dark */
     --accent-foreground: 222 47% 7%;
+    --accent-glow: 190 90% 45%;
 
     --destructive: 0 72% 55%;
     --destructive-foreground: 210 40% 98%;
@@ -113,13 +127,23 @@ All colors MUST be HSL.
     --gradient-primary: linear-gradient(135deg, hsl(280 100% 70%), hsl(190 100% 55%));
     --gradient-secondary: linear-gradient(180deg, hsl(222 47% 9%), hsl(222 47% 5%));
     --gradient-accent: linear-gradient(45deg, hsl(190 100% 55%), hsl(280 100% 70%));
+    --gradient-subtle: linear-gradient(135deg, hsl(280 30% 20%), hsl(190 30% 20%));
     
     --glass-bg: 222 47% 9% / 60%;
-    --glass-border: 222 47% 20% / 60%;
+    --glass-border: 280 50% 50% / 30%;
     
     --shadow-elegant: 0 20px 60px -20px hsl(280 100% 70% / 0.4);
     --shadow-glow: 0 0 50px hsl(280 100% 70% / 0.5);
     --shadow-accent: 0 10px 30px -10px hsl(190 100% 55% / 0.5);
+    --shadow-neon: 0 0 30px hsl(280 100% 70% / 0.6), 0 0 60px hsl(190 100% 55% / 0.4);
+
+    /* React Flow theming for dark mode */
+    --rf-node-bg: hsl(222 47% 15%);
+    --rf-node-border: hsl(280 50% 50%);
+    --rf-node-text: hsl(210 40% 98%);
+    --rf-node-selected: hsl(280 100% 70%);
+    --rf-edge-stroke: hsl(280 70% 60%);
+    --rf-background: hsl(222 47% 5%);
   }
 }
 
@@ -145,12 +169,16 @@ All colors MUST be HSL.
 
   .glass:hover {
     box-shadow: var(--shadow-glow);
-    border-color: hsl(var(--primary) / 0.3);
+    border-color: hsl(var(--primary) / 0.4);
   }
 
   .cyber-glow {
     box-shadow: var(--shadow-glow);
     transition: var(--transition-smooth);
+  }
+
+  .cyber-glow:hover {
+    box-shadow: var(--shadow-neon);
   }
 
   .gradient-text {
@@ -166,5 +194,81 @@ All colors MUST be HSL.
 
   .hover-scale:hover {
     transform: scale(1.05);
+  }
+
+  .neon-border {
+    border: 1px solid hsl(var(--primary) / 0.5);
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.3);
+  }
+
+  .light-glow {
+    box-shadow: var(--shadow-accent);
+  }
+
+  /* React Flow Custom Styling */
+  .react-flow {
+    background: var(--rf-background);
+  }
+
+  .react-flow__node {
+    background: var(--rf-node-bg);
+    border: 2px solid var(--rf-node-border);
+    color: var(--rf-node-text);
+    border-radius: 8px;
+    font-weight: 600;
+    transition: var(--transition-smooth);
+  }
+
+  .react-flow__node:hover {
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.4);
+  }
+
+  .react-flow__node.selected {
+    border-color: var(--rf-node-selected);
+    box-shadow: 0 0 30px hsl(var(--primary) / 0.6);
+  }
+
+  .react-flow__edge-path {
+    stroke: var(--rf-edge-stroke);
+    stroke-width: 3;
+  }
+
+  .react-flow__edge.animated .react-flow__edge-path {
+    stroke: hsl(var(--accent));
+    stroke-dasharray: 5;
+    animation: dashdraw 0.5s linear infinite;
+  }
+
+  .react-flow__edge.selected .react-flow__edge-path {
+    stroke: hsl(var(--primary));
+  }
+
+  .react-flow__controls {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 8px;
+  }
+
+  .react-flow__controls button {
+    background: hsl(var(--card));
+    border-bottom: 1px solid hsl(var(--border));
+    color: hsl(var(--foreground));
+  }
+
+  .react-flow__controls button:hover {
+    background: hsl(var(--muted));
+  }
+
+  .react-flow__minimap {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 8px;
+  }
+
+  @keyframes dashdraw {
+    to {
+      stroke-dashoffset: -10;
+    }
   }
 }

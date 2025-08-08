@@ -5,8 +5,8 @@ export function GlassCard({ className, ...props }: HTMLAttributes<HTMLDivElement
   return (
     <div
       className={cn(
-        "glass rounded-lg border p-4 transition-shadow",
-        "hover:shadow-[var(--shadow-glow)]",
+        "glass rounded-lg border p-4 transition-shadow light-glow",
+        "hover:shadow-[var(--shadow-neon)]",
         className
       )}
       {...props}

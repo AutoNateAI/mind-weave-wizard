@@ -24,10 +24,10 @@ const Index = () => {
           A cyber‑wizard, graph‑powered learning system. Build mental models, play with logic flows, and level‑up your thinking.
         </p>
         <div className="mt-8 flex gap-4">
-          <Button asChild className="hover-scale cyber-glow">
+          <Button asChild className="hover-scale cyber-glow neon-border">
             <Link to="/dashboard">Enter Dashboard</Link>
           </Button>
-          <Button variant="secondary" asChild className="hover-scale">
+          <Button variant="secondary" asChild className="hover-scale light-glow">
             <Link to="/learn-more">Learn More</Link>
           </Button>
         </div>

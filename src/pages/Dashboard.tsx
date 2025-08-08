@@ -57,7 +57,7 @@ export default function Dashboard() {
           const locked = !isUnlocked(n);
           const complete = isCompleted(n);
           return (
-            <GlassCard key={n} className={`p-5 animate-fade-in hover-scale ${complete ? "ring-1 ring-primary cyber-glow" : ""}`}>
+            <GlassCard key={n} className={`p-5 animate-fade-in hover-scale ${complete ? "ring-1 ring-primary cyber-glow" : "light-glow"}`}>
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xl font-semibold">Session {n}</h2>
                 {complete && <span className="text-xs text-accent-foreground bg-accent/30 rounded px-2 py-1">Completed</span>}
