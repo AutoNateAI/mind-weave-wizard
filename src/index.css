@@ -211,22 +211,41 @@ All colors MUST be HSL.
   }
 
   .react-flow__node {
-    background: var(--rf-node-bg);
-    border: 2px solid var(--rf-node-border);
-    color: var(--rf-node-text);
-    border-radius: 8px;
+    background: var(--rf-node-bg) !important;
+    border: 2px solid var(--rf-node-border) !important;
+    color: var(--rf-node-text) !important;
+    border-radius: 8px !important;
     font-weight: 600;
     transition: var(--transition-smooth);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
 
   .react-flow__node:hover {
-    border-color: hsl(var(--primary));
+    border-color: hsl(var(--primary)) !important;
     box-shadow: 0 0 20px hsl(var(--primary) / 0.4);
   }
 
   .react-flow__node.selected {
-    border-color: var(--rf-node-selected);
+    border-color: var(--rf-node-selected) !important;
     box-shadow: 0 0 30px hsl(var(--primary) / 0.6);
+  }
+
+  /* Dark mode specific overrides */
+  .dark .react-flow__node {
+    background: var(--rf-node-bg) !important;
+    border-color: var(--rf-node-border) !important;
+    color: var(--rf-node-text) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .dark .react-flow__node:hover {
+    border-color: hsl(var(--primary)) !important;
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.6);
+  }
+
+  .dark .react-flow__node.selected {
+    border-color: var(--rf-node-selected) !important;
+    box-shadow: 0 0 30px hsl(var(--primary) / 0.8);
   }
 
   .react-flow__edge-path {
@@ -245,30 +264,73 @@ All colors MUST be HSL.
   }
 
   .react-flow__controls {
-    background: hsl(var(--card));
-    border: 1px solid hsl(var(--border));
+    background: hsl(var(--card)) !important;
+    border: 1px solid hsl(var(--border)) !important;
     border-radius: 8px;
   }
 
   .react-flow__controls button {
-    background: hsl(var(--card));
-    border-bottom: 1px solid hsl(var(--border));
-    color: hsl(var(--foreground));
+    background: hsl(var(--card)) !important;
+    border-bottom: 1px solid hsl(var(--border)) !important;
+    color: hsl(var(--foreground)) !important;
   }
 
   .react-flow__controls button:hover {
-    background: hsl(var(--muted));
+    background: hsl(var(--muted)) !important;
   }
 
   .react-flow__minimap {
-    background: hsl(var(--card));
-    border: 1px solid hsl(var(--border));
+    background: hsl(var(--card)) !important;
+    border: 1px solid hsl(var(--border)) !important;
     border-radius: 8px;
+  }
+
+  /* Background pattern theming */
+  .react-flow__background {
+    fill: hsl(var(--muted-foreground) / 0.2);
+  }
+
+  .dark .react-flow__background {
+    fill: hsl(var(--muted-foreground) / 0.1);
+  }
+
+  /* Node input/output handles */
+  .react-flow__handle {
+    background: hsl(var(--primary)) !important;
+    border: 2px solid hsl(var(--background)) !important;
+    width: 8px !important;
+    height: 8px !important;
+  }
+
+  .dark .react-flow__handle {
+    background: hsl(var(--primary)) !important;
+    border: 2px solid hsl(var(--background)) !important;
+  }
+
+  .react-flow__handle:hover {
+    background: hsl(var(--accent)) !important;
   }
 
   @keyframes dashdraw {
     to {
       stroke-dashoffset: -10;
     }
+  }
+
+  /* Ensure proper text contrast in all node types */
+  .react-flow__node-input,
+  .react-flow__node-output,
+  .react-flow__node-default {
+    background: var(--rf-node-bg) !important;
+    border: 2px solid var(--rf-node-border) !important;
+    color: var(--rf-node-text) !important;
+  }
+
+  .dark .react-flow__node-input,
+  .dark .react-flow__node-output,
+  .dark .react-flow__node-default {
+    background: var(--rf-node-bg) !important;
+    border: 2px solid var(--rf-node-border) !important;
+    color: var(--rf-node-text) !important;
   }
 }

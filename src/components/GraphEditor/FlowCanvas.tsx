@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from "react";
 import { ReactFlow, MiniMap, Controls, Background, useNodesState, useEdgesState, addEdge, Connection, Edge } from "@xyflow/react";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "next-themes";
 import "@xyflow/react/dist/style.css";
 
 export type RFNode = Parameters<typeof useNodesState>[0][number];
@@ -12,6 +13,7 @@ export function FlowCanvas({ storageKey, initialNodes = [], initialEdges = [], o
   initialEdges?: RFEdge[];
   onSave?: (data: { nodes: RFNode[]; edges: RFEdge[] }) => void;
 }) {
+  const { theme } = useTheme();
   const saved = localStorage.getItem(storageKey);
   const parsed = saved ? JSON.parse(saved) : null;
 
@@ -37,6 +39,11 @@ export function FlowCanvas({ storageKey, initialNodes = [], initialEdges = [], o
     window.location.reload();
   };
 
+  // Theme-aware background pattern properties
+  const backgroundVariant = theme === 'dark' ? 'dots' : 'dots';
+  const backgroundGap = 20;
+  const backgroundSize = 1;
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between pb-2 px-2">
@@ -54,11 +61,20 @@ export function FlowCanvas({ storageKey, initialNodes = [], initialEdges = [], o
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           fitView
-          className="cyber-flow w-full h-full"
+          className={`cyber-flow w-full h-full ${theme === 'dark' ? 'dark' : ''}`}
         >
-          <MiniMap zoomable pannable />
-          <Controls />
-          <Background />
+          <MiniMap 
+            zoomable 
+            pannable 
+            className={theme === 'dark' ? 'dark' : ''}
+          />
+          <Controls className={theme === 'dark' ? 'dark' : ''} />
+          <Background 
+            variant={backgroundVariant as any}
+            gap={backgroundGap}
+            size={backgroundSize}
+            className={theme === 'dark' ? 'dark' : ''}
+          />
         </ReactFlow>
       </div>
     </div>
