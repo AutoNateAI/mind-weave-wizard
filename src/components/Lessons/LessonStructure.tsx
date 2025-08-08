@@ -65,7 +65,7 @@ export function LessonStructure({
         </TabsContent>
 
         <TabsContent value="reflection" className="space-y-4">
-          <div className="glass rounded-lg p-3 sm:p-6 h-[calc(100vh-20rem)] sm:h-[calc(100vh-24rem)]">
+          <div className="glass rounded-lg p-3 sm:p-6 h-[calc(100vh-20rem)] sm:h-[calc(100vh-18rem)] lg:h-[calc(100vh-14rem)]">
             <DatabaseReflectionEditor
               prompt={reflectionPrompt}
               sessionNumber={sessionNumber}

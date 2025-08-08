@@ -5,6 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Save } from "lucide-react";
+import { MultipleChoiceQuiz } from "@/components/Quiz/MultipleChoiceQuiz";
+import { Separator } from "@/components/ui/separator";
 
 type DatabaseReflectionEditorProps = {
   prompt: string;
@@ -94,7 +96,7 @@ export function DatabaseReflectionEditor({
   if (loading) {
     return (
       <div className="space-y-2">
-        <Label className="text-sm text-muted-foreground">{prompt}</Label>
+        <Label className="text-sm text-muted-foreground">Loading...</Label>
         <div className="animate-pulse">
           <div className="h-32 bg-muted rounded-md"></div>
         </div>
@@ -103,25 +105,44 @@ export function DatabaseReflectionEditor({
   }
 
   return (
-    <div className="h-full flex flex-col space-y-4">
-      <Label className="text-sm text-muted-foreground">{prompt}</Label>
-      <Textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Write your reflection…"
-        className="flex-1 glass resize-none"
-        style={{ minHeight: '200px' }}
-      />
-      <div className="flex justify-between items-center">
-        <p className="text-xs text-muted-foreground">Click Save to store your reflection</p>
-        <Button 
-          onClick={handleSave} 
-          disabled={saving || text.trim().length === 0}
-          size="sm"
-        >
-          <Save className="w-4 h-4 mr-2" />
-          {saving ? "Saving..." : "Save"}
-        </Button>
+    <div className="h-full flex flex-col space-y-4 overflow-hidden">
+      {/* Quiz Section - Fixed height */}
+      <div className="flex-shrink-0 max-h-[40%] overflow-y-auto">
+        <MultipleChoiceQuiz 
+          sessionNumber={sessionNumber} 
+          lectureNumber={lectureNumber} 
+        />
+      </div>
+
+      <Separator className="flex-shrink-0" />
+
+      {/* Reflection Section - Flexible height */}
+      <div className="flex-1 flex flex-col space-y-3 min-h-0">
+        <div className="flex-shrink-0">
+          <h3 className="font-semibold text-base mb-2">Personal Reflection</h3>
+          <Label className="text-sm text-muted-foreground">{prompt}</Label>
+        </div>
+        
+        <div className="flex-1 flex flex-col space-y-3 min-h-0">
+          <Textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Write your reflection…"
+            className="flex-1 glass resize-none min-h-[100px] h-auto"
+          />
+          
+          <div className="flex justify-between items-center flex-shrink-0">
+            <p className="text-xs text-muted-foreground">Click Save to store your reflection</p>
+            <Button 
+              onClick={handleSave} 
+              disabled={saving || text.trim().length === 0}
+              size="sm"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {saving ? "Saving..." : "Save"}
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

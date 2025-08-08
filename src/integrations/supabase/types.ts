@@ -50,6 +50,83 @@ export type Database = {
         }
         Relationships: []
       }
+      multiple_choice_questions: {
+        Row: {
+          correct_option: string
+          created_at: string
+          id: string
+          lecture_number: number
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question_text: string
+          session_number: number
+          updated_at: string
+        }
+        Insert: {
+          correct_option: string
+          created_at?: string
+          id?: string
+          lecture_number: number
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question_text: string
+          session_number: number
+          updated_at?: string
+        }
+        Update: {
+          correct_option?: string
+          created_at?: string
+          id?: string
+          lecture_number?: number
+          option_a?: string
+          option_b?: string
+          option_c?: string
+          option_d?: string
+          question_text?: string
+          session_number?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_quiz_answers: {
+        Row: {
+          created_at: string
+          id: string
+          is_correct: boolean
+          question_id: string
+          selected_option: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_correct: boolean
+          question_id: string
+          selected_option: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_correct?: boolean
+          question_id?: string
+          selected_option?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_quiz_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "multiple_choice_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_reflections: {
         Row: {
           created_at: string
