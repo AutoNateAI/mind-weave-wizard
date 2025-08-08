@@ -46,7 +46,7 @@ export function LessonStructure({
         </TabsContent>
 
         <TabsContent value="game" className="space-y-4">
-          <div className="glass rounded-lg p-3 sm:p-6 h-[calc(100vh-20rem)] sm:h-[calc(100vh-24rem)]">
+          <div className="glass rounded-lg p-3 sm:p-6 h-[calc(100vh-20rem)] sm:h-[calc(100vh-18rem)] lg:h-[calc(100vh-16rem)]">
             {gameComponent || (
               <div className="text-center py-12 space-y-4">
                 <Play className="w-16 h-16 mx-auto text-muted-foreground" />
