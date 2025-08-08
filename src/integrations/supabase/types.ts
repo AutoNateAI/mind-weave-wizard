@@ -50,6 +50,44 @@ export type Database = {
         }
         Relationships: []
       }
+      multiple_choice_interactions: {
+        Row: {
+          created_at: string
+          id: string
+          interaction_timestamp: string
+          is_correct: boolean
+          question_id: string
+          selected_option: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interaction_timestamp?: string
+          is_correct: boolean
+          question_id: string
+          selected_option: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interaction_timestamp?: string
+          is_correct?: boolean
+          question_id?: string
+          selected_option?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "multiple_choice_interactions_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "multiple_choice_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       multiple_choice_questions: {
         Row: {
           correct_option: string
@@ -86,6 +124,36 @@ export type Database = {
           option_b?: string
           option_c?: string
           option_d?: string
+          question_text?: string
+          session_number?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reflection_questions: {
+        Row: {
+          created_at: string
+          id: string
+          lecture_number: number
+          question_number: number
+          question_text: string
+          session_number: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lecture_number: number
+          question_number: number
+          question_text: string
+          session_number: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lecture_number?: number
+          question_number?: number
           question_text?: string
           session_number?: number
           updated_at?: string
@@ -133,6 +201,7 @@ export type Database = {
           id: string
           lecture_number: number
           reflection_content: string | null
+          reflection_question_id: string | null
           session_number: number
           updated_at: string
           user_id: string
@@ -142,6 +211,7 @@ export type Database = {
           id?: string
           lecture_number: number
           reflection_content?: string | null
+          reflection_question_id?: string | null
           session_number: number
           updated_at?: string
           user_id: string
@@ -151,11 +221,20 @@ export type Database = {
           id?: string
           lecture_number?: number
           reflection_content?: string | null
+          reflection_question_id?: string | null
           session_number?: number
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_reflections_reflection_question_id_fkey"
+            columns: ["reflection_question_id"]
+            isOneToOne: false
+            referencedRelation: "reflection_questions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

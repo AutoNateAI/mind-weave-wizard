@@ -86,7 +86,29 @@ export function MultipleChoiceQuiz({ sessionNumber, lectureNumber }: MultipleCho
     }
   };
 
-  const handleAnswerSelect = (questionId: string, option: string) => {
+  const handleAnswerSelect = async (questionId: string, option: string) => {
+    // Log the interaction immediately when clicked
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (session.session?.user) {
+        const question = questions.find(q => q.id === questionId);
+        const isCorrect = question ? option === question.correct_option : false;
+
+        // Log every click interaction
+        await supabase
+          .from('multiple_choice_interactions')
+          .insert({
+            user_id: session.session.user.id,
+            question_id: questionId,
+            selected_option: option,
+            is_correct: isCorrect
+          });
+      }
+    } catch (error) {
+      console.error('Error logging interaction:', error);
+    }
+
+    // Update the selected answer in the UI
     setSelectedAnswers(prev => ({
       ...prev,
       [questionId]: option
