@@ -83,15 +83,15 @@ export default function SessionPage() {
             lectureNumber={1}
             lectureTitle={session.lectures[0]?.title || "Lecture 1"}
             gameComponent={
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Build, connect, explore.</p>
+              //<div className="space-y-2">
+                //<p className="text-sm text-muted-foreground">Build, connect, explore.</p>
                 <FlowCanvas
                   storageKey={`session-${n}-game-1`}
                   initialNodes={initial.nodes}
                   initialEdges={initial.edges}
                   onSave={() => markGame(n)}
                 />
-              </div>
+              //</div>
             }
             reflectionPrompt={session.reflections[0] || "Reflect on this lesson..."}
             onComplete={() => markLecture(n)}
@@ -120,10 +120,10 @@ export default function SessionPage() {
             lectureNumber={3}
             lectureTitle={session.lectures[2]?.title || "Lecture 3"}
             gameComponent={
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Map your personal mental web.</p>
+             // <div className="space-y-2">
+               // <p className="text-sm text-muted-foreground">Map your personal mental web.</p>
                 <FlowCanvas storageKey={`session-${n}-game-3`} onSave={() => markGame(n)} />
-              </div>
+             // </div>
             }
             reflectionPrompt={session.reflections[2] || "Reflect on this lesson..."}
             onComplete={() => markReflection(n)}
