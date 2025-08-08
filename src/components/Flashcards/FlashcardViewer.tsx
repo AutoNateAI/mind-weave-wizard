@@ -111,7 +111,7 @@ export function FlashcardViewer({ sessionNumber, lectureNumber }: FlashcardViewe
 
   const FlashcardContent = ({ fullscreen = false }: { fullscreen?: boolean }) => (
     <Card 
-      className={`glass transition-all duration-300 cursor-pointer h-full ${fullscreen ? 'min-h-96' : ''} ${isFlipped ? 'neon-border' : ''}`} 
+      className={`glass transition-all duration-300 cursor-pointer ${fullscreen ? 'h-96' : 'h-64'} ${isFlipped ? 'neon-border' : ''}`} 
       onClick={toggleFlip}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -136,7 +136,7 @@ export function FlashcardViewer({ sessionNumber, lectureNumber }: FlashcardViewe
   );
 
   return (
-    <div className="h-full flex flex-col space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-sm sm:text-lg font-semibold">
           Concept {currentIndex + 1} of {flashcards.length}
@@ -159,9 +159,7 @@ export function FlashcardViewer({ sessionNumber, lectureNumber }: FlashcardViewe
         </div>
       </div>
 
-      <div className="flex-1">
-        <FlashcardContent />
-      </div>
+      <FlashcardContent />
 
       <div className="flex justify-between items-center">
         <Button variant="outline" size="sm" onClick={prevCard} disabled={flashcards.length <= 1}>
