@@ -1,0 +1,11 @@
+{
+  "nodes": [
+    { "id": "1-1", "type": "input", "position": { "x": 150, "y": 0 }, "data": { "label": "Input Node" } },
+    { "id": "1-2", "type": "default", "position": { "x": 0, "y": 120 }, "data": { "label": "Default Node" } },
+    { "id": "1-3", "type": "output", "position": { "x": 300, "y": 120 }, "data": { "label": "Output Node" } }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "1-1", "target": "1-2", "label": "edge", "type": "smoothstep" },
+    { "id": "e1-3", "source": "1-1", "target": "1-3", "label": "animated edge", "animated": true }
+  ]
+}
