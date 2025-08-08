@@ -10,6 +10,7 @@ import SessionPage from "./pages/SessionPage";
 import { HelmetProvider } from "react-helmet-async";
 import Auth from "./pages/Auth";
 import LearnMore from "./pages/LearnMore";
+import Profile from "./pages/Profile";
 import { RequireAuth } from "./components/Auth/RequireAuth";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/learn-more" element={<LearnMore />} />
             <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
+            <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
             <Route path="/session/:sessionNumber" element={<RequireAuth><SessionPage /></RequireAuth>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

@@ -1,16 +1,22 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { GlassCard } from "@/components/UI/GlassCard";
 import { useProgress } from "@/lib/progress";
 import { Button } from "@/components/ui/button";
 import { PageMeta } from "@/components/UI/PageMeta";
 import { supabase } from "@/integrations/supabase/client";
-import { LogOut } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function Dashboard() {
-  const { isUnlocked, isCompleted, sessions } = useProgress();
+  const { isUnlocked, isCompleted, sessions, checkAdminStatus } = useProgress();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Check admin status on mount
+  useEffect(() => {
+    checkAdminStatus();
+  }, [checkAdminStatus]);
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -30,10 +36,18 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold">Session Dashboard</h1>
           <p className="text-muted-foreground">Complete each session to unlock the next.</p>
         </div>
-        <Button variant="outline" onClick={handleSignOut} className="flex items-center gap-2">
-          <LogOut className="w-4 h-4" />
-          Sign Out
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/profile" className="flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Profile
+            </Link>
+          </Button>
+          <Button variant="outline" onClick={handleSignOut} className="flex items-center gap-2">
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </Button>
+        </div>
       </header>
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.from({ length: 10 }).map((_, idx) => {
