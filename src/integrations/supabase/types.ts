@@ -14,7 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      flashcards: {
+        Row: {
+          concept_type: string | null
+          content: string
+          created_at: string
+          id: string
+          lecture_number: number
+          order_index: number | null
+          session_number: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          concept_type?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          lecture_number: number
+          order_index?: number | null
+          session_number: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          concept_type?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          lecture_number?: number
+          order_index?: number | null
+          session_number?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_reflections: {
+        Row: {
+          created_at: string
+          id: string
+          lecture_number: number
+          reflection_content: string | null
+          session_number: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lecture_number: number
+          reflection_content?: string | null
+          session_number: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lecture_number?: number
+          reflection_content?: string | null
+          session_number?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
