@@ -111,7 +111,7 @@ export function FlashcardViewer({ sessionNumber, lectureNumber }: FlashcardViewe
 
   const FlashcardContent = ({ fullscreen = false }: { fullscreen?: boolean }) => (
     <Card 
-      className={`glass transition-all duration-300 cursor-pointer ${fullscreen ? 'h-96' : 'h-full min-h-[300px]'} ${isFlipped ? 'neon-border' : ''}`} 
+      className={`glass transition-all duration-300 cursor-pointer h-full ${fullscreen ? 'min-h-96' : ''} ${isFlipped ? 'neon-border' : ''}`} 
       onClick={toggleFlip}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
