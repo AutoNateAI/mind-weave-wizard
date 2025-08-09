@@ -30,7 +30,16 @@ export default function AdminDashboard() {
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
+  console.log('🏛️ AdminDashboard render:', { 
+    userEmail: user?.email, 
+    loading, 
+    isAdmin, 
+    isStudentView,
+    pathname: window.location.pathname
+  });
+
   useEffect(() => {
+    console.log('🏛️ AdminDashboard useEffect:', { isAdmin });
     if (isAdmin) {
       loadCourses();
     }

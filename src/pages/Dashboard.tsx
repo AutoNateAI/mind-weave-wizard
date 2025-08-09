@@ -17,6 +17,13 @@ export default function Dashboard() {
   const { isAdmin, isStudentView, isAdminView, toggleView } = useAdminViewSwitch();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  console.log('🎯 Dashboard render:', { 
+    isAdmin, 
+    isStudentView,
+    isAdminView,
+    pathname: window.location.pathname
+  });
 
   // Check admin status on mount
   useEffect(() => {

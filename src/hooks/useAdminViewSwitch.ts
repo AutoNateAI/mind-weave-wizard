@@ -7,10 +7,21 @@ export function useAdminViewSwitch() {
   
   const isAdmin = user?.email === 'admin@gmail.com';
   
+  console.log('👑 useAdminViewSwitch:', { 
+    userEmail: user?.email, 
+    isAdmin, 
+    isStudentView,
+    currentPath: window.location.pathname 
+  });
+  
   const toggleView = useCallback(() => {
+    console.log('👑 toggleView called', { isAdmin, currentStudentView: isStudentView });
     if (!isAdmin) return;
-    setIsStudentView(prev => !prev);
-  }, [isAdmin]);
+    setIsStudentView(prev => {
+      console.log('👑 toggleView: changing from', prev, 'to', !prev);
+      return !prev;
+    });
+  }, [isAdmin, isStudentView]);
 
   const switchToAdmin = useCallback(() => {
     if (!isAdmin) return;
