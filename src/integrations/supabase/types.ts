@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_chat_sessions: {
+        Row: {
+          admin_user_id: string | null
+          chat_history: Json | null
+          context_type: string | null
+          course_id: string | null
+          created_at: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          admin_user_id?: string | null
+          chat_history?: Json | null
+          context_type?: string | null
+          course_id?: string | null
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          admin_user_id?: string | null
+          chat_history?: Json | null
+          context_type?: string | null
+          course_id?: string | null
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_chat_sessions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          overview: string | null
+          status: string | null
+          title: string
+          total_sessions: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          overview?: string | null
+          status?: string | null
+          title: string
+          total_sessions?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          overview?: string | null
+          status?: string | null
+          title?: string
+          total_sessions?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       flashcards: {
         Row: {
           concept_type: string | null
@@ -49,6 +123,144 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      generation_workflows: {
+        Row: {
+          course_id: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          input_data: Json | null
+          output_data: Json | null
+          progress_percentage: number | null
+          status: string | null
+          updated_at: string | null
+          workflow_type: string
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          input_data?: Json | null
+          output_data?: Json | null
+          progress_percentage?: number | null
+          status?: string | null
+          updated_at?: string | null
+          workflow_type: string
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          input_data?: Json | null
+          output_data?: Json | null
+          progress_percentage?: number | null
+          status?: string | null
+          updated_at?: string | null
+          workflow_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generation_workflows_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lecture_slides: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          lecture_id: string | null
+          slide_number: number
+          slide_type: string | null
+          speaker_notes: string | null
+          svg_animation: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          lecture_id?: string | null
+          slide_number: number
+          slide_type?: string | null
+          speaker_notes?: string | null
+          svg_animation?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          lecture_id?: string | null
+          slide_number?: number
+          slide_type?: string | null
+          speaker_notes?: string | null
+          svg_animation?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lecture_slides_lecture_id_fkey"
+            columns: ["lecture_id"]
+            isOneToOne: false
+            referencedRelation: "lectures_dynamic"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lectures_dynamic: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          estimated_duration_minutes: number | null
+          id: string
+          lecture_number: number
+          order_index: number
+          session_id: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          lecture_number: number
+          order_index: number
+          session_id?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          lecture_number?: number
+          order_index?: number
+          session_id?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lectures_dynamic_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions_dynamic"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       multiple_choice_interactions: {
         Row: {
@@ -159,6 +371,50 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      sessions_dynamic: {
+        Row: {
+          course_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          order_index: number
+          session_number: number
+          theme: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          order_index: number
+          session_number: number
+          theme?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          order_index?: number
+          session_number?: number
+          theme?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_dynamic_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_quiz_answers: {
         Row: {
