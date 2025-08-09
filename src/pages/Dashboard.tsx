@@ -8,12 +8,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { LogOut, User, Settings } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { AdminHeader } from "@/components/Admin/AdminHeader";
 import { useAdminViewSwitch } from "@/hooks/useAdminViewSwitch";
+import { Badge } from "@/components/ui/badge";
+import { Eye } from "lucide-react";
 
 export default function Dashboard() {
   const { isUnlocked, isCompleted, sessions, checkAdminStatus } = useProgress();
-  const { isAdmin, isStudentView } = useAdminViewSwitch();
+  const { isAdmin, isStudentView, isAdminView, toggleView } = useAdminViewSwitch();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -36,20 +37,34 @@ export default function Dashboard() {
     <>
       <PageMeta title="Thinking Wizard — Dashboard" description="Track progress and enter sessions." />
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-        {/* Admin header for view switching */}
-        {isAdmin && <AdminHeader />}
-        
         <main className="container py-10">
           <header className="mb-8 flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold gradient-text">
-                {isStudentView && isAdmin ? "Student View - " : ""}Session Dashboard
-              </h1>
-              <p className="text-muted-foreground">Complete each session to unlock the next.</p>
+            <div className="flex items-center gap-4">
+              <div>
+                <h1 className="text-3xl font-bold gradient-text">Session Dashboard</h1>
+                <p className="text-muted-foreground">Complete each session to unlock the next.</p>
+              </div>
+              {isAdmin && (
+                <Badge variant={isStudentView ? "secondary" : "default"} className="gap-2">
+                  {isStudentView ? <User className="w-3 h-3" /> : <Settings className="w-3 h-3" />}
+                  {isStudentView ? "Student View" : "Admin View"}
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
-              {isAdmin && !isStudentView && (
+              {isAdmin && (
+                <Button
+                  onClick={toggleView}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Eye className="w-4 h-4" />
+                  Switch to {isStudentView ? "Admin" : "Student"} View
+                </Button>
+              )}
+              {isAdminView && (
                 <Button variant="outline" asChild className="hover-scale">
                   <Link to="/admin" className="flex items-center gap-2">
                     <Settings className="w-4 h-4" />
