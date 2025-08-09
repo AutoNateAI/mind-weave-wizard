@@ -73,7 +73,11 @@ export default function Dashboard() {
               )}
               {isAdminView && (
                 <Button variant="outline" asChild className="hover-scale">
-                  <Link to="/admin" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm whitespace-nowrap">
+                  <Link 
+                    to="/admin" 
+                    className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm whitespace-nowrap"
+                    onClick={() => console.log('🚀 Admin Panel clicked - navigating to /admin')}
+                  >
                     <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span className="hidden xs:inline">Admin</span> Panel
                   </Link>
