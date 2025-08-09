@@ -157,6 +157,7 @@ Make sure each session has exactly 3 lectures, each 5-7 minutes long. Focus on e
   return new Response(JSON.stringify({ course, plan: generatedPlan }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
+}
 
 async function planningChat(payload: any) {
   const { chatHistory } = payload;
