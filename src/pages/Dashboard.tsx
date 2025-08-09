@@ -38,49 +38,49 @@ export default function Dashboard() {
       <PageMeta title="Thinking Wizard — Dashboard" description="Track progress and enter sessions." />
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
         <main className="container py-10">
-          <header className="mb-8 flex justify-between items-start">
-            <div className="flex items-center gap-4">
+          <header className="mb-8 flex flex-col sm:flex-row justify-between items-start gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
               <div>
-                <h1 className="text-3xl font-bold gradient-text">Session Dashboard</h1>
-                <p className="text-muted-foreground">Complete each session to unlock the next.</p>
+                <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Session Dashboard</h1>
+                <p className="text-sm sm:text-base text-muted-foreground">Complete each session to unlock the next.</p>
               </div>
               {isAdmin && (
-                <Badge variant={isStudentView ? "secondary" : "default"} className="gap-2">
+                <Badge variant={isStudentView ? "secondary" : "default"} className="gap-2 text-xs">
                   {isStudentView ? <User className="w-3 h-3" /> : <Settings className="w-3 h-3" />}
                   {isStudentView ? "Student View" : "Admin View"}
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
               <ThemeToggle />
               {isAdmin && (
                 <Button
                   onClick={toggleView}
                   variant="outline"
                   size="sm"
-                  className="gap-2"
+                  className="gap-1 sm:gap-2 text-xs sm:text-sm whitespace-nowrap"
                 >
-                  <Eye className="w-4 h-4" />
-                  Switch to {isStudentView ? "Admin" : "Student"} View
+                  <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden xs:inline">Switch to</span> {isStudentView ? "Admin" : "Student"}
                 </Button>
               )}
               {isAdminView && (
                 <Button variant="outline" asChild className="hover-scale">
-                  <Link to="/admin" className="flex items-center gap-2">
-                    <Settings className="w-4 h-4" />
-                    Admin Panel
+                  <Link to="/admin" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm whitespace-nowrap">
+                    <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden xs:inline">Admin</span> Panel
                   </Link>
                 </Button>
               )}
               <Button variant="outline" asChild className="hover-scale">
-                <Link to="/profile" className="flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  Profile
+                <Link to="/profile" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm whitespace-nowrap">
+                  <User className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Profile</span>
                 </Link>
               </Button>
-              <Button variant="outline" onClick={handleSignOut} className="flex items-center gap-2 hover-scale">
-                <LogOut className="w-4 h-4" />
-                Sign Out
+              <Button variant="outline" onClick={handleSignOut} className="flex items-center gap-1 sm:gap-2 hover-scale text-xs sm:text-sm whitespace-nowrap">
+                <LogOut className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Sign Out</span>
               </Button>
             </div>
           </header>

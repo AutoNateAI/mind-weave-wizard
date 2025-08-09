@@ -8,6 +8,7 @@ import { Send, Bot, User, Wand2, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { CourseCreationModal } from "./CourseCreationModal";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -31,6 +32,7 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [canGenerate, setCanGenerate] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -166,7 +168,7 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
       <div className="p-4 border-t border-border/50 space-y-3">
         {canGenerate && (
           <Button
-            onClick={generateCoursePlan}
+            onClick={() => setShowConfirmModal(true)}
             disabled={isLoading}
             className="w-full gap-2"
             size="lg"
@@ -199,6 +201,15 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
           </Button>
         </div>
       </div>
+      
+      <CourseCreationModal 
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={async () => {
+          setShowConfirmModal(false);
+          await generateCoursePlan();
+        }}
+      />
     </div>
   );
 }
