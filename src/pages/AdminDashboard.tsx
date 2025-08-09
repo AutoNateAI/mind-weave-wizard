@@ -59,12 +59,15 @@ export default function AdminDashboard() {
 
   // Redirect non-admin users only after auth has loaded
   if (user && !isAdmin) {
+    console.log('🚨 AdminDashboard REDIRECT: Non-admin user detected', { 
+      userEmail: user?.email, 
+      isAdmin, 
+      userObject: user 
+    });
     return <Navigate to="/dashboard" replace />;
   }
 
-  // If in student view, redirect to regular dashboard
-  // Note: We don't redirect here because the user intentionally navigated to /admin
-  // The view switch should only affect the UI, not routing
+  console.log('✅ AdminDashboard: Admin check passed', { userEmail: user?.email, isAdmin });
 
   const loadCourses = async () => {
     try {
