@@ -54,9 +54,8 @@ export default function AdminDashboard() {
   }
 
   // If in student view, redirect to regular dashboard
-  if (isAdmin && isStudentView) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  // Note: We don't redirect here because the user intentionally navigated to /admin
+  // The view switch should only affect the UI, not routing
 
   const loadCourses = async () => {
     try {
