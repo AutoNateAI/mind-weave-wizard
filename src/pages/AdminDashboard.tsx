@@ -24,7 +24,7 @@ import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { isAdmin, isStudentView } = useAdminViewSwitch();
   const [courses, setCourses] = useState<any[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
@@ -36,13 +36,25 @@ export default function AdminDashboard() {
     }
   }, [isAdmin]);
 
-  // Redirect non-admin users
-  if (!isAdmin) {
+  // Show loading while auth is still checking
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect non-admin users only after auth has loaded
+  if (user && !isAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
 
   // If in student view, redirect to regular dashboard
-  if (isStudentView) {
+  if (isAdmin && isStudentView) {
     return <Navigate to="/dashboard" replace />;
   }
 
