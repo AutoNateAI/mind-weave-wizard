@@ -25,6 +25,8 @@ serve(async (req) => {
     switch (action) {
       case 'plan_course':
         return await planCourse(payload);
+      case 'planning_chat':
+        return await planningChat(payload);
       case 'generate_content':
         return await generateContent(payload);
       case 'edit_content':
@@ -155,7 +157,36 @@ Make sure each session has exactly 3 lectures, each 5-7 minutes long. Focus on e
   return new Response(JSON.stringify({ course, plan: generatedPlan }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
+
+async function planningChat(payload: any) {
+  const { chatHistory } = payload;
+
+  const messages = [
+    { role: 'system', content: 'You are an expert course planning assistant. Ask clarifying questions and help shape a course concept. Keep replies concise and conversational.' },
+    ...chatHistory.map((m: any) => ({ role: m.role, content: m.content }))
+  ];
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      messages,
+      temperature: 0.7,
+    }),
+  });
+
+  const data = await response.json();
+  const reply = data.choices?.[0]?.message?.content ?? 'Sorry, I could not generate a response right now.';
+
+  return new Response(JSON.stringify({ reply }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
 }
+
 
 async function generateContent(payload: any) {
   const { lectureId, lectureTitle, sessionTheme } = payload;

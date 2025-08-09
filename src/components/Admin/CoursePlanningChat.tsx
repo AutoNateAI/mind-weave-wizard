@@ -60,26 +60,25 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
     setIsLoading(true);
 
     try {
-      // Simple AI response for planning conversation
-      const planningPrompts = [
-        "That sounds interesting! Can you tell me more about the specific learning outcomes you want to achieve?",
-        "Great! What's the target audience for this course? What's their current knowledge level?",
-        "Perfect! How would you like to structure the learning journey? Any specific methodologies or approaches you prefer?",
-        "Excellent! Based on our discussion, I have a good understanding of your vision. When you're ready, use the 'Generate Course Plan' button to create the structured course outline.",
-        "I can help refine those ideas further. What aspects would you like to explore more deeply?"
-      ];
+      // Call edge function for an actual AI response based on chat history
+      const { data, error } = await supabase.functions.invoke('ai-course-generator', {
+        body: {
+          action: 'planning_chat',
+          payload: {
+            chatHistory: [...messages, userMessage].map(m => ({ role: m.role, content: m.content }))
+          }
+        }
+      });
 
-      const response = planningPrompts[Math.min(messages.length - 1, planningPrompts.length - 1)];
+      if (error) throw error;
 
-      setTimeout(() => {
-        const assistantMessage: Message = {
-          role: 'assistant',
-          content: response,
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, assistantMessage]);
-        setIsLoading(false);
-      }, 1000);
+      const assistantMessage: Message = {
+        role: 'assistant',
+        content: data?.reply || 'I could not generate a response right now.',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, assistantMessage]);
+      setIsLoading(false);
 
     } catch (error) {
       console.error('Error in conversation:', error);
