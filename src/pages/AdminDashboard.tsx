@@ -25,16 +25,19 @@ import { toast } from "sonner";
 
 export default function AdminDashboard() {
   const { user, loading } = useAuth();
-  const { isAdmin, isStudentView } = useAdminViewSwitch();
+  const { isStudentView } = useAdminViewSwitch();
   const [courses, setCourses] = useState<any[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
+  // Direct admin check - don't rely on the hook
+  const isAdmin = user?.email === 'admin@gmail.com';
+
   console.log('🏛️ AdminDashboard render:', { 
     userEmail: user?.email, 
     loading, 
-    isAdmin, 
-    isStudentView,
+    isAdmin,
+    directAdminCheck: user?.email === 'admin@gmail.com',
     pathname: window.location.pathname
   });
 
