@@ -5,12 +5,15 @@ import { useProgress } from "@/lib/progress";
 import { Button } from "@/components/ui/button";
 import { PageMeta } from "@/components/UI/PageMeta";
 import { supabase } from "@/integrations/supabase/client";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, Settings } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { AdminHeader } from "@/components/Admin/AdminHeader";
+import { useAdminViewSwitch } from "@/hooks/useAdminViewSwitch";
 
 export default function Dashboard() {
   const { isUnlocked, isCompleted, sessions, checkAdminStatus } = useProgress();
+  const { isAdmin, isStudentView } = useAdminViewSwitch();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -30,27 +33,42 @@ export default function Dashboard() {
   };
 
   return (
-    <main className="container py-10">
+    <>
       <PageMeta title="Thinking Wizard — Dashboard" description="Track progress and enter sessions." />
-      <header className="mb-8 flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold gradient-text">Session Dashboard</h1>
-          <p className="text-muted-foreground">Complete each session to unlock the next.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <Button variant="outline" asChild className="hover-scale">
-            <Link to="/profile" className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              Profile
-            </Link>
-          </Button>
-          <Button variant="outline" onClick={handleSignOut} className="flex items-center gap-2 hover-scale">
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </Button>
-        </div>
-      </header>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
+        {/* Admin header for view switching */}
+        {isAdmin && <AdminHeader />}
+        
+        <main className="container py-10">
+          <header className="mb-8 flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold gradient-text">
+                {isStudentView && isAdmin ? "Student View - " : ""}Session Dashboard
+              </h1>
+              <p className="text-muted-foreground">Complete each session to unlock the next.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              {isAdmin && !isStudentView && (
+                <Button variant="outline" asChild className="hover-scale">
+                  <Link to="/admin" className="flex items-center gap-2">
+                    <Settings className="w-4 h-4" />
+                    Admin Panel
+                  </Link>
+                </Button>
+              )}
+              <Button variant="outline" asChild className="hover-scale">
+                <Link to="/profile" className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Profile
+                </Link>
+              </Button>
+              <Button variant="outline" onClick={handleSignOut} className="flex items-center gap-2 hover-scale">
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </Button>
+            </div>
+          </header>
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.from({ length: 10 }).map((_, idx) => {
           const n = idx + 1;
@@ -69,7 +87,9 @@ export default function Dashboard() {
             </GlassCard>
           );
         })}
-      </section>
-    </main>
+          </section>
+        </main>
+      </div>
+    </>
   );
 }
