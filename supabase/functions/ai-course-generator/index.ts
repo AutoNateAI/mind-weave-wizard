@@ -48,13 +48,20 @@ serve(async (req) => {
 async function planCourse(payload: any) {
   const { courseDescription, chatHistory, userId } = payload;
   
-  const prompt = `You are an expert course designer. Based on the conversation history and course description, create a structured 10-session course plan.
+  const prompt = `You are an expert course designer creating the "AutoNateAI: Thinking Wizard Course" - a 10-session mental mastery journey focused on graph theory and thinking models.
+
+FRAMEWORK CONSTRAINTS: You MUST create courses that follow this exact structure:
+- Exactly 10 sessions
+- Each session has exactly 3 lectures (5-7 minutes each)  
+- Each session follows: Lecture → Game → Reflection pattern repeated 3 times
+- Sessions progress: Graph Theory → Mental Models → Space Between → Research Decomposition → Traversal Techniques → Multiple Perspectives → Pattern Recognition → Advanced Applications → Professional Integration → Mastery & Beyond
+
+Base the session titles, themes, and lecture content on the conversation, but ALWAYS maintain the core framework above.
 
 Course Description: ${courseDescription}
-
 Chat History: ${JSON.stringify(chatHistory)}
 
-Generate a JSON response with this exact structure:
+Generate ONLY valid JSON (no markdown formatting) with this exact structure:
 {
   "course": {
     "title": "Course Title",
@@ -107,7 +114,14 @@ Make sure each session has exactly 3 lectures, each 5-7 minutes long. Focus on e
   });
 
   const data = await response.json();
-  const generatedPlan = JSON.parse(data.choices[0].message.content);
+  let rawContent = data.choices[0].message.content;
+  
+  // Clean up markdown formatting if present
+  if (rawContent.includes('```json')) {
+    rawContent = rawContent.replace(/```json\s*/, '').replace(/```\s*$/, '');
+  }
+  
+  const generatedPlan = JSON.parse(rawContent);
 
   // Save to database
   const { data: course, error: courseError } = await supabase

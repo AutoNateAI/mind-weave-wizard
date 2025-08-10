@@ -4,11 +4,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Send, Bot, User, Wand2, Save } from "lucide-react";
+import { Send, Bot, User, Wand2, Save, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { CourseCreationModal } from "./CourseCreationModal";
+import ReactMarkdown from 'react-markdown';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -33,6 +34,8 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
   const [isLoading, setIsLoading] = useState(false);
   const [canGenerate, setCanGenerate] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -90,8 +93,12 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
   const generateCoursePlan = async () => {
     if (!user) return;
     
-    setIsLoading(true);
+    setIsGenerating(true);
+    setGenerationStatus('Starting course generation...');
+    
     try {
+      setGenerationStatus('Analyzing conversation and creating course structure...');
+      
       const response = await supabase.functions.invoke('ai-course-generator', {
         body: {
           action: 'plan_course',
@@ -105,14 +112,21 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
 
       if (response.error) throw response.error;
 
-      toast.success('Course plan generated successfully!');
+      setGenerationStatus('Course plan generated successfully!');
+      toast.success('Course plan created and saved to database!');
       onCoursePlanned?.(response.data);
+      
+      // Clear status after success
+      setTimeout(() => {
+        setGenerationStatus('');
+        setIsGenerating(false);
+      }, 2000);
       
     } catch (error) {
       console.error('Error generating course plan:', error);
-      toast.error('Failed to generate course plan');
-    } finally {
-      setIsLoading(false);
+      toast.error('Failed to generate course plan: ' + (error as Error).message);
+      setGenerationStatus('');
+      setIsGenerating(false);
     }
   };
 
@@ -147,7 +161,9 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
                   ? 'bg-primary text-primary-foreground' 
                   : 'bg-card'
               }`}>
-                <p className="text-sm">{message.content}</p>
+                <div className="text-sm prose prose-sm max-w-none">
+                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                </div>
                 <p className="text-xs opacity-70 mt-2">
                   {message.timestamp.toLocaleTimeString()}
                 </p>
@@ -165,7 +181,18 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
       </ScrollArea>
 
       <div className="p-4 border-t border-border/50 space-y-3">
-        {canGenerate && (
+        {generationStatus && (
+          <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+            {isGenerating ? (
+              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <CheckCircle className="w-4 h-4 text-green-600" />
+            )}
+            <span className="text-sm">{generationStatus}</span>
+          </div>
+        )}
+        
+        {canGenerate && !isGenerating && (
           <Button
             onClick={() => setShowConfirmModal(true)}
             disabled={isLoading}
@@ -173,7 +200,7 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
             size="lg"
           >
             <Wand2 className="w-4 h-4" />
-            Generate Course Plan
+            Generate AutoNateAI Course Plan
           </Button>
         )}
         
@@ -192,7 +219,7 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
           />
           <Button
             onClick={sendMessage}
-            disabled={!input.trim() || isLoading}
+            disabled={!input.trim() || isLoading || isGenerating}
             size="lg"
             className="px-4"
           >
