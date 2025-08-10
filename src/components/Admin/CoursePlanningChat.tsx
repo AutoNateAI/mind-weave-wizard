@@ -26,7 +26,7 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "Hello! I'm your AI course planning assistant. Tell me about the course you'd like to create. What topic, learning objectives, and target audience do you have in mind?",
+      content: "Hello! I'm here to help you create a customized version of the **AutoNateAI: Thinking Wizard Course** - a 10-session journey through graph theory and mental models.\n\nThis course teaches structured thinking using graphs, mental models, and cognitive frameworks. I can help tailor the themes, examples, and applications to your specific needs.\n\n**What's your background?** Are you interested in:\n- Business/entrepreneurship applications?\n- Academic/research focus?\n- Personal development?\n- Professional skills?\n\nTell me about your goals and I'll help customize the course content!",
       timestamp: new Date()
     }
   ]);

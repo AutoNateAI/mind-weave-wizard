@@ -74,13 +74,13 @@ export default function AdminDashboard() {
 
   const loadCourses = async () => {
     try {
+      console.log('🔍 Loading courses...');
       const { data, error } = await supabase
         .from('courses')
-        .select(`
-          *,
-          sessions_dynamic (count)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
+
+      console.log('📊 Courses query result:', { data, error });
 
       if (error) throw error;
       setCourses(data || []);
