@@ -18,6 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AdminHeader } from "@/components/Admin/AdminHeader";
 import { CoursePlanningChat } from "@/components/Admin/CoursePlanningChat";
 import { CourseStructureView } from "@/components/Admin/CourseStructureView";
+import { ChatHistoryView } from "@/components/Admin/ChatHistoryView";
 import { PageMeta } from "@/components/UI/PageMeta";
 import { useAdminViewSwitch } from "@/hooks/useAdminViewSwitch";
 import { Navigate } from "react-router-dom";
@@ -122,7 +123,7 @@ export default function AdminDashboard() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="overview" className="gap-2">
                 <BarChart3 className="w-4 h-4" />
                 Overview
@@ -130,6 +131,10 @@ export default function AdminDashboard() {
               <TabsTrigger value="planning" className="gap-2">
                 <MessageSquare className="w-4 h-4" />
                 Course Planning
+              </TabsTrigger>
+              <TabsTrigger value="chat-history" className="gap-2">
+                <MessageSquare className="w-4 h-4" />
+                Chat History
               </TabsTrigger>
               <TabsTrigger value="structure" className="gap-2">
                 <BookOpen className="w-4 h-4" />
@@ -210,11 +215,25 @@ export default function AdminDashboard() {
                           <div>
                             <h4 className="font-medium">{course.title}</h4>
                             <p className="text-sm text-muted-foreground">{course.description}</p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveTab('chat-history');
+                                }}
+                              >
+                                <MessageSquare className="w-3 h-3 mr-1" />
+                                View Planning Chat
+                              </Button>
+                            </div>
                           </div>
                           <div className="flex items-center gap-2">
                             <Badge variant="outline">{course.status}</Badge>
                             <Badge variant="secondary">
-                              {course.sessions_dynamic?.[0]?.count || 0} sessions
+                              {course.total_sessions || 10} sessions
                             </Badge>
                           </div>
                         </div>
@@ -237,6 +256,10 @@ export default function AdminDashboard() {
                   <CoursePlanningChat onCoursePlanned={handleCoursePlanned} />
                 </div>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="chat-history">
+              <ChatHistoryView />
             </TabsContent>
 
             <TabsContent value="structure">

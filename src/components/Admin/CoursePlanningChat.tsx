@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Send, Bot, User, Wand2, Save, CheckCircle } from "lucide-react";
+import { Send, Bot, User, Wand2, Save, CheckCircle, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -23,6 +23,7 @@ interface CoursePlanningChatProps {
 
 export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps) {
   const { user } = useAuth();
+  const [chatSessionId, setChatSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
@@ -49,6 +50,109 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
     }
   }, [messages]);
 
+  useEffect(() => {
+    // Initialize or load chat session when component mounts
+    if (user) {
+      initializeChatSession();
+    }
+  }, [user]);
+
+  const initializeChatSession = async () => {
+    if (!user) return;
+
+    try {
+      // Check if there's an existing active chat session
+      const { data: existingSessions, error: fetchError } = await supabase
+        .from('admin_chat_sessions')
+        .select('*')
+        .eq('admin_user_id', user.id)
+        .eq('context_type', 'course_planning')
+        .is('course_id', null)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (fetchError) throw fetchError;
+
+      if (existingSessions && existingSessions.length > 0) {
+        // Load existing session
+        const session = existingSessions[0];
+        setChatSessionId(session.id);
+        
+        if (session.chat_history && Array.isArray(session.chat_history) && session.chat_history.length > 1) {
+          setMessages(session.chat_history.map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          })));
+        }
+      } else {
+        // Create new session
+        await createNewChatSession();
+      }
+    } catch (error) {
+      console.error('Error initializing chat session:', error);
+    }
+  };
+
+  const createNewChatSession = async () => {
+    if (!user) return;
+
+    try {
+      const serializedMessages = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp.toISOString()
+      }));
+
+      const { data, error } = await supabase
+        .from('admin_chat_sessions')
+        .insert({
+          admin_user_id: user.id,
+          context_type: 'course_planning',
+          chat_history: serializedMessages
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      setChatSessionId(data.id);
+      
+      // Reset messages to start fresh chat
+      const initialMessage = {
+        role: 'assistant' as const,
+        content: "Hello! I'm here to help you create a customized version of the **AutoNateAI: Thinking Wizard Course** - a 10-session journey through graph theory and mental models.\n\nThis course teaches structured thinking using graphs, mental models, and cognitive frameworks. I can help tailor the themes, examples, and applications to your specific needs.\n\n**What's your background?** Are you interested in:\n- Business/entrepreneurship applications?\n- Academic/research focus?\n- Personal development?\n- Professional skills?\n\nTell me about your goals and I'll help customize the course content!",
+        timestamp: new Date()
+      };
+      setMessages([initialMessage]);
+      await updateChatSession([initialMessage]);
+    } catch (error) {
+      console.error('Error creating chat session:', error);
+    }
+  };
+
+  const updateChatSession = async (newMessages: Message[]) => {
+    if (!chatSessionId) return;
+
+    try {
+      const serializedMessages = newMessages.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp.toISOString()
+      }));
+
+      const { error } = await supabase
+        .from('admin_chat_sessions')
+        .update({
+          chat_history: serializedMessages,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', chatSessionId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating chat session:', error);
+    }
+  };
+
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -58,9 +162,13 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
       timestamp: new Date()
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setInput('');
     setIsLoading(true);
+
+    // Update chat session in database
+    await updateChatSession(updatedMessages);
 
     try {
       // Call edge function for an actual AI response based on chat history
@@ -80,8 +188,12 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
         content: data?.reply || 'I could not generate a response right now.',
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, assistantMessage]);
+      const finalMessages = [...updatedMessages, assistantMessage];
+      setMessages(finalMessages);
       setIsLoading(false);
+
+      // Update chat session with assistant response
+      await updateChatSession(finalMessages);
 
     } catch (error) {
       console.error('Error in conversation:', error);
@@ -114,6 +226,15 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
 
       setGenerationStatus('Course plan generated successfully!');
       toast.success('Course plan created and saved to database!');
+      
+      // Associate the chat session with the generated course
+      if (chatSessionId && response.data?.course?.id) {
+        await supabase
+          .from('admin_chat_sessions')
+          .update({ course_id: response.data.course.id })
+          .eq('id', chatSessionId);
+      }
+      
       onCoursePlanned?.(response.data);
       
       // Clear status after success
@@ -192,17 +313,29 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
           </div>
         )}
         
-        {canGenerate && !isGenerating && (
+        <div className="flex gap-2">
+          {canGenerate && !isGenerating && (
+            <Button
+              onClick={() => setShowConfirmModal(true)}
+              disabled={isLoading}
+              className="flex-1 gap-2"
+              size="lg"
+            >
+              <Wand2 className="w-4 h-4" />
+              Generate Course Plan
+            </Button>
+          )}
           <Button
-            onClick={() => setShowConfirmModal(true)}
-            disabled={isLoading}
-            className="w-full gap-2"
+            onClick={createNewChatSession}
+            disabled={isLoading || isGenerating}
+            variant="outline"
             size="lg"
+            className="gap-2"
           >
-            <Wand2 className="w-4 h-4" />
-            Generate AutoNateAI Course Plan
+            <Plus className="w-4 h-4" />
+            New Chat
           </Button>
-        )}
+        </div>
         
         <div className="flex gap-2">
           <Textarea
