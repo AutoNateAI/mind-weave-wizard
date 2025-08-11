@@ -661,36 +661,182 @@ Return JSON format:
 }
 
 async function editContent(payload: any) {
-  const { contentId, contentType, editRequest, currentContent } = payload;
+  const { content, prompt, sessionNumber, lectureNumber, lectureTitle } = payload;
+  
+  console.log('🎯 Starting AI content edit');
+  console.log('📝 Edit prompt:', prompt);
+  console.log('📄 Content to edit:', JSON.stringify(content, null, 2));
 
-  const prompt = `Edit the following ${contentType} content based on this request: "${editRequest}"
+  try {
+    // Determine content type and table based on content structure
+    let contentType = '';
+    let tableName = '';
+    let updateField = '';
+    
+    if ('slide_number' in content) {
+      contentType = 'slide';
+      tableName = 'lecture_slides';
+      updateField = content.title ? 'title' : content.content ? 'content' : 'speaker_notes';
+    } else if ('concept_type' in content) {
+      contentType = 'flashcard';
+      tableName = 'flashcards';
+      updateField = content.title ? 'title' : 'content';
+    } else if ('question_number' in content) {
+      contentType = 'reflection question';
+      tableName = 'reflection_questions';
+      updateField = 'question_text';
+    } else if ('correct_option' in content) {
+      contentType = 'multiple choice question';
+      tableName = 'multiple_choice_questions';
+      updateField = content.question_text ? 'question_text' : 'option_a';
+    } else {
+      throw new Error('Unknown content type');
+    }
 
-Current content: ${JSON.stringify(currentContent)}
+    console.log(`🔍 Detected content type: ${contentType}`);
+    console.log(`📊 Will update field: ${updateField} in table: ${tableName}`);
 
-Return the updated content in the same JSON format as the input.`;
+    // Create context-aware prompt based on content type
+    let systemPrompt = '';
+    let userPrompt = '';
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: 'You are an expert content editor. Make precise, thoughtful edits based on user requests.' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.5,
-    }),
-  });
+    if (contentType === 'slide') {
+      systemPrompt = `You are an expert course content editor. You help edit lecture slides to be clear, engaging, and educational. 
+      
+      When editing slides:
+      - Keep content concise and scannable
+      - Use bullet points effectively
+      - Maintain educational value
+      - Consider the lecture context: "${lectureTitle}"
+      
+      Return ONLY the updated text content, nothing else.`;
+      
+      const currentText = content[updateField] || '';
+      userPrompt = `Current ${updateField}: "${currentText}"
+      
+      Edit request: "${prompt}"
+      
+      Please provide the updated ${updateField} content:`;
 
-  const data = await response.json();
-  const editedContent = JSON.parse(data.choices[0].message.content);
+    } else if (contentType === 'flashcard') {
+      systemPrompt = `You are an expert at creating clear, memorable flashcard content for educational purposes.
+      
+      When editing flashcards:
+      - Keep definitions concise but complete
+      - Use clear, simple language
+      - Ensure accuracy for the subject matter
+      - Make it memorable for students
+      
+      Return ONLY the updated text content, nothing else.`;
+      
+      const currentText = content[updateField] || '';
+      userPrompt = `Current flashcard ${updateField}: "${currentText}"
+      
+      Edit request: "${prompt}"
+      
+      Please provide the updated ${updateField} content:`;
 
-  return new Response(JSON.stringify({ editedContent }), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+    } else if (contentType === 'reflection question') {
+      systemPrompt = `You are an expert at creating thoughtful reflection questions that promote deep learning and self-assessment.
+      
+      When editing reflection questions:
+      - Make questions thought-provoking
+      - Encourage personal connection to the material
+      - Use open-ended phrasing
+      - Relate to the lecture: "${lectureTitle}"
+      
+      Return ONLY the updated question text, nothing else.`;
+      
+      userPrompt = `Current reflection question: "${content.question_text}"
+      
+      Edit request: "${prompt}"
+      
+      Please provide the updated reflection question:`;
+
+    } else if (contentType === 'multiple choice question') {
+      systemPrompt = `You are an expert at creating effective multiple choice questions for educational assessments.
+      
+      When editing MCQ content:
+      - Ensure questions test understanding, not just memorization
+      - Make distractors plausible but clearly incorrect
+      - Keep language clear and unambiguous
+      - Maintain appropriate difficulty level
+      
+      Return ONLY the updated text content, nothing else.`;
+      
+      const currentText = content[updateField] || '';
+      userPrompt = `Current MCQ ${updateField}: "${currentText}"
+      
+      Edit request: "${prompt}"
+      
+      Context - Full question: "${content.question_text}"
+      Options: A) ${content.option_a} B) ${content.option_b} C) ${content.option_c} D) ${content.option_d}
+      Correct: ${content.correct_option}
+      
+      Please provide the updated ${updateField} content:`;
+    }
+
+    // Call OpenAI API
+    console.log('🤖 Calling OpenAI API for content editing');
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.3,
+        max_tokens: 1000,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const editedText = data.choices[0].message.content.trim();
+    
+    console.log('✅ OpenAI response received');
+    console.log('📝 Edited content:', editedText);
+
+    // Update the database
+    console.log(`💾 Updating ${tableName} table, field: ${updateField}`);
+    const { error: updateError } = await supabase
+      .from(tableName as any)
+      .update({ [updateField]: editedText })
+      .eq('id', content.id);
+
+    if (updateError) {
+      console.error('❌ Database update error:', updateError);
+      throw updateError;
+    }
+
+    console.log('✅ Content updated successfully in database');
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      editedContent: editedText,
+      field: updateField 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+  } catch (error) {
+    console.error('❌ Error in editContent:', error);
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      success: false 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
 }
 
 async function generateAssessments(payload: any) {
