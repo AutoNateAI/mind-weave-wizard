@@ -237,47 +237,59 @@ async function generateContent(payload: any) {
 
   console.log(`🎯 Generating content for lecture: ${lectureTitle} (Session ${actualSessionNumber}, Lecture ${actualLectureNumber})`);
 
+  let slidesResult = null;
+  let assessmentsResult = null;
+  let slidesError = null;
+  let assessmentsError = null;
+
   try {
-    // Generate all content types in parallel
-    const [slidesResult, assessmentsResult] = await Promise.allSettled([
-      generateSlides(lectureId, lectureTitle, sessionTheme),
-      generateAssessmentsContent(actualSessionNumber, actualLectureNumber, lectureTitle, sessionTheme)
-    ]);
-
-    console.log('📊 Generation results:', {
-      slides: slidesResult.status,
-      assessments: assessmentsResult.status
-    });
-
-    let slides = null;
-    let assessments = null;
-
-    if (slidesResult.status === 'fulfilled') {
-      slides = slidesResult.value.slides;
-      console.log('✅ Slides generated successfully');
-    } else {
-      console.error('❌ Slides generation failed:', slidesResult.reason);
-    }
-
-    if (assessmentsResult.status === 'fulfilled') {
-      assessments = assessmentsResult.value;
-      console.log('✅ Assessments generated successfully');
-    } else {
-      console.error('❌ Assessments generation failed:', assessmentsResult.reason);
-    }
-
-    return new Response(JSON.stringify({ 
-      slides: slides,
-      assessments: assessments,
-      success: true
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-
+    // Generate slides first
+    console.log('🎨 Starting slide generation...');
+    slidesResult = await generateSlides(lectureId, lectureTitle, sessionTheme);
+    console.log('✅ Slides generated successfully');
   } catch (error) {
-    console.error('❌ Error in generateContent:', error);
-    throw error;
+    console.error('❌ Slides generation failed:', error);
+    slidesError = error;
   }
+
+  try {
+    // Generate assessments
+    console.log('📋 Starting assessment generation...');
+    assessmentsResult = await generateAssessmentsContent(actualSessionNumber, actualLectureNumber, lectureTitle, sessionTheme);
+    console.log('✅ Assessments generated successfully');
+  } catch (error) {
+    console.error('❌ Assessments generation failed:', error);
+    assessmentsError = error;
+  }
+
+  // Check if both failed
+  if (slidesError && assessmentsError) {
+    console.error('❌ Both slides and assessments failed');
+    throw new Error(`Content generation failed: Slides: ${slidesError.message}, Assessments: ${assessmentsError.message}`);
+  }
+
+  // If slides failed but assessments succeeded, still throw error for slides
+  if (slidesError) {
+    console.error('❌ Slides failed but assessments succeeded:', slidesError.message);
+    // Don't throw here, let it continue with partial success but log the error
+  }
+
+  if (assessmentsError) {
+    console.error('❌ Assessments failed but slides succeeded:', assessmentsError.message);
+    // Don't throw here, let it continue with partial success but log the error
+  }
+
+  return new Response(JSON.stringify({ 
+    slides: slidesResult?.slides || null,
+    assessments: assessmentsResult || null,
+    success: true,
+    errors: {
+      slidesError: slidesError?.message || null,
+      assessmentsError: assessmentsError?.message || null
+    }
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
 }
 
 async function generateSlides(lectureId: string, lectureTitle: string, sessionTheme: string) {
@@ -373,14 +385,19 @@ Return the response in this exact JSON format:
       content_length: slide.content?.length || 0
     });
     
+    // Ensure all required fields are present and valid
+    const slideNumber = slide.slide_number || (index + 1);
+    const content = slide.content || `Content for slide ${slideNumber}`;
+    const title = slide.title || `Slide ${slideNumber}`;
+    
     return {
       lecture_id: lectureId,
-      slide_number: slide.slide_number,
-      title: slide.title || `Slide ${slide.slide_number}`,
-      content: slide.content || '',
+      slide_number: slideNumber,
+      title: title,
+      content: content, // This CANNOT be null due to NOT NULL constraint
       slide_type: slide.slide_type || 'content',
-      svg_animation: slide.svg_animation || '',
-      speaker_notes: slide.speaker_notes || ''
+      svg_animation: slide.svg_animation || null,
+      speaker_notes: slide.speaker_notes || null
     };
   });
 
@@ -395,7 +412,8 @@ Return the response in this exact JSON format:
   if (slideError) {
     console.error('❌ Failed to insert slides:', slideError);
     console.error('❌ Slide insert data that failed:', JSON.stringify(slideInserts, null, 2));
-    throw new Error(`Failed to save slides: ${slideError.message}`);
+    console.error('❌ Database error details:', slideError);
+    throw new Error(`Failed to save slides: ${slideError.message}. Details: ${JSON.stringify(slideError)}`);
   } else {
     console.log('✅ Successfully inserted slides:', insertedSlides?.length);
     console.log('🎯 Inserted slide IDs:', insertedSlides?.map(s => s.id));
