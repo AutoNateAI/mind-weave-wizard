@@ -120,8 +120,8 @@ export function GameBuilder({ sessionNumber, lectureNumber, lectureContent, onGa
   };
 
   const generateGame = async () => {
-    if (!selectedTemplate || !lectureContent) {
-      toast.error('Please select a template and ensure lecture content is available');
+    if (!selectedTemplate) {
+      toast.error('Please select a template');
       return;
     }
 
