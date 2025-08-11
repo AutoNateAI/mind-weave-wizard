@@ -292,7 +292,7 @@ export function GameBuilderView() {
 
       {/* Game Preview Modal */}
       <Dialog open={!!previewGame} onOpenChange={() => setPreviewGame(null)}>
-        <DialogContent className="max-w-6xl h-[80vh]">
+        <DialogContent className="max-w-7xl h-[95vh] w-[95vw]">
           <DialogHeader>
             <DialogTitle>Game Preview: {previewGame?.title}</DialogTitle>
           </DialogHeader>

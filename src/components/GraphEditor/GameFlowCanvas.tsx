@@ -210,6 +210,8 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
           onConnect={onConnect}
           onNodeClick={onNodeClick}
           fitView
+          minZoom={0.01}
+          maxZoom={50}
           className={`cyber-flow w-full h-full ${theme === 'dark' ? 'dark' : ''} ${
             gameState.isCompleted ? 'pointer-events-none opacity-75' : ''
           }`}

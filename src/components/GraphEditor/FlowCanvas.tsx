@@ -61,6 +61,8 @@ export function FlowCanvas({ storageKey, initialNodes = [], initialEdges = [], o
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           fitView
+          minZoom={0.01}
+          maxZoom={50}
           className={`cyber-flow w-full h-full ${theme === 'dark' ? 'dark' : ''}`}
         >
           <MiniMap 
