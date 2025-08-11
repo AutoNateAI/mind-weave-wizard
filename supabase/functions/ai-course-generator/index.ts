@@ -229,18 +229,49 @@ async function generateContent(payload: any) {
   const actualSessionNumber = sessionNumber || lectureData.sessions_dynamic?.session_number || 1;
   const actualLectureNumber = lectureNumber || lectureData.lecture_number || 1;
 
-  // Generate all content types in parallel
-  const [slidesResult, assessmentsResult] = await Promise.all([
-    generateSlides(lectureId, lectureTitle, sessionTheme),
-    generateAssessmentsContent(actualSessionNumber, actualLectureNumber, lectureTitle, sessionTheme)
-  ]);
+  console.log(`🎯 Generating content for lecture: ${lectureTitle} (Session ${actualSessionNumber}, Lecture ${actualLectureNumber})`);
 
-  return new Response(JSON.stringify({ 
-    slides: slidesResult.slides,
-    assessments: assessmentsResult 
-  }), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+  try {
+    // Generate all content types in parallel
+    const [slidesResult, assessmentsResult] = await Promise.allSettled([
+      generateSlides(lectureId, lectureTitle, sessionTheme),
+      generateAssessmentsContent(actualSessionNumber, actualLectureNumber, lectureTitle, sessionTheme)
+    ]);
+
+    console.log('📊 Generation results:', {
+      slides: slidesResult.status,
+      assessments: assessmentsResult.status
+    });
+
+    let slides = null;
+    let assessments = null;
+
+    if (slidesResult.status === 'fulfilled') {
+      slides = slidesResult.value.slides;
+      console.log('✅ Slides generated successfully');
+    } else {
+      console.error('❌ Slides generation failed:', slidesResult.reason);
+    }
+
+    if (assessmentsResult.status === 'fulfilled') {
+      assessments = assessmentsResult.value;
+      console.log('✅ Assessments generated successfully');
+    } else {
+      console.error('❌ Assessments generation failed:', assessmentsResult.reason);
+    }
+
+    return new Response(JSON.stringify({ 
+      slides: slides,
+      assessments: assessments,
+      success: true
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+  } catch (error) {
+    console.error('❌ Error in generateContent:', error);
+    throw error;
+  }
 }
 
 async function generateSlides(lectureId: string, lectureTitle: string, sessionTheme: string) {
@@ -269,6 +300,7 @@ Return the response in this exact JSON format:
   ]
 }`;
 
+  console.log('🤖 Making OpenAI request for slides...');
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -278,28 +310,44 @@ Return the response in this exact JSON format:
     body: JSON.stringify({
       model: 'gpt-4o',
       messages: [
-        { role: 'system', content: 'You are an expert educational content creator specializing in visual presentations for cognitive and mental model training.' },
+        { role: 'system', content: 'You are an expert educational content creator specializing in visual presentations for cognitive and mental model training. Always return valid JSON without any markdown formatting.' },
         { role: 'user', content: prompt }
       ],
       temperature: 0.8,
     }),
   });
 
+  if (!response.ok) {
+    throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+  }
+
   const data = await response.json();
+  console.log('📝 Raw OpenAI response for slides:', data.choices[0].message.content.substring(0, 200) + '...');
+
   let slideData;
   try {
     // Clean up any markdown formatting that might be in the response
-    let content = data.choices[0].message.content;
-    if (content.includes('```json')) {
-      content = content.replace(/```json\n?/, '').replace(/\n?```/, '');
+    let content = data.choices[0].message.content.trim();
+    
+    // Remove markdown code blocks if present
+    if (content.startsWith('```json')) {
+      content = content.replace(/^```json\s*/, '').replace(/\s*```$/, '');
     }
+    if (content.startsWith('```')) {
+      content = content.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    }
+    
+    console.log('🧹 Cleaned content for slides:', content.substring(0, 200) + '...');
     slideData = JSON.parse(content);
+    console.log('✅ Successfully parsed slide data, slides count:', slideData.slides?.length);
   } catch (e) {
-    console.error('Failed to parse slide data:', data.choices[0].message.content);
-    throw new Error('Failed to parse slide generation response');
+    console.error('❌ Failed to parse slide data:', e);
+    console.error('📄 Raw content that failed to parse:', data.choices[0].message.content);
+    throw new Error(`Failed to parse slide generation response: ${e.message}`);
   }
 
   // Save slides to database with error handling
+  console.log('💾 Saving slides to database...');
   const slideInserts = slideData.slides.map(slide => ({
     lecture_id: lectureId,
     slide_number: slide.slide_number,
@@ -310,12 +358,16 @@ Return the response in this exact JSON format:
     speaker_notes: slide.speaker_notes
   }));
 
-  const { error: slideError } = await supabase.from('lecture_slides').insert(slideInserts);
+  const { data: insertedSlides, error: slideError } = await supabase
+    .from('lecture_slides')
+    .insert(slideInserts)
+    .select();
+
   if (slideError) {
-    console.error('Failed to insert slides:', slideError);
+    console.error('❌ Failed to insert slides:', slideError);
     throw new Error(`Failed to save slides: ${slideError.message}`);
   } else {
-    console.log('✅ Successfully inserted slides');
+    console.log('✅ Successfully inserted slides:', insertedSlides?.length);
   }
 
   return slideData;
@@ -363,6 +415,7 @@ Return JSON format:
   ]
 }`;
 
+  console.log('🤖 Making OpenAI request for assessments...');
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -372,28 +425,49 @@ Return JSON format:
     body: JSON.stringify({
       model: 'gpt-4o',
       messages: [
-        { role: 'system', content: 'You are an expert assessment designer creating engaging educational evaluations for cognitive skill development.' },
+        { role: 'system', content: 'You are an expert assessment designer creating engaging educational evaluations for cognitive skill development. Always return valid JSON without any markdown formatting.' },
         { role: 'user', content: prompt }
       ],
       temperature: 0.7,
     }),
   });
 
-  const data = await response.json();
-  let assessments;
-  try {
-    let content = data.choices[0].message.content;
-    if (content.includes('```json')) {
-      content = content.replace(/```json\n?/, '').replace(/\n?```/, '');
-    }
-    assessments = JSON.parse(content);
-  } catch (e) {
-    console.error('Failed to parse assessment data:', data.choices[0].message.content);
-    throw new Error('Failed to parse assessment generation response');
+  if (!response.ok) {
+    throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
   }
 
-  // Prepare bulk inserts
-  const mcqInserts = assessments.multiple_choice.map(mcq => ({
+  const data = await response.json();
+  console.log('📝 Raw OpenAI response for assessments:', data.choices[0].message.content.substring(0, 200) + '...');
+
+  let assessments;
+  try {
+    let content = data.choices[0].message.content.trim();
+    
+    // Remove markdown code blocks if present
+    if (content.startsWith('```json')) {
+      content = content.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    }
+    if (content.startsWith('```')) {
+      content = content.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    }
+    
+    console.log('🧹 Cleaned content for assessments:', content.substring(0, 200) + '...');
+    assessments = JSON.parse(content);
+    console.log('✅ Successfully parsed assessment data:', {
+      mcq_count: assessments.multiple_choice?.length,
+      reflection_count: assessments.reflection_questions?.length,
+      flashcard_count: assessments.flashcards?.length
+    });
+  } catch (e) {
+    console.error('❌ Failed to parse assessment data:', e);
+    console.error('📄 Raw content that failed to parse:', data.choices[0].message.content);
+    throw new Error(`Failed to parse assessment generation response: ${e.message}`);
+  }
+
+  // Prepare bulk inserts with validation
+  console.log('💾 Preparing database inserts...');
+  
+  const mcqInserts = (assessments.multiple_choice || []).map(mcq => ({
     session_number: sessionNumber,
     lecture_number: lectureNumber,
     question_text: mcq.question_text,
@@ -404,14 +478,14 @@ Return JSON format:
     correct_option: mcq.correct_option
   }));
 
-  const reflectionInserts = assessments.reflection_questions.map(rq => ({
+  const reflectionInserts = (assessments.reflection_questions || []).map(rq => ({
     session_number: sessionNumber,
     lecture_number: lectureNumber,
     question_number: rq.question_number,
     question_text: rq.question_text
   }));
 
-  const flashcardInserts = assessments.flashcards.map((fc, index) => ({
+  const flashcardInserts = (assessments.flashcards || []).map((fc, index) => ({
     session_number: sessionNumber,
     lecture_number: lectureNumber,
     title: fc.title,
@@ -420,22 +494,49 @@ Return JSON format:
     order_index: fc.order_index || index + 1
   }));
 
-  // Execute all inserts in parallel with error logging
-  const insertResults = await Promise.allSettled([
-    supabase.from('multiple_choice_questions').insert(mcqInserts),
-    supabase.from('reflection_questions').insert(reflectionInserts),
-    supabase.from('flashcards').insert(flashcardInserts)
-  ]);
+  console.log('📊 Insert counts:', {
+    mcq: mcqInserts.length,
+    reflections: reflectionInserts.length,
+    flashcards: flashcardInserts.length
+  });
 
-  // Log any insert failures
+  // Execute all inserts in parallel with detailed error logging
+  const insertPromises = [];
+  
+  if (mcqInserts.length > 0) {
+    insertPromises.push(
+      supabase.from('multiple_choice_questions').insert(mcqInserts).select()
+        .then(result => ({ type: 'mcq', result }))
+    );
+  }
+  
+  if (reflectionInserts.length > 0) {
+    insertPromises.push(
+      supabase.from('reflection_questions').insert(reflectionInserts).select()
+        .then(result => ({ type: 'reflections', result }))
+    );
+  }
+  
+  if (flashcardInserts.length > 0) {
+    insertPromises.push(
+      supabase.from('flashcards').insert(flashcardInserts).select()
+        .then(result => ({ type: 'flashcards', result }))
+    );
+  }
+
+  const insertResults = await Promise.allSettled(insertPromises);
+
+  // Log detailed results
   insertResults.forEach((result, index) => {
-    const tableNames = ['multiple_choice_questions', 'reflection_questions', 'flashcards'];
-    if (result.status === 'rejected') {
-      console.error(`Failed to insert ${tableNames[index]}:`, result.reason);
-    } else if (result.value.error) {
-      console.error(`Error inserting ${tableNames[index]}:`, result.value.error);
+    if (result.status === 'fulfilled') {
+      const { type, result: dbResult } = result.value;
+      if (dbResult.error) {
+        console.error(`❌ Error inserting ${type}:`, dbResult.error);
+      } else {
+        console.log(`✅ Successfully inserted ${type}:`, dbResult.data?.length, 'records');
+      }
     } else {
-      console.log(`✅ Successfully inserted ${tableNames[index]}`);
+      console.error(`❌ Promise rejected for insert ${index}:`, result.reason);
     }
   });
 
