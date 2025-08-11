@@ -567,24 +567,66 @@ Return JSON format:
   const insertPromises = [];
   
   if (mcqInserts.length > 0) {
+    console.log('📝 About to insert MCQ records:', mcqInserts.length);
+    console.log('🔍 Sample MCQ insert:', JSON.stringify(mcqInserts[0], null, 2));
     insertPromises.push(
       supabase.from('multiple_choice_questions').insert(mcqInserts).select()
-        .then(result => ({ type: 'mcq', result }))
+        .then(result => {
+          console.log('✅ MCQ insert result:', result.error ? 'ERROR' : 'SUCCESS', result.error || `${result.data?.length} records`);
+          if (result.error) {
+            console.error('❌ MCQ insert error details:', JSON.stringify(result.error, null, 2));
+          }
+          return { type: 'mcq', result };
+        })
+        .catch(error => {
+          console.error('❌ MCQ insert promise error:', error);
+          return { type: 'mcq', result: { error } };
+        })
     );
+  } else {
+    console.log('⚠️ No MCQ records to insert');
   }
   
   if (reflectionInserts.length > 0) {
+    console.log('📝 About to insert Reflection records:', reflectionInserts.length);
+    console.log('🔍 Sample Reflection insert:', JSON.stringify(reflectionInserts[0], null, 2));
     insertPromises.push(
       supabase.from('reflection_questions').insert(reflectionInserts).select()
-        .then(result => ({ type: 'reflections', result }))
+        .then(result => {
+          console.log('✅ Reflection insert result:', result.error ? 'ERROR' : 'SUCCESS', result.error || `${result.data?.length} records`);
+          if (result.error) {
+            console.error('❌ Reflection insert error details:', JSON.stringify(result.error, null, 2));
+          }
+          return { type: 'reflections', result };
+        })
+        .catch(error => {
+          console.error('❌ Reflection insert promise error:', error);
+          return { type: 'reflections', result: { error } };
+        })
     );
+  } else {
+    console.log('⚠️ No Reflection records to insert');
   }
   
   if (flashcardInserts.length > 0) {
+    console.log('📝 About to insert Flashcard records:', flashcardInserts.length);
+    console.log('🔍 Sample Flashcard insert:', JSON.stringify(flashcardInserts[0], null, 2));
     insertPromises.push(
       supabase.from('flashcards').insert(flashcardInserts).select()
-        .then(result => ({ type: 'flashcards', result }))
+        .then(result => {
+          console.log('✅ Flashcard insert result:', result.error ? 'ERROR' : 'SUCCESS', result.error || `${result.data?.length} records`);
+          if (result.error) {
+            console.error('❌ Flashcard insert error details:', JSON.stringify(result.error, null, 2));
+          }
+          return { type: 'flashcards', result };
+        })
+        .catch(error => {
+          console.error('❌ Flashcard insert promise error:', error);
+          return { type: 'flashcards', result: { error } };
+        })
     );
+  } else {
+    console.log('⚠️ No Flashcard records to insert');
   }
 
   const insertResults = await Promise.allSettled(insertPromises);
