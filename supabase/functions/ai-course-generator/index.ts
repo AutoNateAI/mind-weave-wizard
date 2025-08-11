@@ -598,36 +598,20 @@ Return JSON format:
     console.log('📝 About to insert Reflection records:', reflectionInserts.length);
     console.log('🔍 Sample Reflection insert:', JSON.stringify(reflectionInserts[0], null, 2));
     
-    // Check for existing reflections to avoid duplicates
-    const { data: existingReflections } = await supabase
-      .from('reflection_questions')
-      .select('question_number')
-      .eq('session_number', sessionNumber)
-      .eq('lecture_number', lectureNumber);
-    
-    const existingNumbers = new Set(existingReflections?.map(r => r.question_number) || []);
-    const newReflections = reflectionInserts.filter(r => !existingNumbers.has(r.question_number));
-    
-    console.log(`🔍 Existing reflection questions: ${existingNumbers.size}, New to insert: ${newReflections.length}`);
-    
-    if (newReflections.length > 0) {
-      insertPromises.push(
-        supabase.from('reflection_questions').insert(newReflections).select()
-          .then(result => {
-            console.log('✅ Reflection insert result:', result.error ? 'ERROR' : 'SUCCESS', result.error || `${result.data?.length} records`);
-            if (result.error) {
-              console.error('❌ Reflection insert error details:', JSON.stringify(result.error, null, 2));
-            }
-            return { type: 'reflections', result };
-          })
-          .catch(error => {
-            console.error('❌ Reflection insert promise error:', error);
-            return { type: 'reflections', result: { error } };
-          })
-      );
-    } else {
-      console.log('⚠️ All reflection questions already exist, skipping insert');
-    }
+    insertPromises.push(
+      supabase.from('reflection_questions').insert(reflectionInserts).select()
+        .then(result => {
+          console.log('✅ Reflection insert result:', result.error ? 'ERROR' : 'SUCCESS', result.error || `${result.data?.length} records`);
+          if (result.error) {
+            console.error('❌ Reflection insert error details:', JSON.stringify(result.error, null, 2));
+          }
+          return { type: 'reflections', result };
+        })
+        .catch(error => {
+          console.error('❌ Reflection insert promise error:', error);
+          return { type: 'reflections', result: { error } };
+        })
+    );
   } else {
     console.log('⚠️ No Reflection records to insert');
   }
