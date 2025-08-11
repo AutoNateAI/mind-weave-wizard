@@ -599,16 +599,20 @@ Return JSON format:
     console.log('🔍 Sample Reflection insert:', JSON.stringify(reflectionInserts[0], null, 2));
     
     insertPromises.push(
-      supabase.from('reflection_questions').insert(reflectionInserts).select()
+      supabase.from('reflection_questions')
+        .upsert(reflectionInserts, { 
+          onConflict: 'session_number,lecture_number,question_number' 
+        })
+        .select()
         .then(result => {
-          console.log('✅ Reflection insert result:', result.error ? 'ERROR' : 'SUCCESS', result.error || `${result.data?.length} records`);
+          console.log('✅ Reflection upsert result:', result.error ? 'ERROR' : 'SUCCESS', result.error || `${result.data?.length} records`);
           if (result.error) {
-            console.error('❌ Reflection insert error details:', JSON.stringify(result.error, null, 2));
+            console.error('❌ Reflection upsert error details:', JSON.stringify(result.error, null, 2));
           }
           return { type: 'reflections', result };
         })
         .catch(error => {
-          console.error('❌ Reflection insert promise error:', error);
+          console.error('❌ Reflection upsert promise error:', error);
           return { type: 'reflections', result: { error } };
         })
     );
