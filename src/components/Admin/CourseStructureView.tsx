@@ -18,7 +18,8 @@ import {
   FileText,
   MessageSquare,
   HelpCircle,
-  Zap
+  Zap,
+  Loader2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -38,6 +39,9 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
   const [progress, setProgress] = useState(0);
   const [totalLectures, setTotalLectures] = useState(0);
   const [completedLectures, setCompletedLectures] = useState(0);
+  const [generatingLectures, setGeneratingLectures] = useState<Set<string>>(new Set());
+  const [generatingSessions, setGeneratingSessions] = useState<Set<string>>(new Set());
+  const [sessionProgress, setSessionProgress] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (courseId) {
@@ -116,6 +120,8 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
   };
 
   const generateContent = async (lectureId: string, lectureTitle: string, sessionTheme: string, sessionNumber?: number, lectureNumber?: number) => {
+    setGeneratingLectures(prev => new Set([...prev, lectureId]));
+    
     try {
       console.log('🎯 Generating content for lecture:', lectureId, lectureTitle);
       const response = await supabase.functions.invoke('ai-course-generator', {
@@ -137,12 +143,78 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
         console.error('❌ Error generating content:', response.error);
         toast.error('Failed to generate content');
       } else {
-        toast.success('Content generated successfully!');
+        toast.success(`Content generated for "${lectureTitle}"`);
         loadCourseData();
       }
     } catch (error) {
       console.error('❌ Error generating content:', error);
       toast.error('Failed to generate content');
+    } finally {
+      setGeneratingLectures(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(lectureId);
+        return newSet;
+      });
+    }
+  };
+
+  const generateSessionContent = async (sessionData: any) => {
+    const sessionId = sessionData.id;
+    const sessionTitle = sessionData.title;
+    const lectures = sessionData.lectures_dynamic || [];
+    
+    setGeneratingSessions(prev => new Set([...prev, sessionId]));
+    setSessionProgress(prev => ({ ...prev, [sessionId]: 0 }));
+    
+    try {
+      const totalSessionLectures = lectures.length;
+      let completedSessionLectures = 0;
+
+      console.log(`🚀 Starting session generation for ${totalSessionLectures} lectures in "${sessionTitle}"`);
+
+      const promises = lectures.map(async (lecture: any, index: number) => {
+        try {
+          console.log(`🎯 Generating lecture ${index + 1}/${totalSessionLectures}: ${lecture.title}`);
+          await generateContent(
+            lecture.id, 
+            lecture.title, 
+            sessionTitle, 
+            sessionData.session_number, 
+            lecture.lecture_number
+          );
+          
+          completedSessionLectures++;
+          const newProgress = (completedSessionLectures / totalSessionLectures) * 100;
+          setSessionProgress(prev => ({ ...prev, [sessionId]: newProgress }));
+          
+          console.log(`✅ Session progress: ${completedSessionLectures}/${totalSessionLectures}`);
+        } catch (error) {
+          console.error(`❌ Failed to generate ${lecture.title}:`, error);
+          throw error;
+        }
+      });
+
+      await Promise.all(promises);
+      toast.success(`🎉 All content generated for session: ${sessionTitle}`);
+      setSessionProgress(prev => ({ ...prev, [sessionId]: 100 }));
+      
+    } catch (error) {
+      console.error('Error generating session content:', error);
+      toast.error(`Failed to generate session content: ${error.message}`);
+    } finally {
+      setGeneratingSessions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(sessionId);
+        return newSet;
+      });
+      // Reset progress after delay
+      setTimeout(() => {
+        setSessionProgress(prev => {
+          const newProgress = { ...prev };
+          delete newProgress[sessionId];
+          return newProgress;
+        });
+      }, 2000);
     }
   };
 
@@ -183,6 +255,8 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
 
       // Generate all content in parallel
       const promises = allLectures.map(async (lecture, index) => {
+        setGeneratingLectures(prev => new Set([...prev, lecture.id]));
+        
         try {
           console.log(`🎯 Starting generation for lecture ${index + 1}/${total}: ${lecture.title}`);
           await generateContent(lecture.id, lecture.title, lecture.theme, lecture.sessionNumber, lecture.lectureNumber);
@@ -198,6 +272,12 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
         } catch (error) {
           console.error(`❌ Failed to generate content for ${lecture.title}:`, error);
           throw new Error(`Failed to generate ${lecture.title}: ${error.message}`);
+        } finally {
+          setGeneratingLectures(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(lecture.id);
+            return newSet;
+          });
         }
       });
 
@@ -339,6 +419,28 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
                           <h3 className="font-semibold">{session.title}</h3>
                         </div>
                         <div className="flex items-center gap-2">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  generateSessionContent(session);
+                                }}
+                                disabled={generatingSessions.has(session.id) || isLoading}
+                                className="gap-2"
+                              >
+                                {generatingSessions.has(session.id) ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Wand2 className="w-4 h-4" />
+                                )}
+                                Generate Session
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Generate content for all lectures in this session</TooltipContent>
+                          </Tooltip>
                           <Badge variant="secondary">{session.lectures_dynamic?.length || 0} lectures</Badge>
                         </div>
                       </div>
@@ -348,6 +450,19 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
                   <CollapsibleContent>
                     <Separator />
                     <div className="p-4 space-y-3">
+                      {/* Session Progress Bar */}
+                      {generatingSessions.has(session.id) && (
+                        <div className="mb-4 p-3 bg-muted rounded-lg">
+                          <div className="flex items-center justify-between text-sm mb-2">
+                            <span className="font-medium">Generating Session Content</span>
+                            <span className="text-muted-foreground">
+                              {Math.round(sessionProgress[session.id] || 0)}% complete
+                            </span>
+                          </div>
+                          <Progress value={sessionProgress[session.id] || 0} className="h-2" />
+                        </div>
+                      )}
+                      
                       <p className="text-sm text-muted-foreground">{session.description}</p>
                       
                       <div className="space-y-2">
@@ -361,6 +476,12 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
                                 <Badge variant="outline" className="text-xs">
                                   {lecture.estimated_duration_minutes}min
                                 </Badge>
+                                {generatingLectures.has(lecture.id) && (
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                    <span>Generating...</span>
+                                  </div>
+                                )}
                               </div>
                               <div className="flex items-center gap-2">
                                 <Tooltip>
@@ -369,9 +490,13 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
                                        variant="ghost"
                                        size="sm"
                                        onClick={() => generateContent(lecture.id, lecture.title, session.theme, session.session_number, lecture.lecture_number)}
-                                       disabled={isLoading}
+                                       disabled={generatingLectures.has(lecture.id) || generatingSessions.has(session.id) || isLoading}
                                      >
-                                      <Wand2 className="w-4 h-4" />
+                                      {generatingLectures.has(lecture.id) ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <Wand2 className="w-4 h-4" />
+                                      )}
                                       Generate Content
                                     </Button>
                                   </TooltipTrigger>
