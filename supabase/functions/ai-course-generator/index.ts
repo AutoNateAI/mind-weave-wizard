@@ -20,7 +20,8 @@ serve(async (req) => {
 
   try {
     const { action, payload } = await req.json();
-    console.log('AI Course Generator called with action:', action);
+    console.log('🚀 AI Course Generator called with action:', action);
+    console.log('📦 Payload:', JSON.stringify(payload, null, 2));
 
     switch (action) {
       case 'plan_course':
@@ -37,8 +38,9 @@ serve(async (req) => {
         throw new Error(`Unknown action: ${action}`);
     }
   } catch (error) {
-    console.error('Error in ai-course-generator:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('❌ Error in ai-course-generator:', error);
+    console.error('❌ Error stack:', error.stack);
+    return new Response(JSON.stringify({ error: error.message, stack: error.stack }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -216,13 +218,17 @@ async function generateContent(payload: any) {
   const { lectureId, lectureTitle, sessionTheme, sessionNumber, lectureNumber } = payload;
 
   // Get lecture info to understand context
+  console.log('🔍 Getting lecture data for ID:', lectureId);
   const { data: lectureData, error: lectureError } = await supabase
     .from('lectures_dynamic')
     .select('*, sessions_dynamic(*)')
     .eq('id', lectureId)
     .single();
 
+  console.log('📊 Lecture data query result:', { data: lectureData, error: lectureError });
+
   if (lectureError) {
+    console.error('❌ Failed to fetch lecture data:', lectureError);
     throw new Error(`Failed to fetch lecture data: ${lectureError.message}`);
   }
 
@@ -340,6 +346,17 @@ Return the response in this exact JSON format:
     console.log('🧹 Cleaned content for slides:', content.substring(0, 200) + '...');
     slideData = JSON.parse(content);
     console.log('✅ Successfully parsed slide data, slides count:', slideData.slides?.length);
+    
+    // Validate slide data structure
+    if (!slideData.slides || !Array.isArray(slideData.slides)) {
+      throw new Error('Invalid slide data structure: slides array is missing or not an array');
+    }
+    
+    if (slideData.slides.length === 0) {
+      throw new Error('No slides generated in response');
+    }
+    
+    console.log('🔍 First slide structure:', JSON.stringify(slideData.slides[0], null, 2));
   } catch (e) {
     console.error('❌ Failed to parse slide data:', e);
     console.error('📄 Raw content that failed to parse:', data.choices[0].message.content);
@@ -348,15 +365,27 @@ Return the response in this exact JSON format:
 
   // Save slides to database with error handling
   console.log('💾 Saving slides to database...');
-  const slideInserts = slideData.slides.map(slide => ({
-    lecture_id: lectureId,
-    slide_number: slide.slide_number,
-    title: slide.title,
-    content: slide.content,
-    slide_type: slide.slide_type,
-    svg_animation: slide.svg_animation,
-    speaker_notes: slide.speaker_notes
-  }));
+  const slideInserts = slideData.slides.map((slide, index) => {
+    console.log(`📄 Processing slide ${index + 1}:`, {
+      slide_number: slide.slide_number,
+      title: slide.title,
+      has_content: !!slide.content,
+      content_length: slide.content?.length || 0
+    });
+    
+    return {
+      lecture_id: lectureId,
+      slide_number: slide.slide_number,
+      title: slide.title || `Slide ${slide.slide_number}`,
+      content: slide.content || '',
+      slide_type: slide.slide_type || 'content',
+      svg_animation: slide.svg_animation || '',
+      speaker_notes: slide.speaker_notes || ''
+    };
+  });
+
+  console.log('📊 About to insert slides:', slideInserts.length, 'records');
+  console.log('🔍 Sample insert data:', JSON.stringify(slideInserts[0], null, 2));
 
   const { data: insertedSlides, error: slideError } = await supabase
     .from('lecture_slides')
@@ -365,9 +394,11 @@ Return the response in this exact JSON format:
 
   if (slideError) {
     console.error('❌ Failed to insert slides:', slideError);
+    console.error('❌ Slide insert data that failed:', JSON.stringify(slideInserts, null, 2));
     throw new Error(`Failed to save slides: ${slideError.message}`);
   } else {
     console.log('✅ Successfully inserted slides:', insertedSlides?.length);
+    console.log('🎯 Inserted slide IDs:', insertedSlides?.map(s => s.id));
   }
 
   return slideData;
