@@ -127,6 +127,14 @@ export function GameBuilder({ sessionNumber, lectureNumber, lectureContent, onGa
 
     setIsGenerating(true);
     try {
+      console.log('Calling ai-game-generator with:', {
+        sessionNumber,
+        lectureNumber,
+        lectureContent,
+        templateId: selectedTemplate.id,
+        gameType: selectedTemplate.category
+      });
+
       const { data, error } = await supabase.functions.invoke('ai-game-generator', {
         body: {
           sessionNumber,
@@ -137,7 +145,16 @@ export function GameBuilder({ sessionNumber, lectureNumber, lectureContent, onGa
         }
       });
 
-      if (error) throw error;
+      console.log('AI game generator response:', { data, error });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+
+      if (!data) {
+        throw new Error('No data returned from AI generator');
+      }
 
       setGameData({
         ...gameData,
@@ -153,7 +170,7 @@ export function GameBuilder({ sessionNumber, lectureNumber, lectureContent, onGa
       toast.success('Game generated successfully!');
     } catch (error) {
       console.error('Error generating game:', error);
-      toast.error('Failed to generate game');
+      toast.error(`Failed to generate game: ${error.message}`);
     } finally {
       setIsGenerating(false);
     }
