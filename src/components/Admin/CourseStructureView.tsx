@@ -19,11 +19,15 @@ import {
   MessageSquare,
   HelpCircle,
   Zap,
-  Loader2
+  Loader2,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ContentProtectionModal, ExistingContent } from "./ContentProtectionModal";
+import { LectureContentViewer } from "./LectureContentViewer";
 
 interface CourseStructureViewProps {
   courseId?: string;
@@ -42,6 +46,14 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
   const [generatingLectures, setGeneratingLectures] = useState<Set<string>>(new Set());
   const [generatingSessions, setGeneratingSessions] = useState<Set<string>>(new Set());
   const [sessionProgress, setSessionProgress] = useState<Record<string, number>>({});
+  const [expandedLectures, setExpandedLectures] = useState<Set<string>>(new Set());
+  const [showProtectionModal, setShowProtectionModal] = useState(false);
+  const [protectionData, setProtectionData] = useState<{
+    existingContent: ExistingContent[];
+    operationType: 'all' | 'session' | 'single';
+    title: string;
+    onConfirm: (selectedLectures: string[]) => void;
+  } | null>(null);
 
   useEffect(() => {
     if (courseId) {
@@ -119,6 +131,61 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
     }
   };
 
+  const checkExistingContent = async (lectures: Array<{id: string, title: string, sessionNumber: number, lectureNumber: number}>) => {
+    const existingContent: ExistingContent[] = [];
+
+    for (const lecture of lectures) {
+      // Check for slides
+      const { data: slides } = await supabase
+        .from('lecture_slides')
+        .select('id')
+        .eq('lecture_id', lecture.id)
+        .limit(1);
+
+      // Check for flashcards
+      const { data: flashcards } = await supabase
+        .from('flashcards')
+        .select('id')
+        .eq('session_number', lecture.sessionNumber)
+        .eq('lecture_number', lecture.lectureNumber)
+        .limit(1);
+
+      // Check for reflections
+      const { data: reflections } = await supabase
+        .from('reflection_questions')
+        .select('id')
+        .eq('session_number', lecture.sessionNumber)
+        .eq('lecture_number', lecture.lectureNumber)
+        .limit(1);
+
+      // Check for MCQ
+      const { data: mcq } = await supabase
+        .from('multiple_choice_questions')
+        .select('id')
+        .eq('session_number', lecture.sessionNumber)
+        .eq('lecture_number', lecture.lectureNumber)
+        .limit(1);
+
+      const hasContent = (slides?.length || 0) > 0 || (flashcards?.length || 0) > 0 || 
+                        (reflections?.length || 0) > 0 || (mcq?.length || 0) > 0;
+
+      if (hasContent) {
+        existingContent.push({
+          lectureId: lecture.id,
+          lectureTitle: lecture.title,
+          sessionNumber: lecture.sessionNumber,
+          lectureNumber: lecture.lectureNumber,
+          hasSlides: (slides?.length || 0) > 0,
+          hasFlashcards: (flashcards?.length || 0) > 0,
+          hasReflections: (reflections?.length || 0) > 0,
+          hasMCQ: (mcq?.length || 0) > 0
+        });
+      }
+    }
+
+    return existingContent;
+  };
+
   const generateContent = async (lectureId: string, lectureTitle: string, sessionTheme: string, sessionNumber?: number, lectureNumber?: number) => {
     setGeneratingLectures(prev => new Set([...prev, lectureId]));
     
@@ -158,10 +225,75 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
     }
   };
 
-  const generateSessionContent = async (sessionData: any) => {
-    const sessionId = sessionData.id;
-    const sessionTitle = sessionData.title;
-    const lectures = sessionData.lectures_dynamic || [];
+  const toggleSession = (sessionId: string) => {
+    setExpandedSessions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sessionId)) {
+        newSet.delete(sessionId);
+      } else {
+        newSet.add(sessionId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleLecture = (lectureId: string) => {
+    setExpandedLectures(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(lectureId)) {
+        newSet.delete(lectureId);
+      } else {
+        newSet.add(lectureId);
+      }
+      return newSet;
+    });
+  };
+
+  const generateSessionContent = async (session: any) => {
+    if (!session?.lectures_dynamic || session.lectures_dynamic.length === 0) {
+      toast.error('No lectures found in this session');
+      return;
+    }
+
+    // Check for existing content first
+    const lectures = session.lectures_dynamic.map((lecture: any) => ({
+      id: lecture.id,
+      title: lecture.title,
+      sessionNumber: session.session_number,
+      lectureNumber: lecture.lecture_number
+    }));
+
+    const existingContent = await checkExistingContent(lectures);
+    
+    if (existingContent.length > 0) {
+      setProtectionData({
+        existingContent,
+        operationType: 'session',
+        title: `Generate Session "${session.title}" Content`,
+        onConfirm: (selectedLectures) => {
+          setShowProtectionModal(false);
+          executeSessionGeneration(session, selectedLectures);
+        }
+      });
+      setShowProtectionModal(true);
+      return;
+    }
+
+    // No existing content, proceed directly
+    executeSessionGeneration(session, lectures.map(l => l.id));
+  };
+
+  const executeSessionGeneration = async (session: any, allowedLectureIds: string[]) => {
+    const sessionId = session.id;
+    const sessionTitle = session.title;
+    const lectures = session.lectures_dynamic.filter((lecture: any) => 
+      allowedLectureIds.includes(lecture.id)
+    );
+    
+    if (!lectures || lectures.length === 0) {
+      toast.error('No lectures selected for generation');
+      return;
+    }
     
     setGeneratingSessions(prev => new Set([...prev, sessionId]));
     setSessionProgress(prev => ({ ...prev, [sessionId]: 0 }));
@@ -188,7 +320,7 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
             lecture.id, 
             lecture.title, 
             sessionTitle, 
-            sessionData.session_number, 
+            session.session_number, 
             lecture.lecture_number
           );
           
@@ -250,33 +382,54 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
       return;
     }
 
+    // Collect all lectures first
+    const allLectures: Array<{id: string, title: string, theme: string, sessionNumber: number, lectureNumber: number}> = [];
+    
+    for (const session of courseData.sessions_dynamic) {
+      if (session.lectures_dynamic) {
+        for (const lecture of session.lectures_dynamic) {
+          allLectures.push({
+            id: lecture.id,
+            title: lecture.title,
+            theme: session.theme,
+            sessionNumber: session.session_number,
+            lectureNumber: lecture.lecture_number
+          });
+        }
+      }
+    }
+
+    // Check for existing content first
+    const existingContent = await checkExistingContent(allLectures);
+    
+    if (existingContent.length > 0) {
+      setProtectionData({
+        existingContent,
+        operationType: 'all',
+        title: 'Generate All Course Content',
+        onConfirm: (selectedLectures) => {
+          setShowProtectionModal(false);
+          executeAllGeneration(allLectures.filter(l => selectedLectures.includes(l.id)));
+        }
+      });
+      setShowProtectionModal(true);
+      return;
+    }
+
+    // No existing content, proceed directly
+    executeAllGeneration(allLectures);
+  };
+
+  const executeAllGeneration = async (allLectures: Array<{id: string, title: string, theme: string, sessionNumber: number, lectureNumber: number}>) => {
     setIsLoading(true);
     setIsGenerating(true);
-    const total = courseData.sessions_dynamic.reduce((acc: number, session: any) => 
-      acc + (session.lectures_dynamic?.length || 0), 0);
+    const total = allLectures.length;
     
     setTotalLectures(total);
     setCompletedLectures(0);
     setProgress(0);
 
     try {
-      // Collect all lectures first for parallel processing
-      const allLectures: Array<{id: string, title: string, theme: string, sessionNumber: number, lectureNumber: number}> = [];
-      
-      for (const session of courseData.sessions_dynamic) {
-        if (session.lectures_dynamic) {
-          for (const lecture of session.lectures_dynamic) {
-            allLectures.push({
-              id: lecture.id,
-              title: lecture.title,
-              theme: session.theme,
-              sessionNumber: session.session_number,
-              lectureNumber: lecture.lecture_number
-            });
-          }
-        }
-      }
-
       console.log(`🚀 Starting parallel generation for ${total} lectures`);
 
       // Generate all content in parallel
@@ -325,31 +478,6 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
     }
   };
 
-  const viewContent = (lectureId: string) => {
-    // Navigate to lecture content view or open modal
-    toast.info('Content viewer coming soon');
-  };
-
-  const editContent = (lectureId: string) => {
-    // Open content editor
-    toast.info('Content editor coming soon');
-  };
-
-  const viewAssessments = (lectureId: string) => {
-    // View quiz/reflection questions
-    toast.info('Assessment viewer coming soon');
-  };
-
-  const toggleSession = (sessionId: string) => {
-    const newExpanded = new Set(expandedSessions);
-    if (newExpanded.has(sessionId)) {
-      newExpanded.delete(sessionId);
-    } else {
-      newExpanded.add(sessionId);
-    }
-    setExpandedSessions(newExpanded);
-  };
-
   if (!courseData) {
     return (
       <Card className="p-8 text-center">
@@ -380,206 +508,229 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
       )}
       
       <TooltipProvider>
-      <div className="space-y-6">
-        <Card className="p-6 bg-gradient-to-r from-card to-card/80 border-primary/20">
-          <div className="flex items-start justify-between">
-            <div className="space-y-2">
-              {editingItem === `course-${courseData.id}` ? (
-                <div className="flex items-center gap-2">
-                  <Textarea
-                    value={editText}
-                    onChange={(e) => setEditText(e.target.value)}
-                    className="text-2xl font-bold bg-transparent border-primary/50"
-                  />
-                  <Button onClick={() => handleSave('course', courseData.id)} size="sm">
-                    <Save className="w-4 h-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-bold">{courseData.title}</h1>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEdit(`course-${courseData.id}`, courseData.title)}
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </Button>
-                </div>
-              )}
-              <p className="text-muted-foreground">{courseData.description}</p>
+        <div className="space-y-6">
+          <Card className="p-6 bg-gradient-to-r from-card to-card/80 border-primary/20">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                {editingItem === `course-${courseData.id}` ? (
+                  <div className="flex items-center gap-2">
+                    <Textarea
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      className="text-2xl font-bold bg-transparent border-primary/50"
+                    />
+                    <Button onClick={() => handleSave('course', courseData.id)} size="sm">
+                      <Save className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-2xl font-bold">{courseData.title}</h1>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEdit(`course-${courseData.id}`, courseData.title)}
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+                <p className="text-muted-foreground">{courseData.description}</p>
+              </div>
+              <Badge variant="secondary">{courseData.status}</Badge>
             </div>
-            <Badge variant="secondary">{courseData.status}</Badge>
-          </div>
-        </Card>
+          </Card>
 
-        <div className="mb-4 flex justify-end">
-          <Button
-            onClick={generateAllContent}
-            disabled={isLoading}
-            className="flex items-center gap-2"
-          >
-            <Zap className="w-4 h-4" />
-            Generate All Content
-          </Button>
+          <div className="mb-4 flex justify-end">
+            <Button
+              onClick={generateAllContent}
+              disabled={isLoading}
+              className="flex items-center gap-2"
+            >
+              <Zap className="w-4 h-4" />
+              Generate All Content
+            </Button>
+          </div>
+
+          <ScrollArea className="h-[600px]">
+            <div className="space-y-4">
+              {courseData.sessions_dynamic?.map((session: any) => (
+                <Card key={session.id} className="overflow-hidden">
+                  <Collapsible
+                    open={expandedSessions.has(session.id)}
+                    onOpenChange={() => toggleSession(session.id)}
+                  >
+                    <CollapsibleTrigger asChild>
+                      <div className="p-4 hover:bg-accent/50 cursor-pointer transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            {expandedSessions.has(session.id) ? (
+                              <ChevronDown className="w-5 h-5" />
+                            ) : (
+                              <ChevronRight className="w-5 h-5" />
+                            )}
+                            <Badge variant="outline">Session {session.session_number}</Badge>
+                            <h3 className="font-semibold">{session.title}</h3>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    generateSessionContent(session);
+                                  }}
+                                  disabled={generatingSessions.has(session.id) || isLoading}
+                                  className="gap-2"
+                                >
+                                  {generatingSessions.has(session.id) ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Wand2 className="w-4 h-4" />
+                                  )}
+                                  Generate Session
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Generate content for all lectures in this session</TooltipContent>
+                            </Tooltip>
+                            <Badge variant="secondary">{session.lectures_dynamic?.length || 0} lectures</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CollapsibleTrigger>
+
+                    <CollapsibleContent>
+                      <Separator />
+                      <div className="p-4 space-y-3">
+                        {/* Session Progress Bar */}
+                        {generatingSessions.has(session.id) && (
+                          <div className="mb-4 p-3 bg-muted rounded-lg">
+                            <div className="flex items-center justify-between text-sm mb-2">
+                              <span className="font-medium">Generating Session Content</span>
+                              <span className="text-muted-foreground">
+                                {Math.round(sessionProgress[session.id] || 0)}% complete
+                              </span>
+                            </div>
+                            <Progress value={sessionProgress[session.id] || 0} className="h-2" />
+                          </div>
+                        )}
+                        
+                        <p className="text-sm text-muted-foreground">{session.description}</p>
+                        
+                        <div className="space-y-2">
+                          {session.lectures_dynamic?.map((lecture: any) => (
+                            <div key={lecture.id}>
+                              <Card className="p-3 bg-accent/30">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => toggleLecture(lecture.id)}
+                                      className="p-1"
+                                    >
+                                      {expandedLectures.has(lecture.id) ? (
+                                        <EyeOff className="w-4 h-4" />
+                                      ) : (
+                                        <Eye className="w-4 h-4" />
+                                      )}
+                                    </Button>
+                                    <PlayCircle className="w-4 h-4 text-primary" />
+                                    <span className="font-medium">Lecture {lecture.lecture_number}</span>
+                                    <span className="text-sm text-muted-foreground">{lecture.title}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={async () => {
+                                            const lectureData = [{
+                                              id: lecture.id,
+                                              title: lecture.title,
+                                              sessionNumber: session.session_number,
+                                              lectureNumber: lecture.lecture_number
+                                            }];
+                                            
+                                            const existingContent = await checkExistingContent(lectureData);
+                                            
+                                            if (existingContent.length > 0) {
+                                              setProtectionData({
+                                                existingContent,
+                                                operationType: 'single',
+                                                title: `Generate "${lecture.title}" Content`,
+                                                onConfirm: (selectedLectures) => {
+                                                  setShowProtectionModal(false);
+                                                  if (selectedLectures.includes(lecture.id)) {
+                                                    generateContent(lecture.id, lecture.title, session.theme, session.session_number, lecture.lecture_number);
+                                                  }
+                                                }
+                                              });
+                                              setShowProtectionModal(true);
+                                            } else {
+                                              generateContent(lecture.id, lecture.title, session.theme, session.session_number, lecture.lecture_number);
+                                            }
+                                          }}
+                                          disabled={generatingLectures.has(lecture.id) || isLoading}
+                                          className="gap-2"
+                                        >
+                                          {generatingLectures.has(lecture.id) ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                          ) : (
+                                            <Wand2 className="w-4 h-4" />
+                                          )}
+                                          Generate
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>Generate content for this lecture</TooltipContent>
+                                    </Tooltip>
+                                    <Badge variant="outline" className="text-xs">
+                                      {lecture.estimated_duration_minutes}min
+                                    </Badge>
+                                  </div>
+                                </div>
+                              </Card>
+                              
+                              {expandedLectures.has(lecture.id) && (
+                                <div className="mt-4 border rounded-lg bg-background/50">
+                                  <LectureContentViewer
+                                    lectureId={lecture.id}
+                                    lectureTitle={lecture.title}
+                                    sessionNumber={session.session_number}
+                                    lectureNumber={lecture.lecture_number}
+                                    onContentUpdate={loadCourseData}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </Card>
+              ))}
+            </div>
+          </ScrollArea>
         </div>
 
-        <ScrollArea className="h-[600px]">
-          <div className="space-y-4">
-            {courseData.sessions_dynamic?.map((session: any) => (
-              <Card key={session.id} className="overflow-hidden">
-                <Collapsible
-                  open={expandedSessions.has(session.id)}
-                  onOpenChange={() => toggleSession(session.id)}
-                >
-                  <CollapsibleTrigger asChild>
-                    <div className="p-4 hover:bg-accent/50 cursor-pointer transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {expandedSessions.has(session.id) ? (
-                            <ChevronDown className="w-5 h-5" />
-                          ) : (
-                            <ChevronRight className="w-5 h-5" />
-                          )}
-                          <Badge variant="outline">Session {session.session_number}</Badge>
-                          <h3 className="font-semibold">{session.title}</h3>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  generateSessionContent(session);
-                                }}
-                                disabled={generatingSessions.has(session.id) || isLoading}
-                                className="gap-2"
-                              >
-                                {generatingSessions.has(session.id) ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                  <Wand2 className="w-4 h-4" />
-                                )}
-                                Generate Session
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Generate content for all lectures in this session</TooltipContent>
-                          </Tooltip>
-                          <Badge variant="secondary">{session.lectures_dynamic?.length || 0} lectures</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </CollapsibleTrigger>
-
-                  <CollapsibleContent>
-                    <Separator />
-                    <div className="p-4 space-y-3">
-                      {/* Session Progress Bar */}
-                      {generatingSessions.has(session.id) && (
-                        <div className="mb-4 p-3 bg-muted rounded-lg">
-                          <div className="flex items-center justify-between text-sm mb-2">
-                            <span className="font-medium">Generating Session Content</span>
-                            <span className="text-muted-foreground">
-                              {Math.round(sessionProgress[session.id] || 0)}% complete
-                            </span>
-                          </div>
-                          <Progress value={sessionProgress[session.id] || 0} className="h-2" />
-                        </div>
-                      )}
-                      
-                      <p className="text-sm text-muted-foreground">{session.description}</p>
-                      
-                      <div className="space-y-2">
-                        {session.lectures_dynamic?.map((lecture: any) => (
-                          <Card key={lecture.id} className="p-3 bg-accent/30">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <PlayCircle className="w-4 h-4 text-primary" />
-                                <span className="font-medium">Lecture {lecture.lecture_number}</span>
-                                <span>{lecture.title}</span>
-                                <Badge variant="outline" className="text-xs">
-                                  {lecture.estimated_duration_minutes}min
-                                </Badge>
-                                {generatingLectures.has(lecture.id) && (
-                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <Loader2 className="w-3 h-3 animate-spin" />
-                                    <span>Generating...</span>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                     <Button
-                                       variant="ghost"
-                                       size="sm"
-                                       onClick={() => generateContent(lecture.id, lecture.title, session.theme, session.session_number, lecture.lecture_number)}
-                                       disabled={generatingLectures.has(lecture.id) || generatingSessions.has(session.id) || isLoading}
-                                     >
-                                      {generatingLectures.has(lecture.id) ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                      ) : (
-                                        <Wand2 className="w-4 h-4" />
-                                      )}
-                                      Generate Content
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Generate AI slides and content for this lecture</TooltipContent>
-                                </Tooltip>
-                                
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => viewContent(lecture.id)}
-                                    >
-                                      <FileText className="w-4 h-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>View lecture content and slides</TooltipContent>
-                                </Tooltip>
-                                
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => editContent(lecture.id)}
-                                    >
-                                      <MessageSquare className="w-4 h-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Edit lecture content</TooltipContent>
-                                </Tooltip>
-                                
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => viewAssessments(lecture.id)}
-                                    >
-                                      <HelpCircle className="w-4 h-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>View quiz questions and assessments</TooltipContent>
-                                </Tooltip>
-                              </div>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              </Card>
-            ))}
-           </div>
-         </ScrollArea>
-       </div>
+        {/* Content Protection Modal */}
+        {protectionData && (
+          <ContentProtectionModal
+            isOpen={showProtectionModal}
+            onClose={() => {
+              setShowProtectionModal(false);
+              setProtectionData(null);
+            }}
+            onConfirm={protectionData.onConfirm}
+            existingContent={protectionData.existingContent}
+            operationType={protectionData.operationType}
+            title={protectionData.title}
+          />
+        )}
       </TooltipProvider>
     </div>
   );
