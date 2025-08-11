@@ -124,6 +124,104 @@ export type Database = {
         }
         Relationships: []
       }
+      game_analytics: {
+        Row: {
+          completed_at: string | null
+          completion_score: number | null
+          correct_connections: number | null
+          created_at: string
+          decision_path: Json | null
+          final_solution: Json | null
+          hints_used: number | null
+          id: string
+          incorrect_connections: number | null
+          lecture_game_id: string
+          started_at: string
+          time_spent_seconds: number | null
+          total_interactions: number | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completion_score?: number | null
+          correct_connections?: number | null
+          created_at?: string
+          decision_path?: Json | null
+          final_solution?: Json | null
+          hints_used?: number | null
+          id?: string
+          incorrect_connections?: number | null
+          lecture_game_id: string
+          started_at?: string
+          time_spent_seconds?: number | null
+          total_interactions?: number | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          completion_score?: number | null
+          correct_connections?: number | null
+          created_at?: string
+          decision_path?: Json | null
+          final_solution?: Json | null
+          hints_used?: number | null
+          id?: string
+          incorrect_connections?: number | null
+          lecture_game_id?: string
+          started_at?: string
+          time_spent_seconds?: number | null
+          total_interactions?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_analytics_lecture_game_id_fkey"
+            columns: ["lecture_game_id"]
+            isOneToOne: false
+            referencedRelation: "lecture_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_templates: {
+        Row: {
+          category: string
+          content_slots: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          mechanics: Json
+          name: string
+          template_data: Json
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          content_slots?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          mechanics?: Json
+          name: string
+          template_data: Json
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          content_slots?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          mechanics?: Json
+          name?: string
+          template_data?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       generation_workflows: {
         Row: {
           course_id: string | null
@@ -167,6 +265,68 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lecture_games: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          estimated_duration_minutes: number | null
+          game_data: Json
+          game_template_id: string
+          hints: Json | null
+          id: string
+          instructions: string | null
+          is_published: boolean
+          lecture_number: number
+          order_index: number
+          session_number: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_duration_minutes?: number | null
+          game_data: Json
+          game_template_id: string
+          hints?: Json | null
+          id?: string
+          instructions?: string | null
+          is_published?: boolean
+          lecture_number: number
+          order_index?: number
+          session_number: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_duration_minutes?: number | null
+          game_data?: Json
+          game_template_id?: string
+          hints?: Json | null
+          id?: string
+          instructions?: string | null
+          is_published?: boolean
+          lecture_number?: number
+          order_index?: number
+          session_number?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lecture_games_game_template_id_fkey"
+            columns: ["game_template_id"]
+            isOneToOne: false
+            referencedRelation: "game_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -412,6 +572,44 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_game_interactions: {
+        Row: {
+          id: string
+          interaction_data: Json
+          interaction_type: string
+          lecture_game_id: string
+          session_id: string | null
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          interaction_data: Json
+          interaction_type: string
+          lecture_game_id: string
+          session_id?: string | null
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          interaction_data?: Json
+          interaction_type?: string
+          lecture_game_id?: string
+          session_id?: string | null
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_game_interactions_lecture_game_id_fkey"
+            columns: ["lecture_game_id"]
+            isOneToOne: false
+            referencedRelation: "lecture_games"
             referencedColumns: ["id"]
           },
         ]

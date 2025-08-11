@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FlashcardViewer } from "@/components/Flashcards/FlashcardViewer";
 import { DatabaseReflectionEditor } from "@/components/Reflections/DatabaseReflectionEditor";
+import { LectureGameViewer } from "@/components/Games/LectureGameViewer";
 import { Button } from "@/components/ui/button";
 import { Play } from "lucide-react";
 
@@ -47,20 +48,10 @@ export function LessonStructure({
 
         <TabsContent value="game" className="space-y-4">
           <div className="glass rounded-lg p-3 sm:p-6 h-[calc(100vh-20rem)] sm:h-[calc(100vh-18rem)] lg:h-[calc(100vh-14rem)]">
-            {gameComponent || (
-              <div className="text-center py-12 space-y-4">
-                <Play className="w-16 h-16 mx-auto text-muted-foreground" />
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Interactive Experience</h3>
-                  <p className="text-muted-foreground mb-4">
-                    This section will contain an interactive game or exercise to practice the concepts.
-                  </p>
-                  <Button variant="outline" disabled>
-                    Coming Soon
-                  </Button>
-                </div>
-              </div>
-            )}
+            <LectureGameViewer 
+              sessionNumber={sessionNumber}
+              lectureNumber={lectureNumber}
+            />
           </div>
         </TabsContent>
 

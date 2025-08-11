@@ -19,6 +19,7 @@ import { AdminHeader } from "@/components/Admin/AdminHeader";
 import { CoursePlanningChat } from "@/components/Admin/CoursePlanningChat";
 import { CourseStructureView } from "@/components/Admin/CourseStructureView";
 import { ChatHistoryView } from "@/components/Admin/ChatHistoryView";
+import { GameBuilderView } from "@/components/Admin/GameBuilderView";
 import { PageMeta } from "@/components/UI/PageMeta";
 import { useAdminViewSwitch } from "@/hooks/useAdminViewSwitch";
 import { Navigate } from "react-router-dom";
@@ -271,12 +272,7 @@ export default function AdminDashboard() {
             </TabsContent>
 
             <TabsContent value="games">
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Games & Activities</h3>
-                <p className="text-muted-foreground">
-                  Configure interactive games and activities for each lecture to enhance student engagement.
-                </p>
-              </Card>
+              <GameBuilderView />
             </TabsContent>
 
             <TabsContent value="users">
