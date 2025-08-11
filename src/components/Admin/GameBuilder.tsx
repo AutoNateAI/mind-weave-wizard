@@ -42,6 +42,7 @@ interface GameBuilderProps {
 export function GameBuilder({ sessionNumber, lectureNumber, lectureContent, onGameSaved }: GameBuilderProps) {
   const [templates, setTemplates] = useState<GameTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<GameTemplate | null>(null);
+  const [sessionData, setSessionData] = useState<{ theme: string; lectureTitle: string } | null>(null);
   const [gameData, setGameData] = useState<LectureGame>({
     session_number: sessionNumber,
     lecture_number: lectureNumber,
@@ -58,7 +59,8 @@ export function GameBuilder({ sessionNumber, lectureNumber, lectureContent, onGa
 
   useEffect(() => {
     loadTemplates();
-  }, []);
+    loadSessionData();
+  }, [sessionNumber, lectureNumber]);
 
   const loadTemplates = async () => {
     const { data, error } = await supabase
@@ -72,6 +74,49 @@ export function GameBuilder({ sessionNumber, lectureNumber, lectureContent, onGa
     }
 
     setTemplates(data || []);
+  };
+
+  const loadSessionData = async () => {
+    try {
+      // Get session data
+      const { data: session, error: sessionError } = await supabase
+        .from('sessions_dynamic')
+        .select('theme')
+        .eq('session_number', sessionNumber)
+        .single();
+
+      if (sessionError) throw sessionError;
+
+      // Get lecture data
+      const { data: lecture, error: lectureError } = await supabase
+        .from('lectures_dynamic')
+        .select('title')
+        .eq('session_id', (await supabase
+          .from('sessions_dynamic')
+          .select('id')
+          .eq('session_number', sessionNumber)
+          .single()).data?.id)
+        .eq('lecture_number', lectureNumber)
+        .single();
+
+      if (lectureError) throw lectureError;
+
+      setSessionData({
+        theme: session?.theme || `Session ${sessionNumber}`,
+        lectureTitle: lecture?.title || `Lecture ${lectureNumber}`
+      });
+    } catch (error) {
+      // Fallback to static content if database query fails
+      import('@/content/sessions').then(({ sessions }) => {
+        const sessionContent = sessions.find(s => s.number === sessionNumber);
+        const lectureContent = sessionContent?.lectures.find(l => l.id === `s${sessionNumber}-l${lectureNumber}`);
+        
+        setSessionData({
+          theme: sessionContent?.theme || `Session ${sessionNumber}`,
+          lectureTitle: lectureContent?.title || `Lecture ${lectureNumber}`
+        });
+      });
+    }
   };
 
   const generateGame = async () => {
@@ -147,6 +192,12 @@ export function GameBuilder({ sessionNumber, lectureNumber, lectureContent, onGa
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
+          {sessionData && (
+            <div className="mb-2">
+              <h2 className="text-xl font-bold">{sessionData.theme}</h2>
+              <p className="text-lg text-muted-foreground">{sessionData.lectureTitle}</p>
+            </div>
+          )}
           <h3 className="text-lg font-semibold">AI Game Builder</h3>
           <p className="text-sm text-muted-foreground">
             Session {sessionNumber}, Lecture {lectureNumber}
