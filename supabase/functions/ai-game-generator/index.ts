@@ -77,7 +77,12 @@ Return ONLY a JSON object with keys matching the slot names and values being the
     });
 
     const aiData = await response.json();
-    const generatedContent = JSON.parse(aiData.choices[0].message.content);
+    let generatedContentText = aiData.choices[0].message.content;
+    
+    // Remove markdown code block formatting if present
+    generatedContentText = generatedContentText.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
+    
+    const generatedContent = JSON.parse(generatedContentText);
 
     // Replace placeholders in template data
     let gameData = JSON.parse(JSON.stringify(template.template_data));
@@ -123,7 +128,12 @@ Return JSON with "instructions" and "hints" arrays.
     });
 
     const instructionsData = await instructionsResponse.json();
-    const gameInstructions = JSON.parse(instructionsData.choices[0].message.content);
+    let instructionsText = instructionsData.choices[0].message.content;
+    
+    // Remove markdown code block formatting if present
+    instructionsText = instructionsText.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
+    
+    const gameInstructions = JSON.parse(instructionsText);
 
     return new Response(JSON.stringify({
       gameData,
