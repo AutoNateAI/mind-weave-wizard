@@ -299,7 +299,7 @@ Return the response in this exact JSON format:
     throw new Error('Failed to parse slide generation response');
   }
 
-  // Save slides to database
+  // Save slides to database with error handling
   const slideInserts = slideData.slides.map(slide => ({
     lecture_id: lectureId,
     slide_number: slide.slide_number,
@@ -310,7 +310,13 @@ Return the response in this exact JSON format:
     speaker_notes: slide.speaker_notes
   }));
 
-  await supabase.from('lecture_slides').insert(slideInserts);
+  const { error: slideError } = await supabase.from('lecture_slides').insert(slideInserts);
+  if (slideError) {
+    console.error('Failed to insert slides:', slideError);
+    throw new Error(`Failed to save slides: ${slideError.message}`);
+  } else {
+    console.log('✅ Successfully inserted slides');
+  }
 
   return slideData;
 }
@@ -414,12 +420,24 @@ Return JSON format:
     order_index: fc.order_index || index + 1
   }));
 
-  // Execute all inserts in parallel
-  await Promise.all([
+  // Execute all inserts in parallel with error logging
+  const insertResults = await Promise.allSettled([
     supabase.from('multiple_choice_questions').insert(mcqInserts),
     supabase.from('reflection_questions').insert(reflectionInserts),
     supabase.from('flashcards').insert(flashcardInserts)
   ]);
+
+  // Log any insert failures
+  insertResults.forEach((result, index) => {
+    const tableNames = ['multiple_choice_questions', 'reflection_questions', 'flashcards'];
+    if (result.status === 'rejected') {
+      console.error(`Failed to insert ${tableNames[index]}:`, result.reason);
+    } else if (result.value.error) {
+      console.error(`Error inserting ${tableNames[index]}:`, result.value.error);
+    } else {
+      console.log(`✅ Successfully inserted ${tableNames[index]}`);
+    }
+  });
 
   return assessments;
 }

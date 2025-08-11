@@ -154,19 +154,44 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
     let completed = 0;
 
     try {
+      // Collect all lectures first for parallel processing
+      const allLectures: Array<{id: string, title: string, theme: string, sessionNumber: number, lectureNumber: number}> = [];
+      
       for (const session of courseData.sessions_dynamic) {
         if (session.lectures_dynamic) {
           for (const lecture of session.lectures_dynamic) {
-            await generateContent(lecture.id, lecture.title, session.theme, session.session_number, lecture.lecture_number);
-            completed++;
-            toast.info(`Generated ${completed}/${totalLectures} lectures`);
+            allLectures.push({
+              id: lecture.id,
+              title: lecture.title,
+              theme: session.theme,
+              sessionNumber: session.session_number,
+              lectureNumber: lecture.lecture_number
+            });
           }
         }
       }
-      toast.success('All content generated successfully!');
+
+      console.log(`🚀 Starting parallel generation for ${totalLectures} lectures`);
+
+      // Generate all content in parallel
+      const promises = allLectures.map(async (lecture, index) => {
+        try {
+          console.log(`🎯 Starting generation for lecture ${index + 1}/${totalLectures}: ${lecture.title}`);
+          await generateContent(lecture.id, lecture.title, lecture.theme, lecture.sessionNumber, lecture.lectureNumber);
+          completed++;
+          console.log(`✅ Completed ${completed}/${totalLectures}: ${lecture.title}`);
+          toast.info(`Generated ${completed}/${totalLectures} lectures`);
+        } catch (error) {
+          console.error(`❌ Failed to generate content for ${lecture.title}:`, error);
+          throw new Error(`Failed to generate ${lecture.title}: ${error.message}`);
+        }
+      });
+
+      await Promise.all(promises);
+      toast.success('🎉 All content generated successfully!');
     } catch (error) {
       console.error('Error generating all content:', error);
-      toast.error('Failed to generate all content');
+      toast.error(`Failed to generate all content: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
