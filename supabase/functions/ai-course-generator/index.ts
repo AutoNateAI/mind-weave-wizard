@@ -286,7 +286,7 @@ This is part of the AutoNateAI: Thinking Wizard Course - a journey through graph
 Generate 4-6 slides with the following structure for each slide:
 - Title: Clear, engaging slide title
 - Content: MUST be formatted as bullet points separated by newlines. Each bullet point should start with "• " and be on its own line. This will be parsed on the frontend to display individual slide points.
-- Slide Type: One of: title, content, example, exercise, summary
+- Slide Type: MUST be one of: "intro", "content", "example", "summary" (these are the only valid values)
 - SVG Animation: Describe a simple SVG animation concept that would enhance this slide
 - Speaker Notes: Detailed notes for the instructor
 
@@ -424,8 +424,12 @@ This course teaches structured thinking using graphs, mental models, and cogniti
 
 Create:
 1. 3-5 multiple choice questions with 4 options each (test conceptual understanding)
-2. 2-3 reflection questions that encourage deep thinking and personal application
+2. 2-3 reflection questions that encourage deep thinking and personal application (question_number must be 1, 2, or 3)
 3. 5-8 flashcards with key concepts (mix of definitions, examples, and applications)
+
+CRITICAL CONSTRAINTS:
+- correct_option MUST be one of: "A", "B", "C", or "D" (uppercase letters only)
+- question_number for reflections MUST be 1, 2, or 3 (no duplicates within same session/lecture)
 
 Return JSON format:
 {
@@ -436,7 +440,7 @@ Return JSON format:
       "option_b": "Option B", 
       "option_c": "Option C",
       "option_d": "Option D",
-      "correct_option": "a"
+      "correct_option": "A"
     }
   ],
   "reflection_questions": [
@@ -593,20 +597,36 @@ Return JSON format:
   if (reflectionInserts.length > 0) {
     console.log('📝 About to insert Reflection records:', reflectionInserts.length);
     console.log('🔍 Sample Reflection insert:', JSON.stringify(reflectionInserts[0], null, 2));
-    insertPromises.push(
-      supabase.from('reflection_questions').insert(reflectionInserts).select()
-        .then(result => {
-          console.log('✅ Reflection insert result:', result.error ? 'ERROR' : 'SUCCESS', result.error || `${result.data?.length} records`);
-          if (result.error) {
-            console.error('❌ Reflection insert error details:', JSON.stringify(result.error, null, 2));
-          }
-          return { type: 'reflections', result };
-        })
-        .catch(error => {
-          console.error('❌ Reflection insert promise error:', error);
-          return { type: 'reflections', result: { error } };
-        })
-    );
+    
+    // Check for existing reflections to avoid duplicates
+    const { data: existingReflections } = await supabase
+      .from('reflection_questions')
+      .select('question_number')
+      .eq('session_number', sessionNumber)
+      .eq('lecture_number', lectureNumber);
+    
+    const existingNumbers = new Set(existingReflections?.map(r => r.question_number) || []);
+    const newReflections = reflectionInserts.filter(r => !existingNumbers.has(r.question_number));
+    
+    if (newReflections.length > 0) {
+      console.log('📝 Inserting new reflections only:', newReflections.length, 'out of', reflectionInserts.length);
+      insertPromises.push(
+        supabase.from('reflection_questions').insert(newReflections).select()
+          .then(result => {
+            console.log('✅ Reflection insert result:', result.error ? 'ERROR' : 'SUCCESS', result.error || `${result.data?.length} records`);
+            if (result.error) {
+              console.error('❌ Reflection insert error details:', JSON.stringify(result.error, null, 2));
+            }
+            return { type: 'reflections', result };
+          })
+          .catch(error => {
+            console.error('❌ Reflection insert promise error:', error);
+            return { type: 'reflections', result: { error } };
+          })
+      );
+    } else {
+      console.log('⚠️ All reflection questions already exist, skipping');
+    }
   } else {
     console.log('⚠️ No Reflection records to insert');
   }
