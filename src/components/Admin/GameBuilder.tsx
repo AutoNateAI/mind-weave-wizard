@@ -81,7 +81,7 @@ export function GameBuilder({ sessionNumber, lectureNumber, lectureContent, onGa
       // Get session data
       const { data: session, error: sessionError } = await supabase
         .from('sessions_dynamic')
-        .select('theme')
+        .select('title, theme')
         .eq('session_number', sessionNumber)
         .single();
 
@@ -102,7 +102,7 @@ export function GameBuilder({ sessionNumber, lectureNumber, lectureContent, onGa
       if (lectureError) throw lectureError;
 
       setSessionData({
-        theme: session?.theme || `Session ${sessionNumber}`,
+        theme: session?.title || session?.theme || `Session ${sessionNumber}`,
         lectureTitle: lecture?.title || `Lecture ${lectureNumber}`
       });
     } catch (error) {

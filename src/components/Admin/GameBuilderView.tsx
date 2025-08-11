@@ -8,6 +8,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Play, Settings, BarChart3 } from "lucide-react";
 
+interface Session {
+  session_number: number;
+  title: string;
+  theme: string;
+}
+
 interface Lecture {
   id: string;
   title: string;
@@ -26,10 +32,10 @@ interface LectureGame {
 }
 
 export function GameBuilderView() {
-  const [sessions, setSessions] = useState<number[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [lectures, setLectures] = useState<Lecture[]>([]);
   const [games, setGames] = useState<LectureGame[]>([]);
-  const [selectedSession, setSelectedSession] = useState<number | null>(null);
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [selectedLecture, setSelectedLecture] = useState<Lecture | null>(null);
   const [showBuilder, setShowBuilder] = useState(false);
 
@@ -39,7 +45,7 @@ export function GameBuilderView() {
 
   useEffect(() => {
     if (selectedSession) {
-      loadLectures(selectedSession);
+      loadLectures(selectedSession.session_number);
     }
   }, [selectedSession]);
 
@@ -52,7 +58,7 @@ export function GameBuilderView() {
   const loadSessions = async () => {
     const { data, error } = await supabase
       .from('sessions_dynamic')
-      .select('session_number')
+      .select('session_number, title, theme')
       .order('session_number');
 
     if (error) {
@@ -60,8 +66,7 @@ export function GameBuilderView() {
       return;
     }
 
-    const sessionNumbers = data?.map(s => s.session_number) || [];
-    setSessions(sessionNumbers);
+    setSessions(data || []);
   };
 
   const loadLectures = async (sessionNumber: number) => {
@@ -138,8 +143,9 @@ export function GameBuilderView() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">Session</label>
-                <Select value={selectedSession?.toString()} onValueChange={(value) => {
-                  setSelectedSession(parseInt(value));
+                <Select value={selectedSession?.session_number.toString()} onValueChange={(value) => {
+                  const session = sessions.find(s => s.session_number === parseInt(value));
+                  setSelectedSession(session || null);
                   setSelectedLecture(null);
                   setGames([]);
                 }}>
@@ -148,12 +154,17 @@ export function GameBuilderView() {
                   </SelectTrigger>
                   <SelectContent>
                     {sessions.map((session) => (
-                      <SelectItem key={session} value={session.toString()}>
-                        Session {session}
+                      <SelectItem key={session.session_number} value={session.session_number.toString()}>
+                        Session {session.session_number}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {selectedSession && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {selectedSession.theme}
+                  </p>
+                )}
               </div>
 
               <div>
