@@ -296,9 +296,9 @@ export function GameBuilder({ sessionNumber, lectureNumber, lectureContent, onGa
         </div>
       ) : (
         /* Game Preview */
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
           {/* Game Details */}
-          <Card className="p-6">
+          <Card className="p-6 h-full overflow-y-auto">
             <h4 className="font-semibold mb-4">Game Details</h4>
             <div className="space-y-4">
               <div>
@@ -348,13 +348,13 @@ export function GameBuilder({ sessionNumber, lectureNumber, lectureContent, onGa
           </Card>
 
           {/* Game Canvas Preview */}
-          <div className="lg:col-span-2">
-            <Card className="p-6">
+          <div className="lg:col-span-2 h-full">
+            <Card className="p-6 h-full flex flex-col">
               <h4 className="font-semibold mb-4 flex items-center gap-2">
                 <Play className="w-4 h-4" />
                 Game Preview
               </h4>
-              <div className="h-96 border rounded-lg overflow-hidden">
+              <div className="flex-1 border rounded-lg overflow-hidden">
                 <FlowCanvas
                   storageKey={`game-preview-${Date.now()}`}
                   initialNodes={gameData.game_data?.nodes || []}
