@@ -58,9 +58,14 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
   }, [user]);
 
   const initializeChatSession = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('❌ No user found for chat session initialization');
+      return;
+    }
 
     try {
+      console.log('🔍 Initializing chat session for user:', user.email, 'ID:', user.id);
+      
       // Check if there's an existing active chat session
       const { data: existingSessions, error: fetchError } = await supabase
         .from('admin_chat_sessions')
@@ -71,7 +76,7 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
         .order('created_at', { ascending: false })
         .limit(1);
 
-      if (fetchError) throw fetchError;
+      console.log('📊 Existing sessions query:', { existingSessions, fetchError });
 
       if (existingSessions && existingSessions.length > 0) {
         // Load existing session
@@ -94,14 +99,25 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
   };
 
   const createNewChatSession = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('❌ No user found for creating chat session');
+      return;
+    }
 
     try {
+      console.log('🆕 Creating new chat session for user:', user.email);
+      
       const serializedMessages = messages.map(msg => ({
         role: msg.role,
         content: msg.content,
         timestamp: msg.timestamp.toISOString()
       }));
+
+      console.log('📝 Inserting chat session with data:', { 
+        admin_user_id: user.id, 
+        context_type: 'course_planning',
+        messageCount: serializedMessages.length 
+      });
 
       const { data, error } = await supabase
         .from('admin_chat_sessions')
@@ -113,8 +129,11 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
         .select()
         .single();
 
+      console.log('💾 Chat session creation result:', { data, error });
+
       if (error) throw error;
       setChatSessionId(data.id);
+      console.log('✅ Chat session created with ID:', data.id);
       
       // Reset messages to start fresh chat
       const initialMessage = {

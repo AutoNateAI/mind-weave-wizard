@@ -75,16 +75,20 @@ export default function AdminDashboard() {
 
   const loadCourses = async () => {
     try {
-      console.log('🔍 Loading courses...');
+      console.log('🔍 Loading courses in AdminDashboard...');
       const { data, error } = await supabase
         .from('courses')
         .select('*')
         .order('created_at', { ascending: false });
 
-      console.log('📊 Courses query result:', { data, error });
+      console.log('📊 Courses query result in AdminDashboard:', { data, error });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error loading courses:', error);
+        throw error;
+      }
       setCourses(data || []);
+      console.log('✅ Courses loaded successfully:', data?.length || 0, 'courses');
     } catch (error) {
       console.error('Error loading courses:', error);
       toast.error('Failed to load courses');
