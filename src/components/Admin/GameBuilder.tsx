@@ -193,9 +193,9 @@ export function GameBuilder({ sessionNumber, lectureNumber, lectureContent, onGa
       <div className="flex items-center justify-between">
         <div>
           {sessionData && (
-            <div className="mb-2">
-              <h2 className="text-xl font-bold">{sessionData.theme}</h2>
-              <p className="text-lg text-muted-foreground">{sessionData.lectureTitle}</p>
+            <div className="mb-3">
+              <h1 className="text-2xl font-bold">{sessionData.theme}</h1>
+              <h2 className="text-xl text-muted-foreground">{sessionData.lectureTitle}</h2>
             </div>
           )}
           <h3 className="text-lg font-semibold">AI Game Builder</h3>
