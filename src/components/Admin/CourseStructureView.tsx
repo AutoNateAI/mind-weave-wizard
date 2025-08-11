@@ -110,7 +110,7 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
     }
   };
 
-  const generateContent = async (lectureId: string, lectureTitle: string, sessionTheme: string) => {
+  const generateContent = async (lectureId: string, lectureTitle: string, sessionTheme: string, sessionNumber?: number, lectureNumber?: number) => {
     try {
       console.log('🎯 Generating content for lecture:', lectureId, lectureTitle);
       const response = await supabase.functions.invoke('ai-course-generator', {
@@ -119,7 +119,9 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
           payload: {
             lectureId,
             lectureTitle,
-            sessionTheme
+            sessionTheme,
+            sessionNumber,
+            lectureNumber
           }
         }
       });
@@ -155,7 +157,7 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
       for (const session of courseData.sessions_dynamic) {
         if (session.lectures_dynamic) {
           for (const lecture of session.lectures_dynamic) {
-            await generateContent(lecture.id, lecture.title, session.theme);
+            await generateContent(lecture.id, lecture.title, session.theme, session.session_number, lecture.lecture_number);
             completed++;
             toast.info(`Generated ${completed}/${totalLectures} lectures`);
           }
@@ -300,12 +302,12 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
                               <div className="flex items-center gap-2">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => generateContent(lecture.id, lecture.title, session.theme)}
-                                      disabled={isLoading}
-                                    >
+                                     <Button
+                                       variant="ghost"
+                                       size="sm"
+                                       onClick={() => generateContent(lecture.id, lecture.title, session.theme, session.session_number, lecture.lecture_number)}
+                                       disabled={isLoading}
+                                     >
                                       <Wand2 className="w-4 h-4" />
                                       Generate Content
                                     </Button>

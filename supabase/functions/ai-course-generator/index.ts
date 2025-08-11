@@ -212,30 +212,59 @@ Keep replies concise and conversational. Focus on how to adapt the course themes
   });
 }
 
-
 async function generateContent(payload: any) {
-  const { lectureId, lectureTitle, sessionTheme } = payload;
+  const { lectureId, lectureTitle, sessionTheme, sessionNumber, lectureNumber } = payload;
 
-  const prompt = `Generate educational slide content for a lecture titled "${lectureTitle}" in a session about "${sessionTheme}".
+  // Get lecture info to understand context
+  const { data: lectureData, error: lectureError } = await supabase
+    .from('lectures_dynamic')
+    .select('*, sessions_dynamic(*)')
+    .eq('id', lectureId)
+    .single();
 
-Create 4-6 slides with engaging content. Each slide should have:
-1. A clear title
-2. Main content (2-3 key points)
-3. An SVG animation concept description
-4. Speaker notes for delivery
+  if (lectureError) {
+    throw new Error(`Failed to fetch lecture data: ${lectureError.message}`);
+  }
 
-Make content visual, interactive, and memorable. Focus on practical application.
+  const actualSessionNumber = sessionNumber || lectureData.sessions_dynamic?.session_number || 1;
+  const actualLectureNumber = lectureNumber || lectureData.lecture_number || 1;
 
-Return JSON in this format:
+  // Generate all content types in parallel
+  const [slidesResult, assessmentsResult] = await Promise.all([
+    generateSlides(lectureId, lectureTitle, sessionTheme),
+    generateAssessmentsContent(actualSessionNumber, actualLectureNumber, lectureTitle, sessionTheme)
+  ]);
+
+  return new Response(JSON.stringify({ 
+    slides: slidesResult.slides,
+    assessments: assessmentsResult 
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+async function generateSlides(lectureId: string, lectureTitle: string, sessionTheme: string) {
+  const prompt = `Create detailed slide content for a lecture titled "${lectureTitle}" with the session theme "${sessionTheme}".
+
+This is part of the AutoNateAI: Thinking Wizard Course - a journey through graph theory and mental models.
+
+Generate 4-6 slides with the following structure for each slide:
+- Title: Clear, engaging slide title
+- Content: Detailed bullet points or explanatory text (focus on practical applications and connections)
+- Slide Type: One of: title, content, example, exercise, summary
+- SVG Animation: Describe a simple SVG animation concept that would enhance this slide
+- Speaker Notes: Detailed notes for the instructor
+
+Return the response in this exact JSON format:
 {
   "slides": [
     {
       "slide_number": 1,
       "title": "Slide Title",
-      "content": "Main content points",
-      "slide_type": "intro",
-      "svg_animation": "Description of visual/animation concept",
-      "speaker_notes": "Notes for presenter"
+      "content": "Detailed content with bullet points or paragraphs",
+      "slide_type": "content",
+      "svg_animation": "Description of animation concept",
+      "speaker_notes": "Detailed instructor notes"
     }
   ]
 }`;
@@ -249,7 +278,7 @@ Return JSON in this format:
     body: JSON.stringify({
       model: 'gpt-4o',
       messages: [
-        { role: 'system', content: 'You are an expert educational content creator specializing in visual presentations.' },
+        { role: 'system', content: 'You are an expert educational content creator specializing in visual presentations for cognitive and mental model training.' },
         { role: 'user', content: prompt }
       ],
       temperature: 0.8,
@@ -257,26 +286,142 @@ Return JSON in this format:
   });
 
   const data = await response.json();
-  const slideData = JSON.parse(data.choices[0].message.content);
-
-  // Save slides to database
-  for (const slide of slideData.slides) {
-    await supabase
-      .from('lecture_slides')
-      .insert({
-        lecture_id: lectureId,
-        slide_number: slide.slide_number,
-        title: slide.title,
-        content: slide.content,
-        slide_type: slide.slide_type,
-        svg_animation: slide.svg_animation,
-        speaker_notes: slide.speaker_notes
-      });
+  let slideData;
+  try {
+    // Clean up any markdown formatting that might be in the response
+    let content = data.choices[0].message.content;
+    if (content.includes('```json')) {
+      content = content.replace(/```json\n?/, '').replace(/\n?```/, '');
+    }
+    slideData = JSON.parse(content);
+  } catch (e) {
+    console.error('Failed to parse slide data:', data.choices[0].message.content);
+    throw new Error('Failed to parse slide generation response');
   }
 
-  return new Response(JSON.stringify({ slides: slideData.slides }), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  // Save slides to database
+  const slideInserts = slideData.slides.map(slide => ({
+    lecture_id: lectureId,
+    slide_number: slide.slide_number,
+    title: slide.title,
+    content: slide.content,
+    slide_type: slide.slide_type,
+    svg_animation: slide.svg_animation,
+    speaker_notes: slide.speaker_notes
+  }));
+
+  await supabase.from('lecture_slides').insert(slideInserts);
+
+  return slideData;
+}
+
+async function generateAssessmentsContent(sessionNumber: number, lectureNumber: number, lectureTitle: string, sessionTheme: string) {
+  const prompt = `Based on the lecture "${lectureTitle}" (Session ${sessionNumber}, Lecture ${lectureNumber}) with theme "${sessionTheme}" from the AutoNateAI: Thinking Wizard Course, generate comprehensive educational assessments.
+
+This course teaches structured thinking using graphs, mental models, and cognitive frameworks. Create assessments that:
+1. Test understanding of key concepts
+2. Encourage practical application
+3. Connect to the broader course themes
+4. Build cognitive skills progressively
+
+Create:
+1. 3-5 multiple choice questions with 4 options each (test conceptual understanding)
+2. 2-3 reflection questions that encourage deep thinking and personal application
+3. 5-8 flashcards with key concepts (mix of definitions, examples, and applications)
+
+Return JSON format:
+{
+  "multiple_choice": [
+    {
+      "question_text": "Question focusing on practical application",
+      "option_a": "Option A",
+      "option_b": "Option B", 
+      "option_c": "Option C",
+      "option_d": "Option D",
+      "correct_option": "a"
+    }
+  ],
+  "reflection_questions": [
+    {
+      "question_number": 1,
+      "question_text": "Thought-provoking question that connects to personal experience"
+    }
+  ],
+  "flashcards": [
+    {
+      "title": "Key Concept",
+      "content": "Clear definition with practical example",
+      "concept_type": "definition",
+      "order_index": 1
+    }
+  ]
+}`;
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: 'You are an expert assessment designer creating engaging educational evaluations for cognitive skill development.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.7,
+    }),
   });
+
+  const data = await response.json();
+  let assessments;
+  try {
+    let content = data.choices[0].message.content;
+    if (content.includes('```json')) {
+      content = content.replace(/```json\n?/, '').replace(/\n?```/, '');
+    }
+    assessments = JSON.parse(content);
+  } catch (e) {
+    console.error('Failed to parse assessment data:', data.choices[0].message.content);
+    throw new Error('Failed to parse assessment generation response');
+  }
+
+  // Prepare bulk inserts
+  const mcqInserts = assessments.multiple_choice.map(mcq => ({
+    session_number: sessionNumber,
+    lecture_number: lectureNumber,
+    question_text: mcq.question_text,
+    option_a: mcq.option_a,
+    option_b: mcq.option_b,
+    option_c: mcq.option_c,
+    option_d: mcq.option_d,
+    correct_option: mcq.correct_option
+  }));
+
+  const reflectionInserts = assessments.reflection_questions.map(rq => ({
+    session_number: sessionNumber,
+    lecture_number: lectureNumber,
+    question_number: rq.question_number,
+    question_text: rq.question_text
+  }));
+
+  const flashcardInserts = assessments.flashcards.map((fc, index) => ({
+    session_number: sessionNumber,
+    lecture_number: lectureNumber,
+    title: fc.title,
+    content: fc.content,
+    concept_type: fc.concept_type || 'definition',
+    order_index: fc.order_index || index + 1
+  }));
+
+  // Execute all inserts in parallel
+  await Promise.all([
+    supabase.from('multiple_choice_questions').insert(mcqInserts),
+    supabase.from('reflection_questions').insert(reflectionInserts),
+    supabase.from('flashcards').insert(flashcardInserts)
+  ]);
+
+  return assessments;
 }
 
 async function editContent(payload: any) {
@@ -313,80 +458,16 @@ Return the updated content in the same JSON format as the input.`;
 }
 
 async function generateAssessments(payload: any) {
-  const { lectureId, lectureTitle, slideContent } = payload;
+  const { lectureId, lectureTitle, slideContent, sessionNumber, lectureNumber } = payload;
 
-  const prompt = `Based on the lecture "${lectureTitle}" and slide content, generate educational assessments:
+  const result = await generateAssessmentsContent(
+    sessionNumber || 1, 
+    lectureNumber || 1, 
+    lectureTitle, 
+    'Assessment Generation'
+  );
 
-Slide Content: ${JSON.stringify(slideContent)}
-
-Create:
-1. 3-5 multiple choice questions with 4 options each
-2. 2-3 reflection questions that encourage deep thinking
-3. 5-8 flashcards with key concepts
-
-Return JSON format:
-{
-  "multiple_choice": [
-    {
-      "question_text": "Question",
-      "option_a": "Option A",
-      "option_b": "Option B", 
-      "option_c": "Option C",
-      "option_d": "Option D",
-      "correct_option": "a"
-    }
-  ],
-  "reflection_questions": [
-    {
-      "question_number": 1,
-      "question_text": "Reflection prompt"
-    }
-  ],
-  "flashcards": [
-    {
-      "title": "Concept",
-      "content": "Definition/explanation",
-      "concept_type": "definition"
-    }
-  ]
-}`;
-
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: 'You are an expert assessment designer creating engaging educational evaluations.' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.7,
-    }),
-  });
-
-  const data = await response.json();
-  const assessments = JSON.parse(data.choices[0].message.content);
-
-  // Save to respective tables
-  for (const mcq of assessments.multiple_choice) {
-    await supabase
-      .from('multiple_choice_questions')
-      .insert({
-        session_number: 1, // Will need to derive this properly
-        lecture_number: 1, // Will need to derive this properly
-        question_text: mcq.question_text,
-        option_a: mcq.option_a,
-        option_b: mcq.option_b,
-        option_c: mcq.option_c,
-        option_d: mcq.option_d,
-        correct_option: mcq.correct_option
-      });
-  }
-
-  return new Response(JSON.stringify({ assessments }), {
+  return new Response(JSON.stringify({ assessments: result }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }
