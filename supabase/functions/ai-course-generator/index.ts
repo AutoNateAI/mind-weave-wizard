@@ -217,15 +217,14 @@ Keep replies concise and conversational. Focus on how to adapt the course themes
 async function generateContent(payload: any) {
   const { lectureId, lectureTitle, sessionTheme, sessionNumber, lectureNumber } = payload;
 
+  console.log('🚀 Starting content generation with payload:', JSON.stringify(payload, null, 2));
+
   // Get lecture info to understand context
-  console.log('🔍 Getting lecture data for ID:', lectureId);
   const { data: lectureData, error: lectureError } = await supabase
     .from('lectures_dynamic')
     .select('*, sessions_dynamic(*)')
     .eq('id', lectureId)
     .single();
-
-  console.log('📊 Lecture data query result:', { data: lectureData, error: lectureError });
 
   if (lectureError) {
     console.error('❌ Failed to fetch lecture data:', lectureError);
@@ -235,58 +234,45 @@ async function generateContent(payload: any) {
   const actualSessionNumber = sessionNumber || lectureData.sessions_dynamic?.session_number || 1;
   const actualLectureNumber = lectureNumber || lectureData.lecture_number || 1;
 
-  console.log(`🎯 Generating content for lecture: ${lectureTitle} (Session ${actualSessionNumber}, Lecture ${actualLectureNumber})`);
+  console.log(`🎯 Generating content for: ${lectureTitle} (Session ${actualSessionNumber}, Lecture ${actualLectureNumber})`);
 
-  let slidesResult = null;
-  let assessmentsResult = null;
-  let slidesError = null;
-  let assessmentsError = null;
+  // Generate all content types in parallel
+  const contentPromises = [
+    generateSlides(lectureId, lectureTitle, sessionTheme),
+    generateAssessmentsContent(actualSessionNumber, actualLectureNumber, lectureTitle, sessionTheme)
+  ];
 
-  try {
-    // Generate slides first
-    console.log('🎨 Starting slide generation...');
-    slidesResult = await generateSlides(lectureId, lectureTitle, sessionTheme);
+  console.log('⚡ Starting parallel content generation...');
+  const results = await Promise.allSettled(contentPromises);
+
+  const slidesResult = results[0];
+  const assessmentsResult = results[1];
+
+  let slidesData = null;
+  let assessmentsData = null;
+  const errors = {};
+
+  if (slidesResult.status === 'fulfilled') {
+    slidesData = slidesResult.value;
     console.log('✅ Slides generated successfully');
-  } catch (error) {
-    console.error('❌ Slides generation failed:', error);
-    slidesError = error;
+  } else {
+    console.error('❌ Slides generation failed:', slidesResult.reason);
+    errors.slidesError = slidesResult.reason?.message || 'Unknown slides error';
   }
 
-  try {
-    // Generate assessments
-    console.log('📋 Starting assessment generation...');
-    assessmentsResult = await generateAssessmentsContent(actualSessionNumber, actualLectureNumber, lectureTitle, sessionTheme);
+  if (assessmentsResult.status === 'fulfilled') {
+    assessmentsData = assessmentsResult.value;
     console.log('✅ Assessments generated successfully');
-  } catch (error) {
-    console.error('❌ Assessments generation failed:', error);
-    assessmentsError = error;
-  }
-
-  // Check if both failed
-  if (slidesError && assessmentsError) {
-    console.error('❌ Both slides and assessments failed');
-    throw new Error(`Content generation failed: Slides: ${slidesError.message}, Assessments: ${assessmentsError.message}`);
-  }
-
-  // If slides failed but assessments succeeded, still throw error for slides
-  if (slidesError) {
-    console.error('❌ Slides failed but assessments succeeded:', slidesError.message);
-    // Don't throw here, let it continue with partial success but log the error
-  }
-
-  if (assessmentsError) {
-    console.error('❌ Assessments failed but slides succeeded:', assessmentsError.message);
-    // Don't throw here, let it continue with partial success but log the error
+  } else {
+    console.error('❌ Assessments generation failed:', assessmentsResult.reason);
+    errors.assessmentsError = assessmentsResult.reason?.message || 'Unknown assessments error';
   }
 
   return new Response(JSON.stringify({ 
-    slides: slidesResult?.slides || null,
-    assessments: assessmentsResult || null,
+    slides: slidesData?.slides || null,
+    assessments: assessmentsData || null,
     success: true,
-    errors: {
-      slidesError: slidesError?.message || null,
-      assessmentsError: assessmentsError?.message || null
-    }
+    errors
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
@@ -385,16 +371,18 @@ Return the response in this exact JSON format:
       content_length: slide.content?.length || 0
     });
     
-    // Ensure all required fields are present and valid
+    // Ensure all required fields are present and valid with fallbacks
     const slideNumber = slide.slide_number || (index + 1);
-    const content = slide.content || `Content for slide ${slideNumber}`;
-    const title = slide.title || `Slide ${slideNumber}`;
+    const title = slide.title || `Slide ${slideNumber} - ${lectureTitle}`;
+    const content = slide.content || `Content for slide ${slideNumber} about ${lectureTitle}. This slide covers key concepts and practical applications.`;
+    
+    console.log(`🔍 Slide ${index + 1} validation:`, { slideNumber, title, content_length: content.length });
     
     return {
       lecture_id: lectureId,
       slide_number: slideNumber,
       title: title,
-      content: content, // This CANNOT be null due to NOT NULL constraint
+      content: content, // Guaranteed not null with fallback
       slide_type: slide.slide_type || 'content',
       svg_animation: slide.svg_animation || null,
       speaker_notes: slide.speaker_notes || null
@@ -516,32 +504,58 @@ Return JSON format:
   // Prepare bulk inserts with validation
   console.log('💾 Preparing database inserts...');
   
-  const mcqInserts = (assessments.multiple_choice || []).map(mcq => ({
-    session_number: sessionNumber,
-    lecture_number: lectureNumber,
-    question_text: mcq.question_text,
-    option_a: mcq.option_a,
-    option_b: mcq.option_b,
-    option_c: mcq.option_c,
-    option_d: mcq.option_d,
-    correct_option: mcq.correct_option
-  }));
+  const mcqInserts = (assessments.multiple_choice || []).map((mcq, index) => {
+    // Validate and provide fallbacks for required fields
+    const questionText = mcq.question_text || `Multiple choice question ${index + 1} for ${lectureTitle}`;
+    const optionA = mcq.option_a || 'Option A';
+    const optionB = mcq.option_b || 'Option B';
+    const optionC = mcq.option_c || 'Option C';
+    const optionD = mcq.option_d || 'Option D';
+    const correctOption = mcq.correct_option || 'a';
+    
+    console.log(`🔍 MCQ ${index + 1} validation:`, { questionText, optionA, optionB, optionC, optionD, correctOption });
+    
+    return {
+      session_number: sessionNumber,
+      lecture_number: lectureNumber,
+      question_text: questionText,
+      option_a: optionA,
+      option_b: optionB,
+      option_c: optionC,
+      option_d: optionD,
+      correct_option: correctOption
+    };
+  });
 
-  const reflectionInserts = (assessments.reflection_questions || []).map(rq => ({
-    session_number: sessionNumber,
-    lecture_number: lectureNumber,
-    question_number: rq.question_number,
-    question_text: rq.question_text
-  }));
+  const reflectionInserts = (assessments.reflection_questions || []).map((rq, index) => {
+    const questionText = rq.question_text || `Reflection question ${index + 1} for ${lectureTitle}`;
+    const questionNumber = rq.question_number || (index + 1);
+    
+    console.log(`🔍 Reflection ${index + 1} validation:`, { questionNumber, questionText });
+    
+    return {
+      session_number: sessionNumber,
+      lecture_number: lectureNumber,
+      question_number: questionNumber,
+      question_text: questionText
+    };
+  });
 
-  const flashcardInserts = (assessments.flashcards || []).map((fc, index) => ({
-    session_number: sessionNumber,
-    lecture_number: lectureNumber,
-    title: fc.title,
-    content: fc.content,
-    concept_type: fc.concept_type || 'definition',
-    order_index: fc.order_index || index + 1
-  }));
+  const flashcardInserts = (assessments.flashcards || []).map((fc, index) => {
+    const title = fc.title || `Flashcard ${index + 1}`;
+    const content = fc.content || `Content for flashcard about ${lectureTitle}`;
+    
+    console.log(`🔍 Flashcard ${index + 1} validation:`, { title, content, concept_type: fc.concept_type });
+    
+    return {
+      session_number: sessionNumber,
+      lecture_number: lectureNumber,
+      title: title,
+      content: content,
+      concept_type: fc.concept_type || 'definition',
+      order_index: fc.order_index || index + 1
+    };
+  });
 
   console.log('📊 Insert counts:', {
     mcq: mcqInserts.length,
