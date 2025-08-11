@@ -165,7 +165,7 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
   return (
     <div className="h-full flex flex-col">
       {/* Game Controls */}
-      <div className="flex items-center justify-between py-1 px-2 bg-background/80 backdrop-blur-sm border-b shrink-0">
+      <div className="flex items-center justify-between py-3 px-4 bg-background/80 backdrop-blur-sm border-b shrink-0">
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-1">
             <Target className="w-4 h-4" />
