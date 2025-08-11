@@ -88,61 +88,58 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
             ...msg,
             timestamp: new Date(msg.timestamp)
           })));
+        } else {
+          // Show initial message but don't save to database yet
+          const initialMessage = {
+            role: 'assistant' as const,
+            content: "Hello! I'm here to help you create a customized version of the **AutoNateAI: Thinking Wizard Course** - a 10-session journey through graph theory and mental models.\n\nThis course teaches structured thinking using graphs, mental models, and cognitive frameworks. I can help tailor the themes, examples, and applications to your specific needs.\n\n**What's your background?** Are you interested in:\n- Business/entrepreneurship applications?\n- Academic/research focus?\n- Personal development?\n- Professional skills?\n\nTell me about your goals and I'll help customize the course content!",
+            timestamp: new Date()
+          };
+          setMessages([initialMessage]);
         }
       } else {
-        // Create new session
-        await createNewChatSession();
+        // Create session ID but don't save to database yet
+        const tempSessionId = crypto.randomUUID();
+        setChatSessionId(tempSessionId);
+        
+        // Show initial message but don't save to database yet
+        const initialMessage = {
+          role: 'assistant' as const,
+          content: "Hello! I'm here to help you create a customized version of the **AutoNateAI: Thinking Wizard Course** - a 10-session journey through graph theory and mental models.\n\nThis course teaches structured thinking using graphs, mental models, and cognitive frameworks. I can help tailor the themes, examples, and applications to your specific needs.\n\n**What's your background?** Are you interested in:\n- Business/entrepreneurship applications?\n- Academic/research focus?\n- Personal development?\n- Professional skills?\n\nTell me about your goals and I'll help customize the course content!",
+          timestamp: new Date()
+        };
+        setMessages([initialMessage]);
       }
     } catch (error) {
       console.error('Error initializing chat session:', error);
     }
   };
 
-  const createNewChatSession = async () => {
-    if (!user) {
-      console.log('❌ No user found for creating chat session');
-      return;
-    }
+  const createNewChatSession = async (initialMessages: Message[]) => {
+    if (!user) return;
 
     try {
-      console.log('🆕 Creating new chat session for user:', user.email);
-      
-      const serializedMessages = messages.map(msg => ({
-        role: msg.role,
-        content: msg.content,
-        timestamp: msg.timestamp.toISOString()
-      }));
-
-      console.log('📝 Inserting chat session with data:', { 
-        admin_user_id: user.id, 
-        context_type: 'course_planning',
-        messageCount: serializedMessages.length 
-      });
-
       const { data, error } = await supabase
         .from('admin_chat_sessions')
         .insert({
           admin_user_id: user.id,
           context_type: 'course_planning',
-          chat_history: serializedMessages
+          chat_history: initialMessages.map(msg => ({
+            role: msg.role,
+            content: msg.content,
+            timestamp: msg.timestamp.toISOString()
+          }))
         })
         .select()
         .single();
 
-      console.log('💾 Chat session creation result:', { data, error });
+      if (error) {
+        console.error('Error creating chat session:', error);
+        throw error;
+      }
 
-      if (error) throw error;
       setChatSessionId(data.id);
       console.log('✅ Chat session created with ID:', data.id);
-      
-      // Reset messages to start fresh chat
-      const initialMessage = {
-        role: 'assistant' as const,
-        content: "Hello! I'm here to help you create a customized version of the **AutoNateAI: Thinking Wizard Course** - a 10-session journey through graph theory and mental models.\n\nThis course teaches structured thinking using graphs, mental models, and cognitive frameworks. I can help tailor the themes, examples, and applications to your specific needs.\n\n**What's your background?** Are you interested in:\n- Business/entrepreneurship applications?\n- Academic/research focus?\n- Personal development?\n- Professional skills?\n\nTell me about your goals and I'll help customize the course content!",
-        timestamp: new Date()
-      };
-      setMessages([initialMessage]);
-      await updateChatSession([initialMessage]);
     } catch (error) {
       console.error('Error creating chat session:', error);
     }
@@ -177,7 +174,7 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
 
     const userMessage: Message = {
       role: 'user',
-      content: input,
+      content: input.trim(),
       timestamp: new Date()
     };
 
@@ -186,8 +183,14 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
     setInput('');
     setIsLoading(true);
 
-    // Update chat session in database
-    await updateChatSession(updatedMessages);
+    // Create or update chat session in database (first time will create)
+    if (!chatSessionId || chatSessionId.length < 20) {
+      // This is a temporary ID, create real session
+      await createNewChatSession(updatedMessages);
+    } else {
+      // Update existing session
+      await updateChatSession(updatedMessages);
+    }
 
     try {
       // Call edge function for an actual AI response based on chat history
@@ -270,6 +273,18 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
     }
   };
 
+  const startNewChat = () => {
+    // Reset to initial state
+    setMessages([{
+      role: 'assistant',
+      content: "Hello! I'm here to help you create a customized version of the **AutoNateAI: Thinking Wizard Course** - a 10-session journey through graph theory and mental models.\n\nThis course teaches structured thinking using graphs, mental models, and cognitive frameworks. I can help tailor the themes, examples, and applications to your specific needs.\n\n**What's your background?** Are you interested in:\n- Business/entrepreneurship applications?\n- Academic/research focus?\n- Personal development?\n- Professional skills?\n\nTell me about your goals and I'll help customize the course content!",
+      timestamp: new Date()
+    }]);
+    setCanGenerate(false);
+    const tempSessionId = crypto.randomUUID();
+    setChatSessionId(tempSessionId);
+  };
+
   return (
     <div className="flex flex-col h-[600px] border border-border/50 rounded-xl bg-card/30 backdrop-blur-sm">
       <div className="flex items-center justify-between p-4 border-b border-border/50">
@@ -345,7 +360,7 @@ export function CoursePlanningChat({ onCoursePlanned }: CoursePlanningChatProps)
             </Button>
           )}
           <Button
-            onClick={createNewChatSession}
+            onClick={startNewChat}
             disabled={isLoading || isGenerating}
             variant="outline"
             size="lg"

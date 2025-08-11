@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   BookOpen, 
   PlayCircle, 
@@ -15,7 +16,8 @@ import {
   Wand2,
   FileText,
   MessageSquare,
-  HelpCircle
+  HelpCircle,
+  Zap
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -72,7 +74,7 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
 
       if (sessionsError) throw sessionsError;
 
-      setCourseData({ ...course, sessions });
+      setCourseData({ ...course, sessions_dynamic: sessions });
     } catch (error) {
       console.error('Error loading course data:', error);
       toast.error('Failed to load course data');
@@ -109,8 +111,8 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
   };
 
   const generateContent = async (lectureId: string, lectureTitle: string, sessionTheme: string) => {
-    setIsLoading(true);
     try {
+      console.log('🎯 Generating content for lecture:', lectureId, lectureTitle);
       const response = await supabase.functions.invoke('ai-course-generator', {
         body: {
           action: 'generate_content',
@@ -122,16 +124,65 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
         }
       });
 
-      if (response.error) throw response.error;
+      console.log('📡 Generate content response:', response);
 
-      toast.success('Content generated successfully!');
-      loadCourseData();
+      if (response.error) {
+        console.error('❌ Error generating content:', response.error);
+        toast.error('Failed to generate content');
+      } else {
+        toast.success('Content generated successfully!');
+        loadCourseData();
+      }
     } catch (error) {
-      console.error('Error generating content:', error);
+      console.error('❌ Error generating content:', error);
       toast.error('Failed to generate content');
+    }
+  };
+
+  const generateAllContent = async () => {
+    if (!courseData?.sessions_dynamic) {
+      toast.error('No sessions found');
+      return;
+    }
+
+    setIsLoading(true);
+    const totalLectures = courseData.sessions_dynamic.reduce((acc: number, session: any) => 
+      acc + (session.lectures_dynamic?.length || 0), 0);
+    
+    let completed = 0;
+
+    try {
+      for (const session of courseData.sessions_dynamic) {
+        if (session.lectures_dynamic) {
+          for (const lecture of session.lectures_dynamic) {
+            await generateContent(lecture.id, lecture.title, session.theme);
+            completed++;
+            toast.info(`Generated ${completed}/${totalLectures} lectures`);
+          }
+        }
+      }
+      toast.success('All content generated successfully!');
+    } catch (error) {
+      console.error('Error generating all content:', error);
+      toast.error('Failed to generate all content');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const viewContent = (lectureId: string) => {
+    // Navigate to lecture content view or open modal
+    toast.info('Content viewer coming soon');
+  };
+
+  const editContent = (lectureId: string) => {
+    // Open content editor
+    toast.info('Content editor coming soon');
+  };
+
+  const viewAssessments = (lectureId: string) => {
+    // View quiz/reflection questions
+    toast.info('Assessment viewer coming soon');
   };
 
   const toggleSession = (sessionId: string) => {
@@ -157,114 +208,162 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="p-6 bg-gradient-to-r from-card to-card/80 border-primary/20">
-        <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            {editingItem === `course-${courseData.id}` ? (
-              <div className="flex items-center gap-2">
-                <Textarea
-                  value={editText}
-                  onChange={(e) => setEditText(e.target.value)}
-                  className="text-2xl font-bold bg-transparent border-primary/50"
-                />
-                <Button onClick={() => handleSave('courses', courseData.id)} size="sm">
-                  <Save className="w-4 h-4" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold">{courseData.title}</h1>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleEdit(`course-${courseData.id}`, courseData.title)}
-                >
-                  <Edit3 className="w-4 h-4" />
-                </Button>
-              </div>
-            )}
-            <p className="text-muted-foreground">{courseData.description}</p>
+    <TooltipProvider>
+      <div className="space-y-6">
+        <Card className="p-6 bg-gradient-to-r from-card to-card/80 border-primary/20">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              {editingItem === `course-${courseData.id}` ? (
+                <div className="flex items-center gap-2">
+                  <Textarea
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    className="text-2xl font-bold bg-transparent border-primary/50"
+                  />
+                  <Button onClick={() => handleSave('course', courseData.id)} size="sm">
+                    <Save className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-bold">{courseData.title}</h1>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleEdit(`course-${courseData.id}`, courseData.title)}
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+              <p className="text-muted-foreground">{courseData.description}</p>
+            </div>
+            <Badge variant="secondary">{courseData.status}</Badge>
           </div>
-          <Badge variant="secondary">{courseData.status}</Badge>
-        </div>
-      </Card>
+        </Card>
 
-      <ScrollArea className="h-[600px]">
-        <div className="space-y-4">
-          {courseData.sessions?.map((session: any) => (
-            <Card key={session.id} className="overflow-hidden">
-              <Collapsible
-                open={expandedSessions.has(session.id)}
-                onOpenChange={() => toggleSession(session.id)}
-              >
-                <CollapsibleTrigger asChild>
-                  <div className="p-4 hover:bg-accent/50 cursor-pointer transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        {expandedSessions.has(session.id) ? (
-                          <ChevronDown className="w-5 h-5" />
-                        ) : (
-                          <ChevronRight className="w-5 h-5" />
-                        )}
-                        <Badge variant="outline">Session {session.session_number}</Badge>
-                        <h3 className="font-semibold">{session.title}</h3>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary">{session.lectures_dynamic?.length || 0} lectures</Badge>
+        <div className="mb-4 flex justify-end">
+          <Button
+            onClick={generateAllContent}
+            disabled={isLoading}
+            className="flex items-center gap-2"
+          >
+            <Zap className="w-4 h-4" />
+            Generate All Content
+          </Button>
+        </div>
+
+        <ScrollArea className="h-[600px]">
+          <div className="space-y-4">
+            {courseData.sessions_dynamic?.map((session: any) => (
+              <Card key={session.id} className="overflow-hidden">
+                <Collapsible
+                  open={expandedSessions.has(session.id)}
+                  onOpenChange={() => toggleSession(session.id)}
+                >
+                  <CollapsibleTrigger asChild>
+                    <div className="p-4 hover:bg-accent/50 cursor-pointer transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {expandedSessions.has(session.id) ? (
+                            <ChevronDown className="w-5 h-5" />
+                          ) : (
+                            <ChevronRight className="w-5 h-5" />
+                          )}
+                          <Badge variant="outline">Session {session.session_number}</Badge>
+                          <h3 className="font-semibold">{session.title}</h3>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">{session.lectures_dynamic?.length || 0} lectures</Badge>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CollapsibleTrigger>
+                  </CollapsibleTrigger>
 
-                <CollapsibleContent>
-                  <Separator />
-                  <div className="p-4 space-y-3">
-                    <p className="text-sm text-muted-foreground">{session.description}</p>
-                    
-                    <div className="space-y-2">
-                      {session.lectures_dynamic?.map((lecture: any) => (
-                        <Card key={lecture.id} className="p-3 bg-accent/30">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <PlayCircle className="w-4 h-4 text-primary" />
-                              <span className="font-medium">Lecture {lecture.lecture_number}</span>
-                              <span>{lecture.title}</span>
-                              <Badge variant="outline" className="text-xs">
-                                {lecture.estimated_duration_minutes}min
-                              </Badge>
+                  <CollapsibleContent>
+                    <Separator />
+                    <div className="p-4 space-y-3">
+                      <p className="text-sm text-muted-foreground">{session.description}</p>
+                      
+                      <div className="space-y-2">
+                        {session.lectures_dynamic?.map((lecture: any) => (
+                          <Card key={lecture.id} className="p-3 bg-accent/30">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <PlayCircle className="w-4 h-4 text-primary" />
+                                <span className="font-medium">Lecture {lecture.lecture_number}</span>
+                                <span>{lecture.title}</span>
+                                <Badge variant="outline" className="text-xs">
+                                  {lecture.estimated_duration_minutes}min
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => generateContent(lecture.id, lecture.title, session.theme)}
+                                      disabled={isLoading}
+                                    >
+                                      <Wand2 className="w-4 h-4" />
+                                      Generate Content
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Generate AI slides and content for this lecture</TooltipContent>
+                                </Tooltip>
+                                
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => viewContent(lecture.id)}
+                                    >
+                                      <FileText className="w-4 h-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>View lecture content and slides</TooltipContent>
+                                </Tooltip>
+                                
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => editContent(lecture.id)}
+                                    >
+                                      <MessageSquare className="w-4 h-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Edit lecture content</TooltipContent>
+                                </Tooltip>
+                                
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => viewAssessments(lecture.id)}
+                                    >
+                                      <HelpCircle className="w-4 h-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>View quiz questions and assessments</TooltipContent>
+                                </Tooltip>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => generateContent(lecture.id, lecture.title, session.theme)}
-                                disabled={isLoading}
-                              >
-                                <Wand2 className="w-4 h-4" />
-                                Generate Content
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                <FileText className="w-4 h-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                <MessageSquare className="w-4 h-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                <HelpCircle className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
+                          </Card>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            </Card>
-          ))}
-        </div>
-      </ScrollArea>
-    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </Card>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
+    </TooltipProvider>
   );
 }
