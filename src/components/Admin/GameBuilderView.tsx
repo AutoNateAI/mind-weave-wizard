@@ -296,7 +296,7 @@ export function GameBuilderView() {
           <DialogHeader className="px-4 py-2 border-b shrink-0 min-h-0">
             <DialogTitle className="text-lg">Game Preview: {previewGame?.title}</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 min-h-0 p-2">
+          <div className="flex-1 min-h-0">
             {previewGame && (
               <GameFlowCanvas
                 gameId={previewGame.id}

@@ -201,7 +201,7 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
       </div>
 
       {/* Game Canvas */}
-      <div className="flex-1 min-h-0 rounded-md overflow-hidden border neon-border react-flow-container relative">
+      <div className="flex-1 min-h-0 overflow-hidden react-flow-container relative">
         <ReactFlow
           nodes={nodes}
           edges={edges}
