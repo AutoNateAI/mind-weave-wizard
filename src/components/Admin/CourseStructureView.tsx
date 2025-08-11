@@ -170,11 +170,20 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
       const totalSessionLectures = lectures.length;
       let completedSessionLectures = 0;
 
-      console.log(`🚀 Starting session generation for ${totalSessionLectures} lectures in "${sessionTitle}"`);
+      console.log(`🚀 Starting PARALLEL generation for ${totalSessionLectures} lectures in "${sessionTitle}"`);
+      console.log(`📋 Lectures to generate in parallel:`, lectures.map(l => l.title));
 
+      // Mark all lectures as generating immediately to show parallel execution
+      lectures.forEach((lecture: any) => {
+        setGeneratingLectures(prev => new Set([...prev, lecture.id]));
+      });
+
+      // Create all promises simultaneously (this is what makes it parallel)
       const promises = lectures.map(async (lecture: any, index: number) => {
+        const startTime = Date.now();
+        console.log(`🎯 [${new Date().toISOString()}] STARTING parallel generation for lecture ${index + 1}/${totalSessionLectures}: ${lecture.title}`);
+        
         try {
-          console.log(`🎯 Generating lecture ${index + 1}/${totalSessionLectures}: ${lecture.title}`);
           await generateContent(
             lecture.id, 
             lecture.title, 
@@ -183,18 +192,25 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
             lecture.lecture_number
           );
           
+          const duration = Date.now() - startTime;
           completedSessionLectures++;
           const newProgress = (completedSessionLectures / totalSessionLectures) * 100;
           setSessionProgress(prev => ({ ...prev, [sessionId]: newProgress }));
           
-          console.log(`✅ Session progress: ${completedSessionLectures}/${totalSessionLectures}`);
+          console.log(`✅ [${new Date().toISOString()}] COMPLETED lecture ${index + 1}/${totalSessionLectures}: ${lecture.title} (took ${duration}ms)`);
+          console.log(`📊 Session progress: ${completedSessionLectures}/${totalSessionLectures} (${Math.round(newProgress)}%)`);
         } catch (error) {
-          console.error(`❌ Failed to generate ${lecture.title}:`, error);
+          console.error(`❌ [${new Date().toISOString()}] FAILED lecture ${index + 1}/${totalSessionLectures}: ${lecture.title}`, error);
           throw error;
         }
       });
 
+      console.log(`⚡ All ${totalSessionLectures} lecture generation promises created simultaneously - executing in PARALLEL`);
+      
+      // Wait for ALL promises to complete (this runs them in parallel)
       await Promise.all(promises);
+      
+      console.log(`🎉 All ${totalSessionLectures} lectures completed in PARALLEL for session: ${sessionTitle}`);
       toast.success(`🎉 All content generated for session: ${sessionTitle}`);
       setSessionProgress(prev => ({ ...prev, [sessionId]: 100 }));
       
@@ -207,6 +223,16 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
         newSet.delete(sessionId);
         return newSet;
       });
+      
+      // Clear all lecture generating states
+      lectures.forEach((lecture: any) => {
+        setGeneratingLectures(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(lecture.id);
+          return newSet;
+        });
+      });
+      
       // Reset progress after delay
       setTimeout(() => {
         setSessionProgress(prev => {
