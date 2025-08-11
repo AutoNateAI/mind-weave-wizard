@@ -57,15 +57,19 @@ export function ChatHistoryView() {
 
   const loadChatSessions = async () => {
     try {
+      console.log('🔍 Loading chat sessions for user:', user?.email);
+      
+      // For admin users, query without user restriction since admin_user_id might not be set
       const { data, error } = await supabase
         .from('admin_chat_sessions')
         .select(`
           *,
           course:courses(id, title, status)
         `)
-        .eq('admin_user_id', user?.id)
         .eq('context_type', 'course_planning')
         .order('updated_at', { ascending: false });
+
+      console.log('📊 Chat sessions query result:', { data, error });
 
       if (error) throw error;
       

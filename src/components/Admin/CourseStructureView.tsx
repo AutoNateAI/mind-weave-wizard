@@ -40,13 +40,26 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
 
   const loadCourseData = async () => {
     try {
+      console.log('🔍 Loading course data for courseId:', courseId);
+      
       const { data: course, error: courseError } = await supabase
         .from('courses')
         .select('*')
         .eq('id', courseId)
-        .single();
+        .maybeSingle();
 
-      if (courseError) throw courseError;
+      if (courseError) {
+        console.error('❌ Course error:', courseError);
+        throw courseError;
+      }
+      
+      if (!course) {
+        console.log('⚠️ No course found for ID:', courseId);
+        setCourseData(null);
+        return;
+      }
+      
+      console.log('✅ Course loaded:', course);
 
       const { data: sessions, error: sessionsError } = await supabase
         .from('sessions_dynamic')
