@@ -293,10 +293,10 @@ export function GameBuilderView() {
       {/* Game Preview Modal */}
       <Dialog open={!!previewGame} onOpenChange={() => setPreviewGame(null)}>
         <DialogContent className="max-w-7xl h-[95vh] w-[95vw] p-0 gap-0">
-          <DialogHeader className="px-6 py-3 border-b shrink-0">
-            <DialogTitle>Game Preview: {previewGame?.title}</DialogTitle>
+          <DialogHeader className="px-4 py-2 border-b shrink-0 min-h-0">
+            <DialogTitle className="text-lg">Game Preview: {previewGame?.title}</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 min-h-0 p-4">
+          <div className="flex-1 min-h-0 p-2">
             {previewGame && (
               <GameFlowCanvas
                 gameId={previewGame.id}
