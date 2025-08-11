@@ -10,7 +10,7 @@ import {
   BarChart3, 
   Users,
   Wand2,
-  FileText,
+  Gamepad2,
   MessageSquare
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -144,9 +144,9 @@ export default function AdminDashboard() {
                 <BookOpen className="w-4 h-4" />
                 Course Structure
               </TabsTrigger>
-              <TabsTrigger value="content" className="gap-2">
-                <FileText className="w-4 h-4" />
-                Content
+              <TabsTrigger value="games" className="gap-2">
+                <Gamepad2 className="w-4 h-4" />
+                Games
               </TabsTrigger>
               <TabsTrigger value="users" className="gap-2">
                 <Users className="w-4 h-4" />
@@ -270,11 +270,11 @@ export default function AdminDashboard() {
               <CourseStructureView courseId={selectedCourse || undefined} />
             </TabsContent>
 
-            <TabsContent value="content">
+            <TabsContent value="games">
               <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Content Generation</h3>
+                <h3 className="text-lg font-semibold mb-4">Games & Activities</h3>
                 <p className="text-muted-foreground">
-                  Generate slides, assessments, and interactive content for your lectures.
+                  Configure interactive games and activities for each lecture to enhance student engagement.
                 </p>
               </Card>
             </TabsContent>

@@ -240,11 +240,11 @@ export function MultipleChoiceQuiz({ sessionNumber, lectureNumber }: MultipleCho
                       isSelected 
                         ? showResult 
                           ? isCorrect 
-                            ? 'border-green-500 bg-green-50 dark:bg-green-950/30' 
+                            ? 'border-green-500 bg-green-50 dark:bg-green-900/50' 
                             : 'border-red-500 bg-red-50 dark:bg-red-950/30'
                           : 'border-primary bg-primary/5'
                         : showResult && isCorrect
-                          ? 'border-green-500 bg-green-50 dark:bg-green-950/30'
+                          ? 'border-green-500 bg-green-50 dark:bg-green-900/50'
                           : 'border-border hover:border-primary/50'
                     } ${isAnswered ? 'cursor-default' : 'cursor-pointer hover:bg-accent/50'}`}
                   >
