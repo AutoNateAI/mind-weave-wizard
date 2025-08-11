@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   BookOpen, 
@@ -33,6 +34,10 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
   const [editText, setEditText] = useState('');
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [totalLectures, setTotalLectures] = useState(0);
+  const [completedLectures, setCompletedLectures] = useState(0);
 
   useEffect(() => {
     if (courseId) {
@@ -148,10 +153,13 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
     }
 
     setIsLoading(true);
-    const totalLectures = courseData.sessions_dynamic.reduce((acc: number, session: any) => 
+    setIsGenerating(true);
+    const total = courseData.sessions_dynamic.reduce((acc: number, session: any) => 
       acc + (session.lectures_dynamic?.length || 0), 0);
     
-    let completed = 0;
+    setTotalLectures(total);
+    setCompletedLectures(0);
+    setProgress(0);
 
     try {
       // Collect all lectures first for parallel processing
@@ -171,16 +179,22 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
         }
       }
 
-      console.log(`🚀 Starting parallel generation for ${totalLectures} lectures`);
+      console.log(`🚀 Starting parallel generation for ${total} lectures`);
 
       // Generate all content in parallel
       const promises = allLectures.map(async (lecture, index) => {
         try {
-          console.log(`🎯 Starting generation for lecture ${index + 1}/${totalLectures}: ${lecture.title}`);
+          console.log(`🎯 Starting generation for lecture ${index + 1}/${total}: ${lecture.title}`);
           await generateContent(lecture.id, lecture.title, lecture.theme, lecture.sessionNumber, lecture.lectureNumber);
-          completed++;
-          console.log(`✅ Completed ${completed}/${totalLectures}: ${lecture.title}`);
-          toast.info(`Generated ${completed}/${totalLectures} lectures`);
+          
+          setCompletedLectures(prev => {
+            const newCompleted = prev + 1;
+            const newProgress = (newCompleted / total) * 100;
+            setProgress(newProgress);
+            return newCompleted;
+          });
+          
+          console.log(`✅ Completed ${index + 1}/${total}: ${lecture.title}`);
         } catch (error) {
           console.error(`❌ Failed to generate content for ${lecture.title}:`, error);
           throw new Error(`Failed to generate ${lecture.title}: ${error.message}`);
@@ -189,11 +203,19 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
 
       await Promise.all(promises);
       toast.success('🎉 All content generated successfully!');
+      setProgress(100);
     } catch (error) {
       console.error('Error generating all content:', error);
       toast.error(`Failed to generate all content: ${error.message}`);
     } finally {
       setIsLoading(false);
+      setIsGenerating(false);
+      // Reset progress after a delay
+      setTimeout(() => {
+        setProgress(0);
+        setCompletedLectures(0);
+        setTotalLectures(0);
+      }, 2000);
     }
   };
 
@@ -235,7 +257,23 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
   }
 
   return (
-    <TooltipProvider>
+    <div className="space-y-6">
+      {/* Progress Bar */}
+      {isGenerating && (
+        <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 border-b">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium">Generating Course Content</span>
+              <span className="text-muted-foreground">
+                {completedLectures}/{totalLectures} lectures completed
+              </span>
+            </div>
+            <Progress value={progress} className="h-2" />
+          </div>
+        </div>
+      )}
+      
+      <TooltipProvider>
       <div className="space-y-6">
         <Card className="p-6 bg-gradient-to-r from-card to-card/80 border-primary/20">
           <div className="flex items-start justify-between">
@@ -388,9 +426,10 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
                 </Collapsible>
               </Card>
             ))}
-          </div>
-        </ScrollArea>
-      </div>
-    </TooltipProvider>
+           </div>
+         </ScrollArea>
+       </div>
+      </TooltipProvider>
+    </div>
   );
 }
