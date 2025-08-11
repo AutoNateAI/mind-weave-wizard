@@ -285,10 +285,13 @@ This is part of the AutoNateAI: Thinking Wizard Course - a journey through graph
 
 Generate 4-6 slides with the following structure for each slide:
 - Title: Clear, engaging slide title
-- Content: Detailed bullet points or explanatory text (focus on practical applications and connections)
+- Content: MUST be formatted as bullet points separated by newlines. Each bullet point should start with "• " and be on its own line. This will be parsed on the frontend to display individual slide points.
 - Slide Type: One of: title, content, example, exercise, summary
 - SVG Animation: Describe a simple SVG animation concept that would enhance this slide
 - Speaker Notes: Detailed notes for the instructor
+
+IMPORTANT: For the "content" field, format it as bullet points separated by newlines. Example format:
+"• First key concept or point\n• Second important detail\n• Third supporting idea\n• Fourth practical application"
 
 Return the response in this exact JSON format:
 {
@@ -296,7 +299,7 @@ Return the response in this exact JSON format:
     {
       "slide_number": 1,
       "title": "Slide Title",
-      "content": "Detailed content with bullet points or paragraphs",
+      "content": "• First bullet point\n• Second bullet point\n• Third bullet point",
       "slide_type": "content",
       "svg_animation": "Description of animation concept",
       "speaker_notes": "Detailed instructor notes"
