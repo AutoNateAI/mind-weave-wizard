@@ -165,7 +165,7 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
   return (
     <div className="h-full flex flex-col">
       {/* Game Controls */}
-      <div className="flex items-center justify-between pb-2 px-2 bg-background/80 backdrop-blur-sm border-b">
+      <div className="flex items-center justify-between py-1 px-2 bg-background/80 backdrop-blur-sm border-b shrink-0">
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-1">
             <Target className="w-4 h-4" />
@@ -201,7 +201,7 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
       </div>
 
       {/* Game Canvas */}
-      <div className="flex-1 min-h-0 rounded-md overflow-hidden border neon-border react-flow-container">
+      <div className="flex-1 min-h-0 rounded-md overflow-hidden border neon-border react-flow-container relative">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -229,23 +229,22 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
             className={theme === 'dark' ? 'dark' : ''}
           />
         </ReactFlow>
-      </div>
-
-      {/* Game Completed Overlay */}
-      {gameState.isCompleted && (
-        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
-          <div className="text-center p-8 rounded-lg bg-card border shadow-lg">
-            <Trophy className="w-16 h-16 mx-auto mb-4 text-yellow-500" />
-            <h3 className="text-2xl font-bold mb-2">Game Completed!</h3>
-            <p className="text-lg mb-4">Score: {calculateScore()}%</p>
-            <div className="text-sm text-muted-foreground space-y-1">
-              <p>Time: {Math.floor((Date.now() - gameState.startTime) / 1000 / 60)} minutes</p>
-              <p>Interactions: {gameState.interactions}</p>
-              <p>Hints used: {gameState.hintsUsed}</p>
+        {/* Game Completed Overlay */}
+        {gameState.isCompleted && (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-10">
+            <div className="text-center p-8 rounded-lg bg-card border shadow-lg">
+              <Trophy className="w-16 h-16 mx-auto mb-4 text-yellow-500" />
+              <h3 className="text-2xl font-bold mb-2">Game Completed!</h3>
+              <p className="text-lg mb-4">Score: {calculateScore()}%</p>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p>Time: {Math.floor((Date.now() - gameState.startTime) / 1000 / 60)} minutes</p>
+                <p>Interactions: {gameState.interactions}</p>
+                <p>Hints used: {gameState.hintsUsed}</p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
