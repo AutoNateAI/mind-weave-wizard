@@ -3,7 +3,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { GameBuilder } from "./GameBuilder";
+import { GameFlowCanvas } from "@/components/GraphEditor/GameFlowCanvas";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Play, Settings, BarChart3 } from "lucide-react";
@@ -26,9 +28,14 @@ interface LectureGame {
   id: string;
   title: string;
   description: string;
+  instructions: string;
+  game_data: any;
+  hints: any;
   estimated_duration_minutes: number;
   is_published: boolean;
   created_at: string;
+  game_template_id: string;
+  mechanics?: any;
 }
 
 export function GameBuilderView() {
@@ -38,6 +45,7 @@ export function GameBuilderView() {
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [selectedLecture, setSelectedLecture] = useState<Lecture | null>(null);
   const [showBuilder, setShowBuilder] = useState(false);
+  const [previewGame, setPreviewGame] = useState<LectureGame | null>(null);
 
   useEffect(() => {
     loadSessions();
@@ -97,7 +105,12 @@ export function GameBuilderView() {
   const loadGames = async (sessionNumber: number, lectureNumber: number) => {
     const { data, error } = await supabase
       .from('lecture_games')
-      .select('*')
+      .select(`
+        *,
+        game_templates (
+          mechanics
+        )
+      `)
       .eq('session_number', sessionNumber)
       .eq('lecture_number', lectureNumber)
       .order('order_index');
@@ -107,7 +120,12 @@ export function GameBuilderView() {
       return;
     }
 
-    setGames(data || []);
+    const gamesWithMechanics = data?.map(game => ({
+      ...game,
+      mechanics: game.game_templates?.mechanics || {}
+    })) || [];
+
+    setGames(gamesWithMechanics);
   };
 
   const handleGameSaved = () => {
@@ -238,7 +256,12 @@ export function GameBuilderView() {
                             <BarChart3 className="w-3 h-3" />
                             Analytics
                           </Button>
-                          <Button size="sm" variant="outline" className="gap-1">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="gap-1"
+                            onClick={() => setPreviewGame(game)}
+                          >
                             <Play className="w-3 h-3" />
                             Preview
                           </Button>
@@ -266,6 +289,28 @@ export function GameBuilderView() {
           onGameSaved={handleGameSaved}
         />
       )}
+
+      {/* Game Preview Modal */}
+      <Dialog open={!!previewGame} onOpenChange={() => setPreviewGame(null)}>
+        <DialogContent className="max-w-6xl h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Game Preview: {previewGame?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 min-h-0">
+            {previewGame && (
+              <GameFlowCanvas
+                gameId={previewGame.id}
+                gameData={previewGame.game_data}
+                mechanics={previewGame.mechanics || {}}
+                hints={previewGame.hints}
+                onComplete={(score) => {
+                  toast.success(`Preview completed with ${score}% score!`);
+                }}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
