@@ -92,11 +92,16 @@ export function SlidePreview({ slide }: SlidePreviewProps) {
               const imageLines = lines.filter(line => line.trim().includes('!['));
               const textLines = lines.filter(line => !line.trim().includes('![') && line.trim());
               
-              console.log('Content:', slide.content);
-              console.log('Image lines:', imageLines);
-              console.log('Text lines:', textLines);
+              // Debug logging
+              console.log('=== SLIDE DEBUG ===');
+              console.log('Slide type:', slide.slide_type);
+              console.log('Raw content:', slide.content);
+              console.log('Image lines found:', imageLines);
+              console.log('Text lines found:', textLines);
+              console.log('Has images:', imageLines.length > 0);
+              console.log('=================');
               
-              // Always try side-by-side if we have content and it's an image slide type
+              // Always try side-by-side if we have content and it's an image slide type OR we found image markdown
               if (slide.slide_type === 'image' || imageLines.length > 0) {
                 return (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
