@@ -11,7 +11,8 @@ import {
   Users,
   Wand2,
   Gamepad2,
-  MessageSquare
+  MessageSquare,
+  FileText
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,6 +21,7 @@ import { CoursePlanningChat } from "@/components/Admin/CoursePlanningChat";
 import { CourseStructureView } from "@/components/Admin/CourseStructureView";
 import { ChatHistoryView } from "@/components/Admin/ChatHistoryView";
 import { GameBuilderView } from "@/components/Admin/GameBuilderView";
+import { SlideManagement } from "@/components/Admin/SlideManagement";
 import { PageMeta } from "@/components/UI/PageMeta";
 import { useAdminViewSwitch } from "@/hooks/useAdminViewSwitch";
 import { Navigate } from "react-router-dom";
@@ -128,7 +130,7 @@ export default function AdminDashboard() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="overview" className="gap-2">
                 <BarChart3 className="w-4 h-4" />
                 Overview
@@ -144,6 +146,10 @@ export default function AdminDashboard() {
               <TabsTrigger value="structure" className="gap-2">
                 <BookOpen className="w-4 h-4" />
                 Course Structure
+              </TabsTrigger>
+              <TabsTrigger value="slides" className="gap-2">
+                <FileText className="w-4 h-4" />
+                Slides
               </TabsTrigger>
               <TabsTrigger value="games" className="gap-2">
                 <Gamepad2 className="w-4 h-4" />
@@ -269,6 +275,10 @@ export default function AdminDashboard() {
 
             <TabsContent value="structure">
               <CourseStructureView courseId={selectedCourse || undefined} />
+            </TabsContent>
+
+            <TabsContent value="slides">
+              <SlideManagement selectedCourseId={selectedCourse || undefined} />
             </TabsContent>
 
             <TabsContent value="games">

@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FlashcardViewer } from "@/components/Flashcards/FlashcardViewer";
 import { DatabaseReflectionEditor } from "@/components/Reflections/DatabaseReflectionEditor";
 import { LectureGameViewer } from "@/components/Games/LectureGameViewer";
+import { SlideViewer } from "@/components/Slides/SlideViewer";
 import { Button } from "@/components/ui/button";
 import { Play } from "lucide-react";
 
@@ -30,12 +31,22 @@ export function LessonStructure({
         <p className="text-muted-foreground">Explore concepts, play, and reflect</p>
       </div>
 
-      <Tabs defaultValue="concepts" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="slides" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="slides" className="text-xs sm:text-sm">🎯 <span className="hidden sm:inline">Slides</span></TabsTrigger>
           <TabsTrigger value="concepts" className="text-xs sm:text-sm">📚 <span className="hidden sm:inline">Concepts</span></TabsTrigger>
           <TabsTrigger value="game" className="text-xs sm:text-sm">🎮 <span className="hidden sm:inline">Interactive</span></TabsTrigger>
           <TabsTrigger value="reflection" className="text-xs sm:text-sm">💭 <span className="hidden sm:inline">Reflection</span></TabsTrigger>
         </TabsList>
+
+        <TabsContent value="slides" className="space-y-4">
+          <div className="glass rounded-lg p-3 sm:p-6 h-[calc(100vh-20rem)] sm:h-[calc(100vh-18rem)] lg:h-[calc(100vh-14rem)] overflow-y-auto">
+            <SlideViewer
+              sessionNumber={sessionNumber}
+              lectureNumber={lectureNumber}
+            />
+          </div>
+        </TabsContent>
 
         <TabsContent value="concepts" className="space-y-4">
           <div className="glass rounded-lg p-3 sm:p-6 h-[calc(100vh-20rem)] sm:h-[calc(100vh-18rem)] lg:h-[calc(100vh-14rem)] flex flex-col">
