@@ -79,6 +79,32 @@ export function SlideViewer({ sessionNumber, lectureNumber }: SlideViewerProps) 
 
   const formatContent = (content: string) => {
     return content.split('\n').map((line, index) => {
+      // Check for markdown image syntax
+      const imageMatch = line.match(/!\[.*?\]\((.*?)\)/);
+      if (imageMatch) {
+        const imageUrl = imageMatch[1];
+        return (
+          <div key={index} className="flex justify-center my-6">
+            <div className="responsive-image-container max-w-2xl w-full">
+              <img
+                src={imageUrl}
+                alt="Generated slide image"
+                className="w-full h-auto rounded-lg shadow-lg border"
+                style={{ maxHeight: '400px', objectFit: 'contain' }}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  // Show fallback text
+                  const fallback = document.createElement('div');
+                  fallback.className = 'text-center text-muted-foreground p-4 border rounded-lg';
+                  fallback.innerHTML = `<p>Image failed to load</p><p class="text-xs mt-1">${imageUrl}</p>`;
+                  e.currentTarget.parentNode?.appendChild(fallback);
+                }}
+              />
+            </div>
+          </div>
+        );
+      }
+      
       if (line.trim().startsWith('•') || line.trim().startsWith('-')) {
         return (
           <li key={index} className="ml-4 text-foreground/90">
