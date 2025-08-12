@@ -65,6 +65,12 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
   const [targetSlideForImage, setTargetSlideForImage] = useState<Slide | null>(null);
   const [generatingImageSlides, setGeneratingImageSlides] = useState<Set<string>>(new Set());
   const [aiPrompt, setAiPrompt] = useState('');
+  
+  // New state for image regeneration in edit modal
+  const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
+  const [imageRegenerationPrompt, setImageRegenerationPrompt] = useState('');
+  const [imageSize, setImageSize] = useState('1024x1024');
+  const [imageQuality, setImageQuality] = useState('high');
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -412,6 +418,67 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
     }
   };
 
+  const regenerateImageForEditingSlide = async () => {
+    if (!editingSlide) {
+      toast.error('No slide selected for image regeneration');
+      return;
+    }
+
+    setIsRegeneratingImage(true);
+
+    try {
+      // Auto-generate prompt from slide content if none provided
+      let finalPrompt = imageRegenerationPrompt.trim();
+      if (!finalPrompt && editingSlide.content) {
+        // Extract text content and create a prompt
+        const textContent = editingSlide.content
+          .replace(/!\[.*?\]\(.*?\)/g, '') // Remove existing image markdown
+          .replace(/[•\-\*]/g, '') // Remove bullet points
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0)
+          .join('. ');
+        
+        finalPrompt = `Create a visual diagram or illustration for: ${editingSlide.title}. Content: ${textContent}`;
+      }
+
+      console.log('Regenerating image with prompt:', finalPrompt);
+
+      const response = await supabase.functions.invoke('generate-image', {
+        body: {
+          prompt: finalPrompt,
+          size: imageSize,
+          quality: imageQuality
+        }
+      });
+
+      if (response?.data?.imageUrl) {
+        // Extract existing content without image markdown
+        const existingContent = editingSlide.content
+          .replace(/!\[Generated Image\]\([^)]+\)\n\n?/g, '') // Remove existing generated image
+          .trim();
+
+        // Add new image at the top
+        const updatedContent = `![Generated Image](${response.data.imageUrl})\n\n${existingContent}`;
+        
+        setEditingSlide({
+          ...editingSlide,
+          content: updatedContent
+        });
+        
+        toast.success('Image regenerated successfully!');
+        setImageRegenerationPrompt(''); // Clear the prompt
+      } else {
+        toast.error('Failed to generate image. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error regenerating image:', error);
+      toast.error('Failed to regenerate image. Please try again.');
+    } finally {
+      setIsRegeneratingImage(false);
+    }
+  };
+
   const getSlideIcon = (slideType: string | null) => {
     switch (slideType) {
       case 'title': return <FileText className="w-4 h-4" />;
@@ -663,7 +730,8 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
                     />
                   </div>
 
-                  <div>
+                  {/* Content */}
+                  <div className="space-y-2">
                     <label className="text-sm font-medium">Content</label>
                     <Textarea
                       value={editingSlide.content}
@@ -671,12 +739,80 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
                         ...editingSlide,
                         content: e.target.value
                       })}
-                      className="mt-1 min-h-[120px]"
-                      placeholder="Enter slide content (use bullet points with • or -)..."
+                      className="min-h-32"
+                      placeholder="Slide content..."
                     />
                   </div>
 
-                  <div>
+                  {/* Image Regeneration Section */}
+                  <div className="border rounded-lg p-4 space-y-4 bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      <Image className="w-4 h-4" />
+                      <span className="font-semibold">Image Regeneration</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Image Size</label>
+                        <Select value={imageSize} onValueChange={setImageSize}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1024x1024">Square (1024x1024)</SelectItem>
+                            <SelectItem value="1024x1536">Portrait (1024x1536)</SelectItem>
+                            <SelectItem value="1536x1024">Landscape (1536x1024)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Quality</label>
+                        <Select value={imageQuality} onValueChange={setImageQuality}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="low">Low</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Custom Image Prompt (Optional)</label>
+                      <Textarea
+                        value={imageRegenerationPrompt}
+                        onChange={(e) => setImageRegenerationPrompt(e.target.value)}
+                        placeholder="Leave empty to auto-generate from slide content, or describe a custom image..."
+                        className="min-h-20"
+                      />
+                    </div>
+
+                    <Button 
+                      onClick={regenerateImageForEditingSlide}
+                      disabled={isRegeneratingImage}
+                      className="w-full"
+                      variant="outline"
+                    >
+                      {isRegeneratingImage ? (
+                        <>
+                          <div className="w-4 h-4 animate-spin rounded-full border-2 border-primary border-r-transparent mr-2" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="w-4 h-4 mr-2" />
+                          Regenerate Image
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  {/* Speaker Notes */}
+                  <div className="space-y-2">
                     <label className="text-sm font-medium">Speaker Notes</label>
                     <Textarea
                       value={editingSlide.speaker_notes || ''}
@@ -684,8 +820,7 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
                         ...editingSlide,
                         speaker_notes: e.target.value
                       })}
-                      className="mt-1"
-                      placeholder="Enter speaker notes (optional)..."
+                      placeholder="Speaker notes..."
                     />
                   </div>
 
