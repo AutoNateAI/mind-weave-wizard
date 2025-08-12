@@ -77,34 +77,25 @@ export function SlideViewer({ sessionNumber, lectureNumber }: SlideViewerProps) 
     }
   };
 
-  const formatContent = (content: string) => {
-    return content.split('\n').map((line, index) => {
-      // Check for markdown image syntax
+  const parseSlideContent = (content: string) => {
+    const lines = content.split('\n');
+    let imageUrl = null;
+    const textLines = [];
+
+    for (const line of lines) {
       const imageMatch = line.match(/!\[.*?\]\((.*?)\)/);
-      if (imageMatch) {
-        const imageUrl = imageMatch[1];
-        return (
-          <div key={index} className="flex justify-center my-6">
-            <div className="responsive-image-container max-w-2xl w-full">
-              <img
-                src={imageUrl}
-                alt="Generated slide image"
-                className="w-full h-auto rounded-lg shadow-lg border"
-                style={{ maxHeight: '400px', objectFit: 'contain' }}
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  // Show fallback text
-                  const fallback = document.createElement('div');
-                  fallback.className = 'text-center text-muted-foreground p-4 border rounded-lg';
-                  fallback.innerHTML = `<p>Image failed to load</p><p class="text-xs mt-1">${imageUrl}</p>`;
-                  e.currentTarget.parentNode?.appendChild(fallback);
-                }}
-              />
-            </div>
-          </div>
-        );
+      if (imageMatch && !imageUrl) {
+        imageUrl = imageMatch[1];
+      } else if (line.trim()) {
+        textLines.push(line);
       }
-      
+    }
+
+    return { imageUrl, textLines };
+  };
+
+  const formatTextContent = (lines: string[]) => {
+    return lines.map((line, index) => {
       if (line.trim().startsWith('•') || line.trim().startsWith('-')) {
         return (
           <li key={index} className="ml-4 text-foreground/90">
@@ -195,7 +186,7 @@ export function SlideViewer({ sessionNumber, lectureNumber }: SlideViewerProps) 
 
       {/* Main Slide Display */}
       <Card className={cn(
-        "p-8 min-h-[600px] md:min-h-[700px] lg:min-h-[800px] transition-all duration-300",
+        "p-8 min-h-[600px] md:min-h-[700px] lg:min-h-[900px] transition-all duration-300",
         getSlideStyle(slide?.slide_type),
         isPresenting && "min-h-[80vh] md:min-h-[85vh]"
       )}>
@@ -212,7 +203,6 @@ export function SlideViewer({ sessionNumber, lectureNumber }: SlideViewerProps) 
 
           {/* Slide Content */}
           <div className={cn(
-            "space-y-4",
             slide?.slide_type === 'title' ? "text-center text-xl" : "text-lg"
           )}>
             {slide?.slide_type === 'image' && (
@@ -227,9 +217,65 @@ export function SlideViewer({ sessionNumber, lectureNumber }: SlideViewerProps) 
               </div>
             )}
             
-            <div className="space-y-3">
-              {formatContent(slide?.content || '')}
-            </div>
+            {(() => {
+              const { imageUrl, textLines } = parseSlideContent(slide?.content || '');
+              
+              if (imageUrl && textLines.length > 0) {
+                // Side-by-side layout for image and text
+                return (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                    <div className="space-y-3">
+                      {formatTextContent(textLines)}
+                    </div>
+                    <div className="flex justify-center">
+                      <div className="responsive-image-container max-w-full w-full">
+                        <img
+                          src={imageUrl}
+                          alt="Generated slide image"
+                          className="w-full h-auto rounded-lg shadow-lg border"
+                          style={{ maxHeight: '500px', objectFit: 'contain' }}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const fallback = document.createElement('div');
+                            fallback.className = 'text-center text-muted-foreground p-4 border rounded-lg';
+                            fallback.innerHTML = `<p>Image failed to load</p><p class="text-xs mt-1">${imageUrl}</p>`;
+                            e.currentTarget.parentNode?.appendChild(fallback);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              } else if (imageUrl) {
+                // Only image
+                return (
+                  <div className="flex justify-center">
+                    <div className="responsive-image-container max-w-3xl w-full">
+                      <img
+                        src={imageUrl}
+                        alt="Generated slide image"
+                        className="w-full h-auto rounded-lg shadow-lg border"
+                        style={{ maxHeight: '600px', objectFit: 'contain' }}
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const fallback = document.createElement('div');
+                          fallback.className = 'text-center text-muted-foreground p-4 border rounded-lg';
+                          fallback.innerHTML = `<p>Image failed to load</p><p class="text-xs mt-1">${imageUrl}</p>`;
+                          e.currentTarget.parentNode?.appendChild(fallback);
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              } else {
+                // Only text
+                return (
+                  <div className="space-y-3">
+                    {formatTextContent(textLines)}
+                  </div>
+                );
+              }
+            })()}
           </div>
 
           {/* Speaker Notes (only in presentation mode) */}
