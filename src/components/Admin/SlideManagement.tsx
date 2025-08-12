@@ -79,7 +79,7 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
         .from('lectures_dynamic')
         .select(`
           *,
-          sessions_dynamic!inner(session_number)
+          sessions_dynamic!inner(session_number, course_id)
         `)
         .eq('sessions_dynamic.course_id', selectedCourseId)
         .order('sessions_dynamic.session_number, lecture_number');
