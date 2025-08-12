@@ -134,19 +134,35 @@ export function SlidePreview({ slide }: SlidePreviewProps) {
                               img: ({ src, alt }) => {
                                 console.log('Rendering image:', src);
                                 return (
-                                  <img 
-                                    src={src} 
-                                    alt={alt || 'Slide image'} 
-                                    className="w-full h-auto rounded-lg shadow-lg border max-h-96 object-contain"
-                                    onLoad={() => console.log('Image loaded successfully:', src)}
-                                    onError={(e) => {
-                                      console.error('Image failed to load:', src);
-                                      console.error('Error details:', e);
-                                    }}
-                                  />
+                                  <div className="responsive-image-container w-full">
+                                    <img 
+                                      src={src} 
+                                      alt={alt || 'Slide image'} 
+                                      className="w-full h-auto rounded-lg shadow-lg border max-h-96 object-contain"
+                                      onLoad={() => console.log('Image loaded successfully:', src)}
+                                      onError={(e) => {
+                                        console.error('Image failed to load:', src);
+                                        e.currentTarget.style.display = 'none';
+                                        if (e.currentTarget.parentNode) {
+                                          const fallback = document.createElement('div');
+                                          fallback.className = 'text-center text-muted-foreground p-4 border rounded-lg bg-muted/50 border-dashed';
+                                          fallback.innerHTML = `
+                                            <div class="flex flex-col items-center gap-2">
+                                              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                              </svg>
+                                              <p class="text-sm">Image failed to load</p>
+                                              <p class="text-xs opacity-70">URL: ${src?.substring(0, 50)}...</p>
+                                            </div>
+                                          `;
+                                          e.currentTarget.parentNode.appendChild(fallback);
+                                        }
+                                      }}
+                                    />
+                                  </div>
                                 );
                               },
-                              p: ({ children }) => <div>{children}</div> // Use div instead of null to ensure rendering
+                              p: ({ children }) => <div>{children}</div>
                             }}
                           >
                             {imageLines[0]}
