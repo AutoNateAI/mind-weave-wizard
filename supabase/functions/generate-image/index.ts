@@ -1,7 +1,10 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,7 +18,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, size = '1024x1024', quality = 'hd' } = await req.json();
+    const { prompt, size = '1024x1024', quality = 'high' } = await req.json();
 
     if (!prompt) {
       return new Response(
@@ -35,16 +38,16 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-image-1',
         prompt: prompt,
-        n: 1,
         size: size,
-        quality: quality
+        quality: quality, // Valid values: high, medium, low, auto
+        output_format: 'png'
       }),
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('OpenAI API error:', error);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      const errorData = await response.json();
+      console.error('OpenAI API error:', JSON.stringify(errorData, null, 2));
+      throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
     }
 
     const data = await response.json();
@@ -52,14 +55,60 @@ serve(async (req) => {
 
     // gpt-image-1 returns base64 encoded images
     const base64Image = data.data[0].b64_json;
-    const imageUrl = `data:image/png;base64,${base64Image}`;
+    
+    // Convert base64 to Uint8Array for upload
+    const imageBuffer = Uint8Array.from(atob(base64Image), c => c.charCodeAt(0));
+    
+    // Create Supabase client
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Generate unique filename
+    const filename = `slide-image-${Date.now()}-${Math.random().toString(36).substring(7)}.png`;
+    
+    console.log('Uploading image to storage:', filename);
+    
+    // Upload to Supabase storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('generated-images')
+      .upload(filename, imageBuffer, {
+        contentType: 'image/png',
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('Storage upload error:', uploadError);
+      // Fallback to base64 if storage fails
+      console.log('Falling back to base64 response');
+      return new Response(
+        JSON.stringify({ 
+          imageUrl: `data:image/png;base64,${base64Image}`,
+          prompt: prompt,
+          size: size,
+          quality: quality,
+          storageError: uploadError.message
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        }
+      );
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('generated-images')
+      .getPublicUrl(filename);
+
+    console.log('Image uploaded successfully:', publicUrl);
 
     return new Response(
       JSON.stringify({ 
-        imageUrl: imageUrl,
+        imageUrl: publicUrl,
+        filename: filename,
         prompt: prompt,
         size: size,
-        quality: quality
+        quality: quality,
+        stored: true
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
