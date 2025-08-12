@@ -28,13 +28,18 @@ export function SlidePreview({ slide }: SlidePreviewProps) {
     }
   };
 
-  const getSlideBackground = (slideType: string | null) => {
+  const getSlideStyle = (slideType: string | null) => {
     switch (slideType) {
-      case 'title': return 'bg-gradient-to-br from-primary/10 to-primary/5';
-      case 'image': return 'bg-gradient-to-br from-blue-50 to-blue-25 dark:from-blue-950/50 dark:to-blue-900/25';
-      case 'chart': return 'bg-gradient-to-br from-green-50 to-green-25 dark:from-green-950/50 dark:to-green-900/25';
-      case 'team': return 'bg-gradient-to-br from-purple-50 to-purple-25 dark:from-purple-950/50 dark:to-purple-900/25';
-      default: return 'bg-background';
+      case 'title':
+        return 'bg-gradient-to-br from-primary/20 to-primary/5 border-primary/20';
+      case 'image':
+        return 'bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-blue-500/20';
+      case 'chart':
+        return 'bg-gradient-to-br from-green-500/20 to-green-500/5 border-green-500/20';
+      case 'team':
+        return 'bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-purple-500/20';
+      default:
+        return 'glass border-border/20';
     }
   };
 
@@ -53,7 +58,7 @@ export function SlidePreview({ slide }: SlidePreviewProps) {
   };
 
   return (
-    <Card className={`glass p-8 min-h-[500px] border-2`}>
+    <Card className={`p-8 min-h-[500px] transition-all duration-300 ${getSlideStyle(slide.slide_type)}`}>
       <div className="space-y-6">
         {/* Slide Header */}
         <div className="flex items-center justify-between">
