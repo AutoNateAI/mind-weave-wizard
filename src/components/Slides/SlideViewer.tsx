@@ -186,7 +186,7 @@ export function SlideViewer({ sessionNumber, lectureNumber }: SlideViewerProps) 
 
       {/* Main Slide Display */}
       <Card className={cn(
-        "p-8 transition-all duration-300",
+        "p-8 min-h-fit lg:min-h-[85vh] transition-all duration-300",
         getSlideStyle(slide?.slide_type),
         isPresenting && "min-h-[85vh] md:min-h-[90vh]"
       )}>
