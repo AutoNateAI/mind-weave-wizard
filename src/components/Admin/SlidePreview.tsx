@@ -87,79 +87,77 @@ export function SlidePreview({ slide }: SlidePreviewProps) {
         {/* Content */}
         {slide.content && (
           <div className="flex-1">
-            {slide.slide_type === 'image' ? (
-              <div className="space-y-4">
-                {slide.content.includes('![') ? (
-                  (() => {
-                    const lines = slide.content.split('\n');
-                    const imageLines = lines.filter(line => line.includes('!['));
-                    const textLines = lines.filter(line => !line.includes('![') && line.trim());
-                    
-                    if (imageLines.length > 0 && textLines.length > 0) {
-                      // Side-by-side layout
-                      return (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                          <div className="space-y-3">
-                            <div className="prose prose-lg dark:prose-invert max-w-none">
-                              <ReactMarkdown
-                                components={{
-                                  ul: ({ children }) => (
-                                    <ul className="space-y-2 text-lg list-disc pl-6">
-                                      {children}
-                                    </ul>
-                                  ),
-                                  li: ({ children }) => (
-                                    <li className="leading-relaxed">{children}</li>
-                                  ),
-                                  p: ({ children }) => (
-                                    <p className="text-lg leading-relaxed mb-4">{children}</p>
-                                  )
-                                }}
-                              >
-                                {formatContent(textLines.join('\n'))}
-                              </ReactMarkdown>
-                            </div>
-                          </div>
-                          <div className="flex justify-center">
-                            <ReactMarkdown
-                              components={{
-                                img: ({ src, alt }) => (
-                                  <img 
-                                    src={src} 
-                                    alt={alt || 'Slide image'} 
-                                    className="w-full h-auto rounded-lg shadow-lg border max-h-96 object-contain"
-                                  />
-                                )
-                              }}
-                            >
-                              {imageLines[0]}
-                            </ReactMarkdown>
-                          </div>
-                        </div>
-                      );
-                    } else {
-                      // Full width image
-                      return (
+            {(() => {
+              const lines = slide.content.split('\n');
+              const imageLines = lines.filter(line => line.includes('!['));
+              const textLines = lines.filter(line => !line.includes('![') && line.trim());
+              
+              if (imageLines.length > 0 && textLines.length > 0) {
+                // Side-by-side layout for image and text
+                return (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                    <div className="space-y-3">
+                      <div className="prose prose-lg dark:prose-invert max-w-none">
                         <ReactMarkdown
                           components={{
-                            img: ({ src, alt }) => (
-                              <div className="flex justify-center">
-                                <img 
-                                  src={src} 
-                                  alt={alt || 'Slide image'} 
-                                  className="max-w-full max-h-96 object-contain rounded-lg shadow-md"
-                                />
-                              </div>
+                            ul: ({ children }) => (
+                              <ul className="space-y-2 text-lg list-disc pl-6">
+                                {children}
+                              </ul>
                             ),
-                            p: ({ children }) => <p className="text-center text-lg">{children}</p>
+                            li: ({ children }) => (
+                              <li className="leading-relaxed">{children}</li>
+                            ),
+                            p: ({ children }) => (
+                              <p className="text-lg leading-relaxed mb-4">{children}</p>
+                            )
                           }}
                         >
-                          {slide.content}
+                          {formatContent(textLines.join('\n'))}
                         </ReactMarkdown>
-                      );
-                    }
-                  })()
-                ) : (
+                      </div>
+                    </div>
+                    <div className="flex justify-center">
+                      <ReactMarkdown
+                        components={{
+                          img: ({ src, alt }) => (
+                            <img 
+                              src={src} 
+                              alt={alt || 'Slide image'} 
+                              className="w-full h-auto rounded-lg shadow-lg border max-h-96 object-contain"
+                            />
+                          ),
+                          p: () => null // Hide paragraph wrapper for images
+                        }}
+                      >
+                        {imageLines[0]}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                );
+              } else if (imageLines.length > 0) {
+                // Only image
+                return (
+                  <ReactMarkdown
+                    components={{
+                      img: ({ src, alt }) => (
+                        <div className="flex justify-center">
+                          <img 
+                            src={src} 
+                            alt={alt || 'Slide image'} 
+                            className="max-w-full max-h-96 object-contain rounded-lg shadow-md"
+                          />
+                        </div>
+                      ),
+                      p: ({ children }) => <p className="text-center text-lg">{children}</p>
+                    }}
+                  >
+                    {slide.content}
+                  </ReactMarkdown>
+                );
+              } else if (slide.slide_type === 'image') {
+                // Image placeholder
+                return (
                   <div className="flex items-center justify-center h-48 bg-muted/50 rounded-lg border-2 border-dashed">
                     <div className="text-center text-muted-foreground">
                       <Image className="w-12 h-12 mx-auto mb-2" />
@@ -167,29 +165,32 @@ export function SlidePreview({ slide }: SlidePreviewProps) {
                       <p className="text-sm mt-2">{slide.content}</p>
                     </div>
                   </div>
-                )}
-              </div>
-            ) : (
-              <div className="prose prose-lg dark:prose-invert max-w-none">
-                <ReactMarkdown
-                  components={{
-                    ul: ({ children }) => (
-                      <ul className="space-y-2 text-lg list-disc pl-6">
-                        {children}
-                      </ul>
-                    ),
-                    li: ({ children }) => (
-                      <li className="leading-relaxed">{children}</li>
-                    ),
-                    p: ({ children }) => (
-                      <p className="text-lg leading-relaxed mb-4">{children}</p>
-                    )
-                  }}
-                >
-                  {formatContent(slide.content)}
-                </ReactMarkdown>
-              </div>
-            )}
+                );
+              } else {
+                // Text only
+                return (
+                  <div className="prose prose-lg dark:prose-invert max-w-none">
+                    <ReactMarkdown
+                      components={{
+                        ul: ({ children }) => (
+                          <ul className="space-y-2 text-lg list-disc pl-6">
+                            {children}
+                          </ul>
+                        ),
+                        li: ({ children }) => (
+                          <li className="leading-relaxed">{children}</li>
+                        ),
+                        p: ({ children }) => (
+                          <p className="text-lg leading-relaxed mb-4">{children}</p>
+                        )
+                      }}
+                    >
+                      {formatContent(slide.content)}
+                    </ReactMarkdown>
+                  </div>
+                );
+              }
+            })()}
           </div>
         )}
 
