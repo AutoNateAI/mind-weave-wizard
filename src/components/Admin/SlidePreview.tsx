@@ -128,20 +128,30 @@ export function SlidePreview({ slide }: SlidePreviewProps) {
                     </div>
                     <div className="flex justify-center">
                       {imageLines.length > 0 ? (
-                        <ReactMarkdown
-                          components={{
-                            img: ({ src, alt }) => (
-                              <img 
-                                src={src} 
-                                alt={alt || 'Slide image'} 
-                                className="w-full h-auto rounded-lg shadow-lg border max-h-96 object-contain"
-                              />
-                            ),
-                            p: () => null // Hide paragraph wrapper for images
-                          }}
-                        >
-                          {imageLines[0]}
-                        </ReactMarkdown>
+                        <div className="w-full">
+                          <ReactMarkdown
+                            components={{
+                              img: ({ src, alt }) => {
+                                console.log('Rendering image:', src);
+                                return (
+                                  <img 
+                                    src={src} 
+                                    alt={alt || 'Slide image'} 
+                                    className="w-full h-auto rounded-lg shadow-lg border max-h-96 object-contain"
+                                    onLoad={() => console.log('Image loaded successfully:', src)}
+                                    onError={(e) => {
+                                      console.error('Image failed to load:', src);
+                                      console.error('Error details:', e);
+                                    }}
+                                  />
+                                );
+                              },
+                              p: ({ children }) => <div>{children}</div> // Use div instead of null to ensure rendering
+                            }}
+                          >
+                            {imageLines[0]}
+                          </ReactMarkdown>
+                        </div>
                       ) : (
                         <div className="flex items-center justify-center h-48 bg-muted/50 rounded-lg border-2 border-dashed w-full">
                           <div className="text-center text-muted-foreground">
