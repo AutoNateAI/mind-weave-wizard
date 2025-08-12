@@ -74,28 +74,21 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
 
   const loadLectures = async () => {
     try {
-      const { data: sessions } = await supabase
-        .from('sessions_dynamic')
-        .select('id, session_number')
-        .eq('course_id', selectedCourseId)
-        .order('session_number');
+      // Use a single query with joins to avoid sequential calls
+      const { data: lecturesData } = await supabase
+        .from('lectures_dynamic')
+        .select(`
+          *,
+          sessions_dynamic!inner(session_number)
+        `)
+        .eq('sessions_dynamic.course_id', selectedCourseId)
+        .order('sessions_dynamic.session_number, lecture_number');
 
-      if (sessions) {
-        const allLectures: Lecture[] = [];
-        for (const session of sessions) {
-          const { data: sessionLectures } = await supabase
-            .from('lectures_dynamic')
-            .select('*')
-            .eq('session_id', session.id)
-            .order('lecture_number');
-
-          if (sessionLectures) {
-            allLectures.push(...sessionLectures.map(lecture => ({
-              ...lecture,
-              session_number: session.session_number
-            })));
-          }
-        }
+      if (lecturesData) {
+        const allLectures: Lecture[] = lecturesData.map(lecture => ({
+          ...lecture,
+          session_number: lecture.sessions_dynamic.session_number
+        }));
         setLectures(allLectures);
       }
     } catch (error) {
@@ -295,9 +288,13 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
     setImagePrompt('');
     toast.success('Image generation started...');
 
-    // Run generation in background
+    // Run generation in background with timeout
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Image generation timed out after 2 minutes')), 120000)
+    );
+
     try {
-      const response = await supabase.functions.invoke('generate-image', {
+      const generationPromise = supabase.functions.invoke('generate-image', {
         body: {
           prompt: contextPrompt,
           size: imageDimensions,
@@ -305,25 +302,29 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
         }
       });
 
+      const response = await Promise.race([generationPromise, timeoutPromise]);
+
       if (response.error) throw response.error;
       
       if (response.data?.imageUrl) {
-        // Update the slide content with the generated image URL
-        const updatedContent = slideContent + 
-          (slideContent ? '\n\n' : '') + 
-          `![Generated Image](${response.data.imageUrl})`;
+        // Update the slide content with the generated image URL at the top
+        const updatedContent = `![Generated Image](${response.data.imageUrl})\n\n${slideContent}`;
         
         await supabase
           .from('lecture_slides')
           .update({ content: updatedContent })
           .eq('id', slideId);
         
-        toast.success(`Image generated for slide: ${slideTitle}`);
+        toast.success(`Image generated and added to slide: ${slideTitle}`);
         loadSlides();
       }
     } catch (error) {
       console.error('Error generating image:', error);
-      toast.error(`Failed to generate image for slide: ${slideTitle}`);
+      if (error.message.includes('timed out')) {
+        toast.error(`Image generation timed out for slide: ${slideTitle}. Please try again.`);
+      } else {
+        toast.error(`Failed to generate image for slide: ${slideTitle}`);
+      }
     } finally {
       // Remove from generating set
       setGeneratingImageSlides(prev => {
