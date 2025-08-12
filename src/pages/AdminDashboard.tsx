@@ -22,6 +22,7 @@ import { CourseStructureView } from "@/components/Admin/CourseStructureView";
 import { ChatHistoryView } from "@/components/Admin/ChatHistoryView";
 import { GameBuilderView } from "@/components/Admin/GameBuilderView";
 import { SlideManagement } from "@/components/Admin/SlideManagement";
+import { CoursePublishing } from "@/components/Admin/CoursePublishing";
 import { PageMeta } from "@/components/UI/PageMeta";
 import { useAdminViewSwitch } from "@/hooks/useAdminViewSwitch";
 import { Navigate } from "react-router-dom";
@@ -200,9 +201,16 @@ export default function AdminDashboard() {
                 </Card>
               </div>
 
+              {/* Course Publishing Section */}
+              {courses.length > 0 && (
+                <Card className="p-6">
+                  <CoursePublishing courses={courses} onCoursesUpdate={loadCourses} />
+                </Card>
+              )}
+
               <Card className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Recent Courses</h3>
+                  <h3 className="text-lg font-semibold">All Courses</h3>
                   <Button onClick={() => setActiveTab('planning')} className="gap-2">
                     <Plus className="w-4 h-4" />
                     Create Course
@@ -224,7 +232,15 @@ export default function AdminDashboard() {
                             }}>
                         <div className="flex items-center justify-between">
                           <div>
-                            <h4 className="font-medium">{course.title}</h4>
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-medium">{course.title}</h4>
+                              {course.is_published && (
+                                <Badge variant="default" className="gap-1 text-xs">
+                                  <FileText className="w-3 h-3" />
+                                  Live
+                                </Badge>
+                              )}
+                            </div>
                             <p className="text-sm text-muted-foreground">{course.description}</p>
                             <div className="flex items-center gap-2 mt-2">
                               <Button

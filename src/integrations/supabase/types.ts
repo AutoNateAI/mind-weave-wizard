@@ -58,7 +58,9 @@ export type Database = {
           created_by: string | null
           description: string | null
           id: string
+          is_published: boolean | null
           overview: string | null
+          published_at: string | null
           status: string | null
           title: string
           total_sessions: number | null
@@ -69,7 +71,9 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          is_published?: boolean | null
           overview?: string | null
+          published_at?: string | null
           status?: string | null
           title: string
           total_sessions?: number | null
@@ -80,7 +84,9 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          is_published?: boolean | null
           overview?: string | null
+          published_at?: string | null
           status?: string | null
           title?: string
           total_sessions?: number | null
