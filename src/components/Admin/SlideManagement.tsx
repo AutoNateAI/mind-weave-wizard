@@ -301,7 +301,7 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
         body: {
           prompt: contextPrompt,
           size: imageDimensions,
-          quality: 'high'
+          quality: 'hd'
         }
       });
 
