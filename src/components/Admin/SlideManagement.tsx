@@ -74,21 +74,48 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
 
   const loadLectures = async () => {
     try {
-      // Use a single query with joins to avoid sequential calls
-      const { data: lecturesData } = await supabase
+      console.log('Loading lectures for course:', selectedCourseId);
+      
+      // First get sessions for this course
+      const { data: sessions } = await supabase
+        .from('sessions_dynamic')
+        .select('id, session_number')
+        .eq('course_id', selectedCourseId);
+
+      if (!sessions || sessions.length === 0) {
+        console.log('No sessions found for course:', selectedCourseId);
+        setLectures([]);
+        return;
+      }
+
+      console.log('Found sessions:', sessions);
+
+      // Then get lectures for these sessions
+      const sessionIds = sessions.map(s => s.id);
+      const { data: lecturesData, error } = await supabase
         .from('lectures_dynamic')
-        .select(`
-          *,
-          sessions_dynamic!inner(session_number, course_id)
-        `)
-        .eq('sessions_dynamic.course_id', selectedCourseId)
-        .order('sessions_dynamic.session_number, lecture_number');
+        .select('*')
+        .in('session_id', sessionIds)
+        .order('session_number, lecture_number');
+
+      if (error) {
+        console.error('Error fetching lectures:', error);
+        throw error;
+      }
+
+      console.log('Found lectures:', lecturesData);
 
       if (lecturesData) {
-        const allLectures: Lecture[] = lecturesData.map(lecture => ({
-          ...lecture,
-          session_number: lecture.sessions_dynamic.session_number
-        }));
+        // Map session numbers to lectures
+        const allLectures: Lecture[] = lecturesData.map(lecture => {
+          const session = sessions.find(s => s.id === lecture.session_id);
+          return {
+            ...lecture,
+            session_number: session?.session_number || 0
+          };
+        });
+        
+        console.log('Processed lectures:', allLectures);
         setLectures(allLectures);
       }
     } catch (error) {
