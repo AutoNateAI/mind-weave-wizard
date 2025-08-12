@@ -89,11 +89,15 @@ export function SlidePreview({ slide }: SlidePreviewProps) {
           <div className="flex-1">
             {(() => {
               const lines = slide.content.split('\n');
-              const imageLines = lines.filter(line => line.includes('!['));
-              const textLines = lines.filter(line => !line.includes('![') && line.trim());
+              const imageLines = lines.filter(line => line.trim().includes('!['));
+              const textLines = lines.filter(line => !line.trim().includes('![') && line.trim());
               
-              if (imageLines.length > 0 && textLines.length > 0) {
-                // Side-by-side layout for image and text
+              console.log('Content:', slide.content);
+              console.log('Image lines:', imageLines);
+              console.log('Text lines:', textLines);
+              
+              // Always try side-by-side if we have content and it's an image slide type
+              if (slide.slide_type === 'image' || imageLines.length > 0) {
                 return (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                     <div className="space-y-3">
@@ -113,56 +117,35 @@ export function SlidePreview({ slide }: SlidePreviewProps) {
                             )
                           }}
                         >
-                          {formatContent(textLines.join('\n'))}
+                          {textLines.length > 0 ? formatContent(textLines.join('\n')) : formatContent(slide.content)}
                         </ReactMarkdown>
                       </div>
                     </div>
                     <div className="flex justify-center">
-                      <ReactMarkdown
-                        components={{
-                          img: ({ src, alt }) => (
-                            <img 
-                              src={src} 
-                              alt={alt || 'Slide image'} 
-                              className="w-full h-auto rounded-lg shadow-lg border max-h-96 object-contain"
-                            />
-                          ),
-                          p: () => null // Hide paragraph wrapper for images
-                        }}
-                      >
-                        {imageLines[0]}
-                      </ReactMarkdown>
-                    </div>
-                  </div>
-                );
-              } else if (imageLines.length > 0) {
-                // Only image
-                return (
-                  <ReactMarkdown
-                    components={{
-                      img: ({ src, alt }) => (
-                        <div className="flex justify-center">
-                          <img 
-                            src={src} 
-                            alt={alt || 'Slide image'} 
-                            className="max-w-full max-h-96 object-contain rounded-lg shadow-md"
-                          />
+                      {imageLines.length > 0 ? (
+                        <ReactMarkdown
+                          components={{
+                            img: ({ src, alt }) => (
+                              <img 
+                                src={src} 
+                                alt={alt || 'Slide image'} 
+                                className="w-full h-auto rounded-lg shadow-lg border max-h-96 object-contain"
+                              />
+                            ),
+                            p: () => null // Hide paragraph wrapper for images
+                          }}
+                        >
+                          {imageLines[0]}
+                        </ReactMarkdown>
+                      ) : (
+                        <div className="flex items-center justify-center h-48 bg-muted/50 rounded-lg border-2 border-dashed w-full">
+                          <div className="text-center text-muted-foreground">
+                            <Image className="w-12 h-12 mx-auto mb-2" />
+                            <p>Image placeholder</p>
+                            <p className="text-xs mt-1">Add image to content</p>
+                          </div>
                         </div>
-                      ),
-                      p: ({ children }) => <p className="text-center text-lg">{children}</p>
-                    }}
-                  >
-                    {slide.content}
-                  </ReactMarkdown>
-                );
-              } else if (slide.slide_type === 'image') {
-                // Image placeholder
-                return (
-                  <div className="flex items-center justify-center h-48 bg-muted/50 rounded-lg border-2 border-dashed">
-                    <div className="text-center text-muted-foreground">
-                      <Image className="w-12 h-12 mx-auto mb-2" />
-                      <p>Image placeholder</p>
-                      <p className="text-sm mt-2">{slide.content}</p>
+                      )}
                     </div>
                   </div>
                 );
