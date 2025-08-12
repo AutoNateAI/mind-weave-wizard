@@ -38,8 +38,9 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-image-1',
         prompt: prompt,
+        n: 1, // Explicitly set to 1
         size: size,
-        quality: quality, // Valid values: high, medium, low, auto
+        quality: quality,
         output_format: 'png'
       }),
     });
