@@ -33,6 +33,12 @@ interface Slide {
   svg_animation: string | null;
 }
 
+interface Session {
+  session_number: number;
+  title: string;
+  theme: string;
+}
+
 interface Lecture {
   id: string;
   title: string;
@@ -45,8 +51,10 @@ interface SlideManagementProps {
 }
 
 export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [lectures, setLectures] = useState<Lecture[]>([]);
-  const [selectedLecture, setSelectedLecture] = useState<string | null>(null);
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [selectedLecture, setSelectedLecture] = useState<Lecture | null>(null);
   const [slides, setSlides] = useState<Slide[]>([]);
   const [editingSlide, setEditingSlide] = useState<Slide | null>(null);
   const [previewingSlide, setPreviewingSlide] = useState<Slide | null>(null);
@@ -61,10 +69,14 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (selectedCourseId) {
-      loadLectures();
+    loadSessions();
+  }, []);
+
+  useEffect(() => {
+    if (selectedSession) {
+      loadLectures(selectedSession.session_number);
     }
-  }, [selectedCourseId]);
+  }, [selectedSession]);
 
   useEffect(() => {
     if (selectedLecture) {
@@ -72,7 +84,47 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
     }
   }, [selectedLecture]);
 
-  const loadLectures = async () => {
+  const loadSessions = async () => {
+    const { data, error } = await supabase
+      .from('sessions_dynamic')
+      .select('session_number, title, theme')
+      .order('session_number');
+
+    if (error) {
+      toast.error('Failed to load sessions');
+      return;
+    }
+
+    setSessions(data || []);
+    setLoading(false);
+  };
+
+  const loadLectures = async (sessionNumber: number) => {
+    const { data, error } = await supabase
+      .from('lectures_dynamic')
+      .select('*')
+      .eq('session_id', (await supabase
+        .from('sessions_dynamic')
+        .select('id')
+        .eq('session_number', sessionNumber)
+        .single()).data?.id)
+      .order('order_index');
+
+    if (error) {
+      toast.error('Failed to load lectures');
+      return;
+    }
+
+    // Map to include session_number for consistency
+    const lecturesWithSession = data?.map(lecture => ({
+      ...lecture,
+      session_number: sessionNumber
+    })) || [];
+
+    setLectures(lecturesWithSession);
+  };
+
+  const loadLecturesOld = async () => {
     try {
       console.log('Loading lectures for course:', selectedCourseId);
       
@@ -121,8 +173,6 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
     } catch (error) {
       console.error('Error loading lectures:', error);
       toast.error('Failed to load lectures');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -131,7 +181,7 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
       const { data: slidesData } = await supabase
         .from('lecture_slides')
         .select('*')
-        .eq('lecture_id', selectedLecture)
+        .eq('lecture_id', selectedLecture?.id)
         .order('slide_number');
 
       setSlides(slidesData || []);
@@ -232,7 +282,7 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
 
     try {
       const slideData = {
-        lecture_id: selectedLecture,
+        lecture_id: selectedLecture.id,
         slide_number: editingSlide.slide_number,
         title: editingSlide.title,
         content: editingSlide.content,
@@ -382,22 +432,56 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
 
   return (
     <div className="space-y-6">
-      {/* Lecture Selection */}
-      <Card className="p-4">
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Select Lecture</h3>
-          <Select value={selectedLecture || ''} onValueChange={setSelectedLecture}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choose a lecture to manage slides" />
-            </SelectTrigger>
-            <SelectContent>
-              {lectures.map((lecture) => (
-                <SelectItem key={lecture.id} value={lecture.id}>
-                  Session {lecture.session_number}, Lecture {lecture.lecture_number}: {lecture.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {/* Selection Controls */}
+      <Card className="p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium mb-2 block">Session</label>
+            <Select value={selectedSession?.session_number.toString()} onValueChange={(value) => {
+              const session = sessions.find(s => s.session_number === parseInt(value));
+              setSelectedSession(session || null);
+              setSelectedLecture(null);
+            }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select session" />
+              </SelectTrigger>
+              <SelectContent>
+                {sessions.map((session) => (
+                  <SelectItem key={session.session_number} value={session.session_number.toString()}>
+                    Session {session.session_number}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedSession && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {selectedSession.theme}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="text-sm font-medium mb-2 block">Lecture</label>
+            <Select 
+              value={selectedLecture?.id} 
+              onValueChange={(value) => {
+                const lecture = lectures.find(l => l.id === value);
+                setSelectedLecture(lecture || null);
+              }}
+              disabled={!selectedSession}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select lecture" />
+              </SelectTrigger>
+              <SelectContent>
+                {lectures.map((lecture) => (
+                  <SelectItem key={lecture.id} value={lecture.id}>
+                    Lecture {lecture.lecture_number}: {lecture.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </Card>
 
