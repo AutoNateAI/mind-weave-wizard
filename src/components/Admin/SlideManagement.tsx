@@ -302,11 +302,11 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
         }
       });
 
-      const response = await Promise.race([generationPromise, timeoutPromise]);
+      const response = await Promise.race([generationPromise, timeoutPromise]) as any;
 
-      if (response.error) throw response.error;
+      if (response?.error) throw response.error;
       
-      if (response.data?.imageUrl) {
+      if (response?.data?.imageUrl) {
         // Update the slide content with the generated image URL at the top
         const updatedContent = `![Generated Image](${response.data.imageUrl})\n\n${slideContent}`;
         

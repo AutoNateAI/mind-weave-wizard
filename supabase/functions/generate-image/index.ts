@@ -26,10 +26,6 @@ serve(async (req) => {
 
     console.log('Generating image with OpenAI:', { prompt, size, quality });
 
-    // Add timeout to OpenAI request (2 minutes)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120000);
-
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -43,10 +39,7 @@ serve(async (req) => {
         size: size,
         quality: quality
       }),
-      signal: controller.signal
     });
-
-    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const error = await response.text();
