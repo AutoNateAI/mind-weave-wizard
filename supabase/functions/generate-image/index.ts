@@ -37,8 +37,7 @@ serve(async (req) => {
         prompt: prompt,
         n: 1,
         size: size,
-        quality: quality,
-        response_format: 'url'
+        quality: quality
       }),
     });
 
@@ -51,9 +50,13 @@ serve(async (req) => {
     const data = await response.json();
     console.log('Image generated successfully');
 
+    // gpt-image-1 returns base64 encoded images
+    const base64Image = data.data[0].b64_json;
+    const imageUrl = `data:image/png;base64,${base64Image}`;
+
     return new Response(
       JSON.stringify({ 
-        imageUrl: data.data[0].url,
+        imageUrl: imageUrl,
         prompt: prompt,
         size: size,
         quality: quality

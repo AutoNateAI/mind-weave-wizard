@@ -53,6 +53,7 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [imagePrompt, setImagePrompt] = useState('');
   const [imageDimensions, setImageDimensions] = useState('1024x1024');
+  const [imageStyle, setImageStyle] = useState('animated_charts');
   const [targetSlideForImage, setTargetSlideForImage] = useState<Slide | null>(null);
   const [aiPrompt, setAiPrompt] = useState('');
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
@@ -259,16 +260,35 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
   };
 
   const generateImageForSlide = async () => {
-    if (!imagePrompt.trim() || !targetSlideForImage) {
-      toast.error('Please enter an image prompt');
+    if (!targetSlideForImage) {
+      toast.error('No slide selected for image generation');
       return;
     }
 
     setIsGeneratingImage(true);
     try {
+      // Build context-aware prompt
+      let contextPrompt = "";
+      
+      if (imagePrompt.trim()) {
+        contextPrompt = imagePrompt;
+      } else {
+        // Generate prompt from slide content and style
+        const slideContent = targetSlideForImage.title + (targetSlideForImage.content ? ": " + targetSlideForImage.content : "");
+        const styleDescriptions = {
+          animated_charts: "animated style chart or graph with nodes and connections",
+          animated_concept: "animated style conceptual illustration with visual metaphors",
+          complex_overlay: "complex animated scenario overlayed on a beautiful, vibrant background",
+          minimalist_diagram: "clean, minimalist animated diagram with clear visual hierarchy",
+          artistic_abstract: "artistic animated abstract representation with flowing elements"
+        };
+        
+        contextPrompt = `Create a ${styleDescriptions[imageStyle]} for this slide content: ${slideContent}. Make it visually engaging and educational. Ultra high resolution.`;
+      }
+
       const response = await supabase.functions.invoke('generate-image', {
         body: {
-          prompt: imagePrompt,
+          prompt: contextPrompt,
           size: imageDimensions,
           quality: 'high'
         }
@@ -563,43 +583,63 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
                   Generate Image for Slide: {targetSlideForImage?.title || 'Untitled'}
                 </DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Image Prompt</label>
-                  <Textarea
-                    value={imagePrompt}
-                    onChange={(e) => setImagePrompt(e.target.value)}
-                    placeholder="Describe the image you want to generate for this slide..."
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Dimensions</label>
-                  <Select value={imageDimensions} onValueChange={setImageDimensions}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1024x1024">1024x1024 (Square)</SelectItem>
-                      <SelectItem value="1792x1024">1792x1024 (Landscape)</SelectItem>
-                      <SelectItem value="1024x1792">1024x1792 (Portrait)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button 
-                  onClick={generateImageForSlide} 
-                  disabled={isGeneratingImage}
-                  className="w-full gap-2"
-                >
-                  {isGeneratingImage ? (
-                    <>Generating...</>
-                  ) : (
-                    <>
-                      <Wand2 className="w-4 h-4" />
-                      Generate Image
-                    </>
-                  )}
-                </Button>
+               <div className="space-y-4">
+                 <div>
+                   <label className="text-sm font-medium">Image Style</label>
+                   <Select value={imageStyle} onValueChange={setImageStyle}>
+                     <SelectTrigger className="mt-1">
+                       <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent>
+                       <SelectItem value="animated_charts">Animated Charts & Graphs</SelectItem>
+                       <SelectItem value="animated_concept">Animated Conceptual</SelectItem>
+                       <SelectItem value="complex_overlay">Complex Overlay Scene</SelectItem>
+                       <SelectItem value="minimalist_diagram">Minimalist Diagram</SelectItem>
+                       <SelectItem value="artistic_abstract">Artistic Abstract</SelectItem>
+                     </SelectContent>
+                   </Select>
+                 </div>
+
+                 <div>
+                   <label className="text-sm font-medium">Custom Prompt (Optional)</label>
+                   <Textarea
+                     value={imagePrompt}
+                     onChange={(e) => setImagePrompt(e.target.value)}
+                     placeholder="Leave empty to auto-generate from slide content, or describe custom image..."
+                     className="mt-1 min-h-20"
+                   />
+                   <p className="text-xs text-muted-foreground mt-1">
+                     AI will use slide content and selected style if no custom prompt provided
+                   </p>
+                 </div>
+                 
+                 <div>
+                   <label className="text-sm font-medium">Dimensions</label>
+                   <Select value={imageDimensions} onValueChange={setImageDimensions}>
+                     <SelectTrigger className="mt-1">
+                       <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent>
+                       <SelectItem value="1024x1024">1024x1024 (Square)</SelectItem>
+                       <SelectItem value="1536x1024">1536x1024 (Landscape)</SelectItem>
+                       <SelectItem value="1024x1536">1024x1536 (Portrait)</SelectItem>
+                     </SelectContent>
+                   </Select>
+                 </div>
+                 <Button 
+                   onClick={generateImageForSlide} 
+                   disabled={isGeneratingImage}
+                   className="w-full gap-2"
+                 >
+                   {isGeneratingImage ? (
+                     <>Generating...</>
+                   ) : (
+                     <>
+                       <Wand2 className="w-4 h-4" />
+                       Generate Image
+                     </>
+                   )}
+                 </Button>
               </div>
             </DialogContent>
           </Dialog>
