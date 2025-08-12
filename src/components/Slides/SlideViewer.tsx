@@ -186,9 +186,9 @@ export function SlideViewer({ sessionNumber, lectureNumber }: SlideViewerProps) 
 
       {/* Main Slide Display */}
       <Card className={cn(
-        "p-8 min-h-[600px] md:min-h-[700px] lg:min-h-[900px] transition-all duration-300",
+        "p-8 min-h-[700px] md:min-h-[800px] lg:min-h-[1000px] transition-all duration-300",
         getSlideStyle(slide?.slide_type),
-        isPresenting && "min-h-[80vh] md:min-h-[85vh]"
+        isPresenting && "min-h-[85vh] md:min-h-[90vh]"
       )}>
         <div className="space-y-6">
           {/* Slide Title */}
