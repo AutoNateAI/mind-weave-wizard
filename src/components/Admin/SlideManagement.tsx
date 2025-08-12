@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { SlidePreview } from "./SlidePreview";
 import { 
   Plus, 
   Edit, 
@@ -48,9 +49,13 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
   const [selectedLecture, setSelectedLecture] = useState<string | null>(null);
   const [slides, setSlides] = useState<Slide[]>([]);
   const [editingSlide, setEditingSlide] = useState<Slide | null>(null);
+  const [previewingSlide, setPreviewingSlide] = useState<Slide | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [imagePrompt, setImagePrompt] = useState('');
   const [imageDimensions, setImageDimensions] = useState('1024x1024');
+  const [targetSlideForImage, setTargetSlideForImage] = useState<Slide | null>(null);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -127,6 +132,79 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
     setEditingSlide(newSlide);
   };
 
+  const generateContentWithAI = async () => {
+    if (!aiPrompt.trim()) {
+      toast.error('Please enter a content prompt');
+      return;
+    }
+
+    setIsGeneratingContent(true);
+    try {
+      const response = await supabase.functions.invoke('ai-course-generator', {
+        body: {
+          prompt: `Create slide content for: ${aiPrompt}. 
+          Respond with a JSON object containing:
+          {
+            "title": "slide title",
+            "content": "bullet points separated by newlines using • format",
+            "speaker_notes": "detailed speaker notes"
+          }`,
+          type: 'slide-content'
+        }
+      });
+
+      if (response.error) throw response.error;
+      
+      const generatedContent = response.data;
+      if (editingSlide && generatedContent) {
+        setEditingSlide({
+          ...editingSlide,
+          title: generatedContent.title || editingSlide.title,
+          content: generatedContent.content || editingSlide.content,
+          speaker_notes: generatedContent.speaker_notes || editingSlide.speaker_notes
+        });
+        toast.success('Content generated successfully!');
+      }
+      setAiPrompt('');
+    } catch (error) {
+      console.error('Error generating content:', error);
+      toast.error('Failed to generate content');
+    } finally {
+      setIsGeneratingContent(false);
+    }
+  };
+
+  const reorderSlides = async (newSlideNumber: number, currentSlide: Slide) => {
+    const updatedSlides = [...slides];
+    const oldNumber = currentSlide.slide_number;
+    
+    // Reorder slides
+    updatedSlides.forEach(slide => {
+      if (slide.id === currentSlide.id) {
+        slide.slide_number = newSlideNumber;
+      } else if (newSlideNumber < oldNumber && slide.slide_number >= newSlideNumber && slide.slide_number < oldNumber) {
+        slide.slide_number += 1;
+      } else if (newSlideNumber > oldNumber && slide.slide_number <= newSlideNumber && slide.slide_number > oldNumber) {
+        slide.slide_number -= 1;
+      }
+    });
+
+    // Update all slides in database
+    try {
+      for (const slide of updatedSlides) {
+        await supabase
+          .from('lecture_slides')
+          .update({ slide_number: slide.slide_number })
+          .eq('id', slide.id);
+      }
+      loadSlides();
+      toast.success('Slide order updated');
+    } catch (error) {
+      console.error('Error reordering slides:', error);
+      toast.error('Failed to reorder slides');
+    }
+  };
+
   const saveSlide = async () => {
     if (!editingSlide || !selectedLecture) return;
 
@@ -180,8 +258,8 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
     }
   };
 
-  const generateImage = async () => {
-    if (!imagePrompt.trim()) {
+  const generateImageForSlide = async () => {
+    if (!imagePrompt.trim() || !targetSlideForImage) {
       toast.error('Please enter an image prompt');
       return;
     }
@@ -192,15 +270,31 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
         body: {
           prompt: imagePrompt,
           size: imageDimensions,
-          quality: 'hd'
+          quality: 'high'
         }
       });
 
       if (response.error) throw response.error;
       
-      // For now, just show success - in real implementation, this would save the image
-      toast.success('Image generated successfully! (Integration pending)');
+      if (response.data?.imageUrl) {
+        // Update the slide content with the generated image URL
+        const updatedContent = targetSlideForImage.content + 
+          (targetSlideForImage.content ? '\n\n' : '') + 
+          `![Generated Image](${response.data.imageUrl})`;
+        
+        await supabase
+          .from('lecture_slides')
+          .update({ content: updatedContent })
+          .eq('id', targetSlideForImage.id);
+        
+        toast.success('Image generated and added to slide!');
+        loadSlides();
+      } else {
+        toast.success('Image generated successfully!');
+      }
+      
       setImagePrompt('');
+      setTargetSlideForImage(null);
     } catch (error) {
       console.error('Error generating image:', error);
       toast.error('Failed to generate image');
@@ -254,57 +348,6 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">Slide Management</h3>
             <div className="flex gap-2">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="gap-2">
-                    <Wand2 className="w-4 h-4" />
-                    Generate Image
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Generate Image with AI</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium">Image Prompt</label>
-                      <Textarea
-                        value={imagePrompt}
-                        onChange={(e) => setImagePrompt(e.target.value)}
-                        placeholder="Describe the image you want to generate..."
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Dimensions</label>
-                      <Select value={imageDimensions} onValueChange={setImageDimensions}>
-                        <SelectTrigger className="mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1024x1024">1024x1024 (Square)</SelectItem>
-                          <SelectItem value="1792x1024">1792x1024 (Landscape)</SelectItem>
-                          <SelectItem value="1024x1792">1024x1792 (Portrait)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Button 
-                      onClick={generateImage} 
-                      disabled={isGeneratingImage}
-                      className="w-full gap-2"
-                    >
-                      {isGeneratingImage ? (
-                        <>Generating...</>
-                      ) : (
-                        <>
-                          <Wand2 className="w-4 h-4" />
-                          Generate Image
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
               <Button onClick={createNewSlide} className="gap-2">
                 <Plus className="w-4 h-4" />
                 Add Slide
@@ -325,7 +368,26 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
                       </Badge>
                       <span className="text-sm text-muted-foreground">#{slide.slide_number}</span>
                     </div>
-                    <div className="flex gap-1">
+                     <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setPreviewingSlide(slide)}
+                        title="Preview Slide"
+                      >
+                        <Eye className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setTargetSlideForImage(slide);
+                          setImagePrompt('');
+                        }}
+                        title="Generate Image for this slide"
+                      >
+                        <Image className="w-3 h-3" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -367,14 +429,22 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
                 <div className="space-y-4 max-h-[70vh] overflow-y-auto">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium">Slide Number</label>
+                      <label className="text-sm font-medium">Slide Position</label>
                       <Input
                         type="number"
+                        min="1"
+                        max={slides.length + 1}
                         value={editingSlide.slide_number}
-                        onChange={(e) => setEditingSlide({
-                          ...editingSlide,
-                          slide_number: parseInt(e.target.value) || 1
-                        })}
+                        onChange={(e) => {
+                          const newNumber = parseInt(e.target.value) || 1;
+                          setEditingSlide({
+                            ...editingSlide,
+                            slide_number: newNumber
+                          });
+                          if (editingSlide.id !== 'new') {
+                            reorderSlides(newNumber, editingSlide);
+                          }
+                        }}
                         className="mt-1"
                       />
                     </div>
@@ -398,6 +468,37 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
                           <SelectItem value="team">Team Slide</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                  </div>
+
+                  {/* AI Content Generation */}
+                  <div className="border rounded-lg p-4 bg-muted/50">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Wand2 className="w-4 h-4" />
+                      <span className="font-medium">AI Content Generation</span>
+                    </div>
+                    <div className="space-y-3">
+                      <Textarea
+                        value={aiPrompt}
+                        onChange={(e) => setAiPrompt(e.target.value)}
+                        placeholder="Describe what this slide should be about and AI will generate the content..."
+                        className="min-h-[60px]"
+                      />
+                      <Button 
+                        onClick={generateContentWithAI} 
+                        disabled={isGeneratingContent || !aiPrompt.trim()}
+                        size="sm"
+                        className="gap-2"
+                      >
+                        {isGeneratingContent ? (
+                          <>Generating...</>
+                        ) : (
+                          <>
+                            <Wand2 className="w-3 h-3" />
+                            Generate Content
+                          </>
+                        )}
+                      </Button>
                     </div>
                   </div>
 
@@ -449,6 +550,71 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
                       Save Slide
                     </Button>
                   </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          {/* Image Generation Dialog */}
+          <Dialog open={!!targetSlideForImage} onOpenChange={() => setTargetSlideForImage(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  Generate Image for Slide: {targetSlideForImage?.title || 'Untitled'}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Image Prompt</label>
+                  <Textarea
+                    value={imagePrompt}
+                    onChange={(e) => setImagePrompt(e.target.value)}
+                    placeholder="Describe the image you want to generate for this slide..."
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Dimensions</label>
+                  <Select value={imageDimensions} onValueChange={setImageDimensions}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1024x1024">1024x1024 (Square)</SelectItem>
+                      <SelectItem value="1792x1024">1792x1024 (Landscape)</SelectItem>
+                      <SelectItem value="1024x1792">1024x1792 (Portrait)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button 
+                  onClick={generateImageForSlide} 
+                  disabled={isGeneratingImage}
+                  className="w-full gap-2"
+                >
+                  {isGeneratingImage ? (
+                    <>Generating...</>
+                  ) : (
+                    <>
+                      <Wand2 className="w-4 h-4" />
+                      Generate Image
+                    </>
+                  )}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Slide Preview Dialog */}
+          <Dialog open={!!previewingSlide} onOpenChange={() => setPreviewingSlide(null)}>
+            <DialogContent className="max-w-6xl max-h-[90vh]">
+              <DialogHeader>
+                <DialogTitle>
+                  Preview: {previewingSlide?.title || 'Untitled Slide'}
+                </DialogTitle>
+              </DialogHeader>
+              {previewingSlide && (
+                <div className="overflow-y-auto max-h-[70vh]">
+                  <SlidePreview slide={previewingSlide} />
                 </div>
               )}
             </DialogContent>
