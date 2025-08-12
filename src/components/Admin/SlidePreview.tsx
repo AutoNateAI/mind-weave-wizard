@@ -53,7 +53,7 @@ export function SlidePreview({ slide }: SlidePreviewProps) {
   };
 
   return (
-    <Card className={`p-8 min-h-[500px] ${getSlideBackground(slide.slide_type)} border-2`}>
+    <Card className={`glass p-8 min-h-[500px] border-2`}>
       <div className="space-y-6">
         {/* Slide Header */}
         <div className="flex items-center justify-between">
