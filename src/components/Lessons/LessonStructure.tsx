@@ -40,7 +40,7 @@ export function LessonStructure({
         </TabsList>
 
         <TabsContent value="slides" className="space-y-4">
-          <div className="glass rounded-lg p-3 sm:p-6 h-[calc(100vh-20rem)] sm:h-[calc(100vh-18rem)] lg:h-[calc(100vh-14rem)] overflow-y-auto">
+          <div className="glass rounded-lg p-3 sm:p-6">
             <SlideViewer
               sessionNumber={sessionNumber}
               lectureNumber={lectureNumber}
