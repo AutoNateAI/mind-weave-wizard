@@ -55,6 +55,7 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
   const [imageDimensions, setImageDimensions] = useState('1024x1024');
   const [imageStyle, setImageStyle] = useState('animated_charts');
   const [targetSlideForImage, setTargetSlideForImage] = useState<Slide | null>(null);
+  const [generatingImageSlides, setGeneratingImageSlides] = useState<Set<string>>(new Set());
   const [aiPrompt, setAiPrompt] = useState('');
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -265,27 +266,37 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
       return;
     }
 
-    setIsGeneratingImage(true);
-    try {
-      // Build context-aware prompt
-      let contextPrompt = "";
-      
-      if (imagePrompt.trim()) {
-        contextPrompt = imagePrompt;
-      } else {
-        // Generate prompt from slide content and style
-        const slideContent = targetSlideForImage.title + (targetSlideForImage.content ? ": " + targetSlideForImage.content : "");
-        const styleDescriptions = {
-          animated_charts: "animated style chart or graph with nodes and connections",
-          animated_concept: "animated style conceptual illustration with visual metaphors",
-          complex_overlay: "complex animated scenario overlayed on a beautiful, vibrant background",
-          minimalist_diagram: "clean, minimalist animated diagram with clear visual hierarchy",
-          artistic_abstract: "artistic animated abstract representation with flowing elements"
-        };
-        
-        contextPrompt = `Create a ${styleDescriptions[imageStyle]} for this slide content: ${slideContent}. Make it visually engaging and educational. Ultra high resolution.`;
-      }
+    const slideId = targetSlideForImage.id;
+    const slideTitle = targetSlideForImage.title;
+    const slideContent = targetSlideForImage.content;
 
+    // Build context-aware prompt
+    let contextPrompt = "";
+    
+    if (imagePrompt.trim()) {
+      contextPrompt = imagePrompt;
+    } else {
+      // Generate prompt from slide content and style
+      const slideContentText = slideTitle + (slideContent ? ": " + slideContent : "");
+      const styleDescriptions = {
+        animated_charts: "animated style chart or graph with nodes and connections",
+        animated_concept: "animated style conceptual illustration with visual metaphors",
+        complex_overlay: "complex animated scenario overlayed on a beautiful, vibrant background",
+        minimalist_diagram: "clean, minimalist animated diagram with clear visual hierarchy",
+        artistic_abstract: "artistic animated abstract representation with flowing elements"
+      };
+      
+      contextPrompt = `Create a ${styleDescriptions[imageStyle]} for this slide content: ${slideContentText}. Make it visually engaging and educational. Ultra high resolution.`;
+    }
+
+    // Add to generating set and close modal immediately
+    setGeneratingImageSlides(prev => new Set([...prev, slideId]));
+    setTargetSlideForImage(null);
+    setImagePrompt('');
+    toast.success('Image generation started...');
+
+    // Run generation in background
+    try {
       const response = await supabase.functions.invoke('generate-image', {
         body: {
           prompt: contextPrompt,
@@ -298,28 +309,28 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
       
       if (response.data?.imageUrl) {
         // Update the slide content with the generated image URL
-        const updatedContent = targetSlideForImage.content + 
-          (targetSlideForImage.content ? '\n\n' : '') + 
+        const updatedContent = slideContent + 
+          (slideContent ? '\n\n' : '') + 
           `![Generated Image](${response.data.imageUrl})`;
         
         await supabase
           .from('lecture_slides')
           .update({ content: updatedContent })
-          .eq('id', targetSlideForImage.id);
+          .eq('id', slideId);
         
-        toast.success('Image generated and added to slide!');
+        toast.success(`Image generated for slide: ${slideTitle}`);
         loadSlides();
-      } else {
-        toast.success('Image generated successfully!');
       }
-      
-      setImagePrompt('');
-      setTargetSlideForImage(null);
     } catch (error) {
       console.error('Error generating image:', error);
-      toast.error('Failed to generate image');
+      toast.error(`Failed to generate image for slide: ${slideTitle}`);
     } finally {
-      setIsGeneratingImage(false);
+      // Remove from generating set
+      setGeneratingImageSlides(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(slideId);
+        return newSet;
+      });
     }
   };
 
@@ -397,17 +408,22 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
                       >
                         <Eye className="w-3 h-3" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setTargetSlideForImage(slide);
-                          setImagePrompt('');
-                        }}
-                        title="Generate Image for this slide"
-                      >
-                        <Image className="w-3 h-3" />
-                      </Button>
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={() => {
+                           setTargetSlideForImage(slide);
+                           setImagePrompt('');
+                         }}
+                         title="Generate Image for this slide"
+                         disabled={generatingImageSlides.has(slide.id)}
+                       >
+                         {generatingImageSlides.has(slide.id) ? (
+                           <div className="w-3 h-3 animate-spin rounded-full border-2 border-primary border-r-transparent" />
+                         ) : (
+                           <Image className="w-3 h-3" />
+                         )}
+                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -628,17 +644,11 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
                  </div>
                  <Button 
                    onClick={generateImageForSlide} 
-                   disabled={isGeneratingImage}
+                   disabled={false}
                    className="w-full gap-2"
                  >
-                   {isGeneratingImage ? (
-                     <>Generating...</>
-                   ) : (
-                     <>
-                       <Wand2 className="w-4 h-4" />
-                       Generate Image
-                     </>
-                   )}
+                   <Wand2 className="w-4 h-4" />
+                   Generate Image
                  </Button>
               </div>
             </DialogContent>
