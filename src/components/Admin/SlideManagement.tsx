@@ -60,7 +60,7 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
   const [previewingSlide, setPreviewingSlide] = useState<Slide | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [imagePrompt, setImagePrompt] = useState('');
-  const [imageDimensions, setImageDimensions] = useState('1024x1024');
+  const [imageDimensions, setImageDimensions] = useState('1536x1024');
   const [imageStyle, setImageStyle] = useState('animated_charts');
   const [targetSlideForImage, setTargetSlideForImage] = useState<Slide | null>(null);
   const [generatingImageSlides, setGeneratingImageSlides] = useState<Set<string>>(new Set());
@@ -69,7 +69,7 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
   // New state for image regeneration in edit modal
   const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
   const [imageRegenerationPrompt, setImageRegenerationPrompt] = useState('');
-  const [imageSize, setImageSize] = useState('1024x1024');
+  const [imageSize, setImageSize] = useState('1536x1024');
   const [imageQuality, setImageQuality] = useState('high');
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -424,11 +424,15 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
       return;
     }
 
+    // Start loading immediately and clear prompt
     setIsRegeneratingImage(true);
+    const currentPrompt = imageRegenerationPrompt.trim();
+    setImageRegenerationPrompt(''); // Clear the prompt immediately
+    toast.success('Image generation started...');
 
     try {
       // Auto-generate prompt from slide content if none provided
-      let finalPrompt = imageRegenerationPrompt.trim();
+      let finalPrompt = currentPrompt;
       if (!finalPrompt && editingSlide.content) {
         // Extract text content and create a prompt
         const textContent = editingSlide.content
@@ -466,8 +470,18 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
           content: updatedContent
         });
         
+        // Also save to database if this is an existing slide
+        if (editingSlide.id !== 'new') {
+          await supabase
+            .from('lecture_slides')
+            .update({ content: updatedContent })
+            .eq('id', editingSlide.id);
+          
+          // Reload slides to reflect changes
+          loadSlides();
+        }
+        
         toast.success('Image regenerated successfully!');
-        setImageRegenerationPrompt(''); // Clear the prompt
       } else {
         toast.error('Failed to generate image. Please try again.');
       }
