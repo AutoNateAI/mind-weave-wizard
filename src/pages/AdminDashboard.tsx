@@ -290,15 +290,105 @@ export default function AdminDashboard() {
             </TabsContent>
 
             <TabsContent value="structure">
-              <CourseStructureView courseId={selectedCourse || undefined} />
+              <Card className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold">Course Structure</h2>
+                    <div className="w-72">
+                      <select
+                        value={selectedCourse || ''}
+                        onChange={(e) => setSelectedCourse(e.target.value || null)}
+                        className="w-full px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <option value="">Select a course...</option>
+                        {courses.map((course) => (
+                          <option key={course.id} value={course.id}>
+                            {course.title}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  {selectedCourse ? (
+                    <CourseStructureView courseId={selectedCourse} />
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                      <h3 className="text-lg font-medium mb-2">No Course Selected</h3>
+                      <p>Create a new course or select an existing one to view its structure.</p>
+                    </div>
+                  )}
+                </div>
+              </Card>
             </TabsContent>
 
             <TabsContent value="slides">
-              <SlideManagement selectedCourseId={selectedCourse || undefined} />
+              <Card className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold">Slide Management</h2>
+                    <div className="w-72">
+                      <select
+                        value={selectedCourse || ''}
+                        onChange={(e) => setSelectedCourse(e.target.value || null)}
+                        className="w-full px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <option value="">Select a course...</option>
+                        {courses.map((course) => (
+                          <option key={course.id} value={course.id}>
+                            {course.title}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  {selectedCourse ? (
+                    <SlideManagement selectedCourseId={selectedCourse} />
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                      <h3 className="text-lg font-medium mb-2">No Course Selected</h3>
+                      <p>Select a course to manage its slides and content.</p>
+                    </div>
+                  )}
+                </div>
+              </Card>
             </TabsContent>
 
             <TabsContent value="games">
-              <GameBuilderView />
+              <Card className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold">Game Management</h2>
+                    <div className="w-72">
+                      <select
+                        value={selectedCourse || ''}
+                        onChange={(e) => setSelectedCourse(e.target.value || null)}
+                        className="w-full px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <option value="">Select a course...</option>
+                        {courses.map((course) => (
+                          <option key={course.id} value={course.id}>
+                            {course.title}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  {selectedCourse ? (
+                    <GameBuilderView selectedCourseId={selectedCourse} />
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Gamepad2 className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                      <h3 className="text-lg font-medium mb-2">No Course Selected</h3>
+                      <p>Select a course to create and manage games for its sessions.</p>
+                    </div>
+                  )}
+                </div>
+              </Card>
             </TabsContent>
 
             <TabsContent value="users">

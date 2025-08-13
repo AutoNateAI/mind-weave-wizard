@@ -38,7 +38,11 @@ interface LectureGame {
   mechanics?: any;
 }
 
-export function GameBuilderView() {
+interface GameBuilderViewProps {
+  selectedCourseId?: string;
+}
+
+export function GameBuilderView({ selectedCourseId }: GameBuilderViewProps) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [lectures, setLectures] = useState<Lecture[]>([]);
   const [games, setGames] = useState<LectureGame[]>([]);
@@ -48,8 +52,14 @@ export function GameBuilderView() {
   const [previewGame, setPreviewGame] = useState<LectureGame | null>(null);
 
   useEffect(() => {
-    loadSessions();
-  }, []);
+    if (selectedCourseId) {
+      loadSessions();
+      // Reset selected session and lecture when course changes
+      setSelectedSession(null);
+      setSelectedLecture(null);
+      setGames([]);
+    }
+  }, [selectedCourseId]);
 
   useEffect(() => {
     if (selectedSession) {
@@ -64,9 +74,15 @@ export function GameBuilderView() {
   }, [selectedLecture]);
 
   const loadSessions = async () => {
+    if (!selectedCourseId) {
+      setSessions([]);
+      return;
+    }
+
     const { data, error } = await supabase
       .from('sessions_dynamic')
       .select('session_number, title, theme')
+      .eq('course_id', selectedCourseId)
       .order('session_number');
 
     if (error) {
