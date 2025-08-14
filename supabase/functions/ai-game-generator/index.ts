@@ -124,15 +124,42 @@ Return ONLY a JSON object with keys matching the slot names and values being the
   // Replace placeholders in template data
   let gameData = JSON.parse(JSON.stringify(template.template_data));
   
-  // Replace placeholders in nodes
-  gameData.nodes = gameData.nodes.map((node: any) => {
+  // Replace placeholders in nodes and add interactive properties
+  gameData.nodes = gameData.nodes.map((node: any, index: number) => {
     let label = node.data.label;
     Object.entries(generatedContent).forEach(([key, value]) => {
       label = label.replace(`{{${key}}}`, value as string);
     });
+    
+    // Determine node type based on position and content
+    let nodeType = 'information';
+    const isFirstNode = index === 0;
+    const hasDecisionWords = label.toLowerCase().includes('choose') || 
+                           label.toLowerCase().includes('decide') || 
+                           label.toLowerCase().includes('option');
+    const hasOutcomeWords = label.toLowerCase().includes('result') || 
+                          label.toLowerCase().includes('outcome') || 
+                          label.toLowerCase().includes('consequence');
+    
+    if (isFirstNode) {
+      nodeType = 'scenario';
+    } else if (hasDecisionWords) {
+      nodeType = 'decision';
+    } else if (hasOutcomeWords) {
+      nodeType = 'outcome';
+    }
+    
     return {
       ...node,
-      data: { ...node.data, label }
+      data: { 
+        ...node.data, 
+        label,
+        nodeType,
+        unlocked: isFirstNode, // Only first node starts unlocked
+        revealed: false,
+        points: nodeType === 'decision' ? 15 : nodeType === 'outcome' ? 25 : 5,
+        consequences: nodeType === 'decision' ? [`Choice made: ${label.substring(0, 50)}...`] : undefined
+      }
     };
   });
 

@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Lightbulb, Trophy, Target } from "lucide-react";
+import { Lightbulb, Trophy, Target, X, Info } from "lucide-react";
+import { handleDecisionNode, handleScenarioNode, handleOutcomeNode, checkGameCompletion, calculateDynamicScore } from "./GameLogic";
 import "@xyflow/react/dist/style.css";
 
 interface GameFlowCanvasProps {
@@ -13,6 +14,18 @@ interface GameFlowCanvasProps {
   mechanics: any;
   hints: any;
   onComplete?: (score: number, analytics: any) => void;
+}
+
+interface GameNode extends Node {
+  data: {
+    label: string;
+    nodeType?: 'scenario' | 'decision' | 'outcome' | 'information';
+    revealed?: boolean;
+    unlocked?: boolean;
+    consequences?: string[];
+    requiredNodes?: string[];
+    points?: number;
+  };
 }
 
 export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete }: GameFlowCanvasProps) {
@@ -25,10 +38,15 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
     hintsUsed: 0,
     startTime: Date.now(),
     decisionPath: [],
-    isCompleted: false
+    isCompleted: false,
+    revealedNodes: new Set<string>(),
+    selectedPath: [],
+    currentScenario: null as string | null,
+    score: 0
   });
   const [showHint, setShowHint] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true);
+  const [selectedNodeDetails, setSelectedNodeDetails] = useState<{ node: GameNode; position: { x: number; y: number } } | null>(null);
 
   const onConnect = useCallback((params: Connection | Edge) => {
     const newEdge = { ...params, id: `edge-${Date.now()}` };
@@ -43,19 +61,56 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
   }, [setEdges]);
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    const gameNode = node as GameNode;
+    
+    // Check if node is unlocked
+    const isUnlocked = gameNode.data.unlocked !== false && 
+      (!gameNode.data.requiredNodes || 
+       gameNode.data.requiredNodes.every(reqId => gameState.revealedNodes.has(reqId)));
+    
+    if (!isUnlocked) {
+      toast.error("This option is not yet available. Complete previous steps first.");
+      return;
+    }
+
     trackInteraction('node_click', {
       nodeId: node.id,
-      nodeType: node.type,
+      nodeType: gameNode.data.nodeType,
       position: node.position,
       timestamp: Date.now()
     });
 
+    // Show detailed information for the node
+    setSelectedNodeDetails({
+      node: gameNode,
+      position: { x: event.clientX, y: event.clientY }
+    });
+
+    // Handle different node types
+    const nodeType = gameNode.data.nodeType || 'information';
+    
+    if (nodeType === 'decision') {
+      handleDecisionNodeClick(gameNode);
+    } else if (nodeType === 'scenario') {
+      handleScenarioNodeClick(gameNode);
+    } else if (nodeType === 'outcome') {
+      handleOutcomeNodeClick(gameNode);
+    }
+
     setGameState(prev => ({
       ...prev,
       interactions: prev.interactions + 1,
-      decisionPath: [...prev.decisionPath, node.id]
+      decisionPath: [...prev.decisionPath, node.id],
+      revealedNodes: new Set([...prev.revealedNodes, node.id])
     }));
-  }, []);
+
+    // Update node visual state
+    setNodes(nds => nds.map(n => 
+      n.id === node.id 
+        ? { ...n, data: { ...n.data, revealed: true } }
+        : n
+    ));
+  }, [gameState.revealedNodes]);
 
   const trackInteraction = async (type: string, data: any) => {
     try {
@@ -131,22 +186,22 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
     }
   };
 
+  // Add the handler functions
+  const handleDecisionNodeClick = useCallback((node: GameNode) => {
+    handleDecisionNode(node, gameState, setGameState, setNodes, toast);
+  }, [gameState, setGameState, setNodes]);
+
+  const handleScenarioNodeClick = useCallback((node: GameNode) => {
+    handleScenarioNode(node, gameState, setGameState, toast);
+  }, [gameState, setGameState]);
+
+  const handleOutcomeNodeClick = useCallback((node: GameNode) => {
+    handleOutcomeNode(node, gameState, setGameState, toast);
+  }, [gameState, setGameState]);
+
   const calculateScore = () => {
-    // Basic scoring algorithm - can be enhanced based on game mechanics
-    let score = 100;
-    
-    // Deduct points for excessive hints
-    if (gameState.hintsUsed > 1) {
-      score -= (gameState.hintsUsed - 1) * 10;
-    }
-    
-    // Bonus for efficient completion
-    const timeSpent = (Date.now() - gameState.startTime) / 1000 / 60; // minutes
-    if (timeSpent < 5) {
-      score += 10;
-    }
-    
-    return Math.max(0, Math.min(100, score));
+    const timeSpent = (Date.now() - gameState.startTime) / 1000;
+    return calculateDynamicScore(gameState, timeSpent);
   };
 
   const resetGame = () => {
@@ -158,11 +213,23 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
       hintsUsed: 0,
       startTime: Date.now(),
       decisionPath: [],
-      isCompleted: false
+      isCompleted: false,
+      revealedNodes: new Set<string>(),
+      selectedPath: [],
+      currentScenario: null,
+      score: 0
     });
     setShowHint(false);
     setShowInstructions(true);
+    setSelectedNodeDetails(null);
   };
+
+  // Check for game completion
+  useEffect(() => {
+    if (checkGameCompletion(gameState, nodes.length) && !gameState.isCompleted) {
+      completeGame();
+    }
+  }, [gameState.revealedNodes, gameState.isCompleted, nodes.length]);
 
   const getGameInstructions = () => {
     const templateName = gameData?.templateName || "Interactive Game";
@@ -269,6 +336,10 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
             <span>Interactions: {gameState.interactions}</span>
           </div>
           <div className="flex items-center gap-1">
+            <Trophy className="w-4 h-4" />
+            <span>Score: {gameState.score}</span>
+          </div>
+          <div className="flex items-center gap-1">
             <Lightbulb className="w-4 h-4" />
             <span>Hints: {gameState.hintsUsed}/{Array.isArray(hints) ? hints.length : 0}</span>
           </div>
@@ -326,16 +397,68 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
             className={theme === 'dark' ? 'dark' : ''}
           />
         </ReactFlow>
+        {/* Node Details Modal */}
+        {selectedNodeDetails && (
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-20 flex items-center justify-center p-4">
+            <div className="bg-card border rounded-lg shadow-xl max-w-md w-full p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Info className="w-5 h-5 text-primary" />
+                  <h3 className="font-semibold">Node Details</h3>
+                </div>
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={() => setSelectedNodeDetails(null)}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <span className="text-sm font-medium text-muted-foreground">Type:</span>
+                  <p className="capitalize">{selectedNodeDetails.node.data.nodeType || 'Information'}</p>
+                </div>
+                
+                <div>
+                  <span className="text-sm font-medium text-muted-foreground">Content:</span>
+                  <p className="text-sm">{selectedNodeDetails.node.data.label}</p>
+                </div>
+                
+                {selectedNodeDetails.node.data.consequences && (
+                  <div>
+                    <span className="text-sm font-medium text-muted-foreground">Consequences:</span>
+                    <ul className="text-sm space-y-1">
+                      {selectedNodeDetails.node.data.consequences.map((consequence, idx) => (
+                        <li key={idx} className="text-muted-foreground">• {consequence}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {selectedNodeDetails.node.data.points && (
+                  <div>
+                    <span className="text-sm font-medium text-muted-foreground">Points:</span>
+                    <p className="text-sm">+{selectedNodeDetails.node.data.points}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Game Completed Overlay */}
         {gameState.isCompleted && (
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-10">
             <div className="text-center p-8 rounded-lg bg-card border shadow-lg">
               <Trophy className="w-16 h-16 mx-auto mb-4 text-yellow-500" />
               <h3 className="text-2xl font-bold mb-2">Game Completed!</h3>
-              <p className="text-lg mb-4">Score: {calculateScore()}%</p>
+              <p className="text-lg mb-4">Final Score: {calculateScore()}</p>
               <div className="text-sm text-muted-foreground space-y-1">
                 <p>Time: {Math.floor((Date.now() - gameState.startTime) / 1000 / 60)} minutes</p>
-                <p>Interactions: {gameState.interactions}</p>
+                <p>Nodes explored: {gameState.revealedNodes.size}/{nodes.length}</p>
                 <p>Hints used: {gameState.hintsUsed}</p>
               </div>
             </div>
