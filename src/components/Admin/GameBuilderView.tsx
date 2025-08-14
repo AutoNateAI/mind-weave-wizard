@@ -171,6 +171,27 @@ export function GameBuilderView({ selectedCourseId }: GameBuilderViewProps) {
     }
   };
 
+  const deleteGame = async (gameId: string, gameTitle: string) => {
+    if (!confirm(`Are you sure you want to delete "${gameTitle}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from('lecture_games')
+      .delete()
+      .eq('id', gameId);
+
+    if (error) {
+      toast.error('Failed to delete game');
+      return;
+    }
+
+    toast.success('Game deleted successfully');
+    if (selectedLecture) {
+      loadGames(selectedLecture.session_number, selectedLecture.lecture_number);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {!showBuilder && !showSuiteBuilder ? (
@@ -300,6 +321,13 @@ export function GameBuilderView({ selectedCourseId }: GameBuilderViewProps) {
                             onClick={() => toggleGameStatus(game.id, game.is_published)}
                           >
                             {game.is_published ? "Unpublish" : "Publish"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => deleteGame(game.id, game.title)}
+                          >
+                            Delete
                           </Button>
                         </div>
                       </div>
