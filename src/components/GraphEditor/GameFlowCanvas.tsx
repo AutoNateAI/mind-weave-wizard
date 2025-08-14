@@ -208,8 +208,13 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
 
   const checkGameCompletion = () => {
     // Game is complete when all required connections are made
-    const requiredConnections = instructorSolution.length;
+    const requiredConnections = instructorSolution?.length || 0;
     const correctConnections = gameState.correctConnections.length;
+    
+    // Don't complete if there are no required connections or if no connections have been made
+    if (requiredConnections === 0 || correctConnections === 0) {
+      return false;
+    }
     
     return correctConnections >= requiredConnections;
   };
