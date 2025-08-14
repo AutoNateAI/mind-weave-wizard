@@ -220,6 +220,25 @@ All colors MUST be HSL.
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
 
+  /* Game node type specific styling */
+  .react-flow__node[data-node-type="scenario"],
+  .react-flow__node[data-node-type="information"] {
+    min-width: 280px !important;
+    max-width: 320px !important;
+    padding: 16px !important;
+    border-radius: 12px !important;
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(var(--accent) / 0.1)) !important;
+    border: 2px solid hsl(var(--primary) / 0.3) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
+  }
+
+  /* Other node types remain compact */
+  .react-flow__node[data-node-type="decision"],
+  .react-flow__node[data-node-type="outcome"] {
+    min-width: 180px !important;
+    max-width: 220px !important;
+  }
+
   .react-flow__node:hover {
     border-color: hsl(var(--primary)) !important;
     box-shadow: 0 0 20px hsl(var(--primary) / 0.4);

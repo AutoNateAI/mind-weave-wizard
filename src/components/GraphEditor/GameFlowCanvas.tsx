@@ -40,10 +40,18 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
     score: 0,
     connections: [] as Array<{source: string, target: string}>,
     correctConnections: [] as Array<{source: string, target: string}>,
-    incorrectConnections: [] as Array<{source: string, target: string}>
+    incorrectConnections: [] as Array<{source: string, target: string}>,
+    connectionHistory: [] as Array<{
+      source: string,
+      target: string,
+      isCorrect: boolean,
+      timestamp: number,
+      action: 'connected' | 'disconnected'
+    }>
   });
   const [showInstructions, setShowInstructions] = useState(true);
   const [selectedNodeDetails, setSelectedNodeDetails] = useState<{ node: GameNode; position: { x: number; y: number } } | null>(null);
+  const [showConnectionHistory, setShowConnectionHistory] = useState(false);
 
   // Get instructor solution and rules from gameData
   const instructorSolution = gameData?.instructorSolution || [];
@@ -60,7 +68,14 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
       setGameState(prev => ({
         ...prev,
         score: prev.score + 20,
-        correctConnections: [...prev.correctConnections, { source, target }]
+        correctConnections: [...prev.correctConnections, { source, target }],
+        connectionHistory: [...prev.connectionHistory, {
+          source,
+          target,
+          isCorrect: true,
+          timestamp: Date.now(),
+          action: 'connected'
+        }]
       }));
       
       // Update edge style to green for correct connection
@@ -98,7 +113,14 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
         setGameState(prev => ({
           ...prev,
           score: Math.max(0, prev.score - 5),
-          incorrectConnections: [...prev.incorrectConnections, { source, target }]
+          incorrectConnections: [...prev.incorrectConnections, { source, target }],
+          connectionHistory: [...prev.connectionHistory, {
+            source,
+            target,
+            isCorrect: false,
+            timestamp: Date.now(),
+            action: 'connected'
+          }]
         }));
       } else {
         // Neutral connection - not explicitly wrong but not in solution
@@ -140,10 +162,17 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     const gameNode = node as GameNode;
     
-    // In connection-based gameplay, clicking just reveals node info
+    // Position popup at right middle of viewport
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const popupPosition = {
+      x: viewportWidth - 350, // 350px from right edge
+      y: viewportHeight / 2 - 150 // Center vertically, adjusted for popup height
+    };
+    
     setSelectedNodeDetails({
       node: gameNode,
-      position: { x: event.clientX, y: event.clientY }
+      position: popupPosition
     });
     
     // Track the interaction
@@ -309,7 +338,8 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
       score: 0,
       connections: [],
       correctConnections: [],
-      incorrectConnections: []
+      incorrectConnections: [],
+      connectionHistory: []
     });
     setShowInstructions(true);
     setSelectedNodeDetails(null);
@@ -438,6 +468,14 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
             <Lightbulb className="w-4 h-4" />
             <span>Hints: {gameState.hintsUsed}/{Array.isArray(hints) ? hints.length : 0}</span>
           </div>
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            onClick={() => setShowConnectionHistory(!showConnectionHistory)}
+            className="gap-1 text-xs"
+          >
+            📋 History ({gameState.connectionHistory.length})
+          </Button>
         </div>
         
         <div className="flex gap-2">
@@ -463,10 +501,69 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
         </div>
       </div>
 
+      {/* Connection History Panel */}
+      {showConnectionHistory && (
+        <div className="absolute top-16 left-4 z-30 bg-card border rounded-lg shadow-xl w-80 max-h-96 overflow-y-auto">
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold">Connection History</h3>
+              <Button size="sm" variant="ghost" onClick={() => setShowConnectionHistory(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {gameState.connectionHistory.slice().reverse().map((connection, index) => {
+                const sourceNode = nodes.find(n => n.id === connection.source);
+                const targetNode = nodes.find(n => n.id === connection.target);
+                const time = new Date(connection.timestamp).toLocaleTimeString();
+                
+                return (
+                  <div 
+                    key={index} 
+                    className={`p-2 rounded text-xs border-l-2 ${
+                      connection.isCorrect 
+                        ? 'border-l-green-500 bg-green-50 dark:bg-green-950/20' 
+                        : 'border-l-red-500 bg-red-50 dark:bg-red-950/20'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <div className="font-medium">
+                          {String(sourceNode?.data.label || connection.source)} → {String(targetNode?.data.label || connection.target)}
+                        </div>
+                        <div className="text-muted-foreground mt-1">
+                          {connection.isCorrect ? '✅ Correct' : '❌ Incorrect'} • {time}
+                        </div>
+                      </div>
+                      {connection.isCorrect ? (
+                        <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-red-600 shrink-0" />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {gameState.connectionHistory.length === 0 && (
+                <div className="text-center text-muted-foreground py-4">
+                  No connections made yet
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Game Canvas */}
       <div className="flex-1 min-h-0 overflow-hidden react-flow-container relative">
         <ReactFlow
-          nodes={nodes}
+          nodes={nodes.map(node => ({
+            ...node,
+            data: {
+              ...node.data,
+              'data-node-type': node.data.nodeType
+            }
+          }))}
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
