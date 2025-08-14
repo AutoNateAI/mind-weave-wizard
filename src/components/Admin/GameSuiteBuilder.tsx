@@ -3,9 +3,11 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { GameFlowCanvas } from "@/components/GraphEditor/GameFlowCanvas";
 import { toast } from "sonner";
-import { Zap, CheckCircle, Loader2, Brain, Target, Award } from "lucide-react";
+import { Zap, CheckCircle, Loader2, Brain, Target, Award, Eye } from "lucide-react";
 
 interface GameSuiteBuilderProps {
   sessionNumber: number;
@@ -41,6 +43,7 @@ export function GameSuiteBuilder({ sessionNumber, lectureNumber, lectureContent,
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState('');
   const [generatedSuite, setGeneratedSuite] = useState<GameSuiteResponse | null>(null);
+  const [previewGame, setPreviewGame] = useState<GeneratedGame | null>(null);
 
   useEffect(() => {
     loadSessionData();
@@ -334,7 +337,18 @@ export function GameSuiteBuilder({ sessionNumber, lectureNumber, lectureContent,
                       ))}
                     </div>
                   </div>
-                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPreviewGame(game)}
+                      className="gap-2"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Preview
+                    </Button>
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -359,6 +373,32 @@ export function GameSuiteBuilder({ sessionNumber, lectureNumber, lectureContent,
           </div>
         </div>
       )}
+
+      {/* Game Preview Dialog */}
+      <Dialog open={!!previewGame} onOpenChange={() => setPreviewGame(null)}>
+        <DialogContent className="max-w-6xl h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Preview: {previewGame?.templateName}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 min-h-0">
+            {previewGame && (
+              <GameFlowCanvas
+                gameId={`preview-${Date.now()}`}
+                gameData={previewGame.gameData}
+                hints={previewGame.hints}
+                mechanics={{
+                  canConnect: true,
+                  canDrag: true,
+                  canDelete: false
+                }}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
