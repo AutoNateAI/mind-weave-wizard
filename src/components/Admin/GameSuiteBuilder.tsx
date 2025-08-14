@@ -376,11 +376,11 @@ export function GameSuiteBuilder({ sessionNumber, lectureNumber, lectureContent,
 
       {/* Game Preview Dialog */}
       <Dialog open={!!previewGame} onOpenChange={() => setPreviewGame(null)}>
-        <DialogContent className="max-w-6xl h-[80vh]">
+        <DialogContent className="max-w-7xl w-[95vw] h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Eye className="w-5 h-5" />
-              Preview: {previewGame?.templateName}
+              Game Preview: {previewGame?.templateName}
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 min-h-0">

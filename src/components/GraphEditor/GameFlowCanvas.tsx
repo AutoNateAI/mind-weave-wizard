@@ -28,6 +28,7 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
     isCompleted: false
   });
   const [showHint, setShowHint] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(true);
 
   const onConnect = useCallback((params: Connection | Edge) => {
     const newEdge = { ...params, id: `edge-${Date.now()}` };
@@ -160,13 +161,109 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
       isCompleted: false
     });
     setShowHint(false);
+    setShowInstructions(true);
   };
+
+  const getGameInstructions = () => {
+    const templateName = gameData?.templateName || "Interactive Game";
+    
+    if (templateName.includes("Critical Decision")) {
+      return {
+        title: "Critical Decision Path Game",
+        objective: "Navigate through the decision tree to reach the optimal outcome",
+        instructions: [
+          "Read each scenario node carefully",
+          "Click on decision nodes to explore different paths",
+          "Connect related concepts by dragging between nodes",
+          "Try to identify the most effective decision sequence",
+          "Use hints if you get stuck on the optimal path"
+        ]
+      };
+    } else if (templateName.includes("Problem Analysis")) {
+      return {
+        title: "Problem Analysis Web Game",
+        objective: "Map the relationships between causes, effects, and solutions",
+        instructions: [
+          "Identify the central problem in the main node",
+          "Connect causes to their effects by dragging between nodes",
+          "Look for patterns and feedback loops in the system",
+          "Build a complete web showing all relationships",
+          "Find the most effective intervention points"
+        ]
+      };
+    } else if (templateName.includes("System Mapping")) {
+      return {
+        title: "System Mapping Game",
+        objective: "Understand how different factors interact within the system",
+        instructions: [
+          "Examine each system component in the nodes",
+          "Create connections between related factors",
+          "Look for reinforcing and balancing loops",
+          "Identify leverage points for system change",
+          "Map the complete system dynamics"
+        ]
+      };
+    }
+    
+    return {
+      title: "Graph Thinking Game",
+      objective: "Explore connections and build understanding through interaction",
+      instructions: [
+        "Click on nodes to explore concepts",
+        "Drag between nodes to create connections",
+        "Look for patterns and relationships",
+        "Build your understanding through exploration",
+        "Use hints when you need guidance"
+      ]
+    };
+  };
+
+  const instructions = getGameInstructions();
 
   return (
     <div className="h-full flex flex-col">
+      {/* Instructions Overlay */}
+      {showInstructions && (
+        <div className="absolute inset-0 bg-background/95 backdrop-blur-sm z-20 flex items-center justify-center p-4">
+          <div className="bg-card border rounded-lg shadow-xl max-w-2xl w-full p-6">
+            <div className="text-center mb-6">
+              <Target className="w-12 h-12 mx-auto mb-3 text-primary" />
+              <h2 className="text-2xl font-bold mb-2">{instructions.title}</h2>
+              <p className="text-muted-foreground">{instructions.objective}</p>
+            </div>
+            
+            <div className="space-y-3 mb-6">
+              <h3 className="font-semibold text-lg mb-3">How to Play:</h3>
+              {instructions.instructions.map((instruction, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm flex items-center justify-center shrink-0 mt-0.5">
+                    {index + 1}
+                  </div>
+                  <p className="text-sm">{instruction}</p>
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex justify-center">
+              <Button onClick={() => setShowInstructions(false)} className="cyber-glow">
+                Start Playing
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Game Controls */}
       <div className="flex items-center justify-between py-3 px-4 bg-background/80 backdrop-blur-sm border-b shrink-0">
         <div className="flex items-center gap-4 text-sm">
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            onClick={() => setShowInstructions(true)}
+            className="gap-1 text-xs"
+          >
+            📖 Instructions
+          </Button>
           <div className="flex items-center gap-1">
             <Target className="w-4 h-4" />
             <span>Interactions: {gameState.interactions}</span>
