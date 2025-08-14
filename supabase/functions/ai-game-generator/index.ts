@@ -250,32 +250,67 @@ Generate a coordinated suite of three CONNECTION-BASED puzzle games for this lec
 
 ${lectureContent}${contextSection}
 
-**Template Analysis:**
-${Object.values(templates).map(t => `
-${t.name}: ${t.description}
-- Heuristics: ${t.heuristic_targets.join(', ')}
-- Content Slots: ${t.content_slots.map(slot => slot.name).join(', ')}
-`).join('\n')}
-
-**CRITICAL REQUIREMENTS:**
-Create ONE cohesive scenario for CONNECTION-BASED games where students must:
-- WIRE nodes together based on logical relationships 
-- Each game has correct connection patterns that students must discover
-- Students are judged on the CORRECTNESS of their wiring, not just clicking nodes
-- Games require systematic thinking to find the right connections
+**CRITICAL DECISION PATH REQUIREMENTS:**
+Create complex hierarchical decision scenarios with:
+- At least 18-20 interconnected nodes
+- Layers: Scenario → Context/Stakes → Resources → Decisions → Consequences → Stakeholder Impacts → Final Outcomes  
+- Multiple resource constraints (time, budget, personnel, reputation)
+- Competing objectives that create real trade-offs
+- At least 12 required connections for optimal solution
+- Progressive complexity where early decisions affect later options
 
 **Response Format (JSON ONLY):**
 {
   "critical_decision_path": {
-    "title": "Game title here",
-    "description": "Brief description",
-    "scenario": "Main scenario text",
-    "decision_points": ["Point 1", "Point 2", "Point 3"],
-    "consequences": ["Consequence 1", "Consequence 2", "Consequence 3"],
-    "optimal_path": "Description of optimal decision sequence",
-    "instructor_solution": [{"source": "node1_id", "target": "node2_id", "relationship": "leads to"}],
-    "connection_rules": ["Rule 1: Environmental factors must connect to outcomes", "Rule 2: Decisions lead to consequences"],
-    "wrong_connections": [{"source": "node1_id", "target": "wrong_node", "why_wrong": "This connection ignores causality"}]
+    "title": "Complex strategic scenario title",
+    "description": "Multi-layered decision scenario with resource constraints",
+    "scenario_description": "Detailed scenario requiring strategic thinking",
+    "context_factor_1": "First contextual factor that influences decisions",
+    "context_factor_2": "Second contextual factor that influences decisions", 
+    "stakes_description": "What's at stake in this scenario",
+    "resource_constraint_1": "Time limitation (specific constraint)",
+    "resource_constraint_2": "Budget limitation (specific constraint)", 
+    "resource_constraint_3": "Personnel limitation (specific constraint)",
+    "resource_constraint_4": "Reputation/trust limitation (specific constraint)",
+    "primary_decision_1": "First major decision point with trade-offs",
+    "primary_decision_2": "Second major decision point with trade-offs",
+    "consequence_1a": "Consequence of first decision path A",
+    "consequence_1b": "Consequence of first decision path B", 
+    "consequence_2a": "Consequence of second decision path A",
+    "consequence_2b": "Consequence of second decision path B",
+    "stakeholder_impact_1": "Impact on first stakeholder group",
+    "stakeholder_impact_2": "Impact on second stakeholder group",
+    "stakeholder_impact_3": "Impact on third stakeholder group", 
+    "stakeholder_impact_4": "Impact on fourth stakeholder group",
+    "optimal_outcome": "Best possible outcome considering all factors",
+    "suboptimal_outcome": "Outcome when key connections are missed",
+    "instructor_solution": [
+      {"source": "scenario", "target": "context1", "relationship": "requires understanding"},
+      {"source": "scenario", "target": "stakes", "relationship": "establishes"},
+      {"source": "context1", "target": "resource1", "relationship": "constrains"},
+      {"source": "context2", "target": "resource2", "relationship": "constrains"},
+      {"source": "stakes", "target": "decision1", "relationship": "influences"},
+      {"source": "resource1", "target": "decision1", "relationship": "limits"},
+      {"source": "resource2", "target": "decision2", "relationship": "limits"},
+      {"source": "decision1", "target": "consequence1a", "relationship": "leads to"},
+      {"source": "decision2", "target": "consequence2a", "relationship": "leads to"},
+      {"source": "consequence1a", "target": "stakeholder1", "relationship": "impacts"},
+      {"source": "consequence2a", "target": "stakeholder2", "relationship": "impacts"},
+      {"source": "stakeholder1", "target": "outcome_optimal", "relationship": "enables"},
+      {"source": "stakeholder2", "target": "outcome_optimal", "relationship": "enables"}
+    ],
+    "connection_rules": [
+      "Scenario must connect to context and stakes before decisions",
+      "All resource constraints must be considered in decisions", 
+      "Decisions must connect to appropriate consequences",
+      "Consequences must connect to stakeholder impacts",
+      "Multiple stakeholder impacts required for optimal outcome"
+    ],
+    "wrong_connections": [
+      {"source": "scenario", "target": "decision1", "why_wrong": "Decisions cannot be made without understanding context and resources"},
+      {"source": "decision1", "target": "outcome_optimal", "why_wrong": "Decisions must go through consequences and stakeholder impacts first"},
+      {"source": "resource1", "target": "stakeholder1", "why_wrong": "Resources don't directly impact stakeholders without decisions"}
+    ]
   },
   "problem_analysis_web": {
     "title": "Game title here", 
@@ -425,11 +460,26 @@ Return JSON format:
     
     if (templateKey === 'critical_decision_path') {
       replacementMap = {
-        'scenario_description': contentForTemplate.scenario || contentForTemplate.description || 'Make critical decisions in this scenario',
-        'decision_point_1': contentForTemplate.decision_points?.[0] || 'First decision point',
-        'option_1a': contentForTemplate.decision_points?.[0] || 'Option A',
-        'option_1b': contentForTemplate.decision_points?.[1] || 'Option B',
-        'final_outcome': contentForTemplate.optimal_path || contentForTemplate.consequences?.[0] || 'Final outcome'
+        'scenario_description': contentForTemplate.scenario_description || 'Make critical decisions in this scenario',
+        'context_factor_1': contentForTemplate.context_factor_1 || 'First contextual factor',
+        'context_factor_2': contentForTemplate.context_factor_2 || 'Second contextual factor',
+        'stakes_description': contentForTemplate.stakes_description || 'What is at stake',
+        'resource_constraint_1': contentForTemplate.resource_constraint_1 || 'Time constraint',
+        'resource_constraint_2': contentForTemplate.resource_constraint_2 || 'Budget constraint',
+        'resource_constraint_3': contentForTemplate.resource_constraint_3 || 'Personnel constraint', 
+        'resource_constraint_4': contentForTemplate.resource_constraint_4 || 'Reputation constraint',
+        'primary_decision_1': contentForTemplate.primary_decision_1 || 'First decision point',
+        'primary_decision_2': contentForTemplate.primary_decision_2 || 'Second decision point',
+        'consequence_1a': contentForTemplate.consequence_1a || 'First consequence A',
+        'consequence_1b': contentForTemplate.consequence_1b || 'First consequence B',
+        'consequence_2a': contentForTemplate.consequence_2a || 'Second consequence A',
+        'consequence_2b': contentForTemplate.consequence_2b || 'Second consequence B',
+        'stakeholder_impact_1': contentForTemplate.stakeholder_impact_1 || 'Impact on stakeholder 1',
+        'stakeholder_impact_2': contentForTemplate.stakeholder_impact_2 || 'Impact on stakeholder 2',
+        'stakeholder_impact_3': contentForTemplate.stakeholder_impact_3 || 'Impact on stakeholder 3',
+        'stakeholder_impact_4': contentForTemplate.stakeholder_impact_4 || 'Impact on stakeholder 4',
+        'optimal_outcome': contentForTemplate.optimal_outcome || 'Best outcome',
+        'suboptimal_outcome': contentForTemplate.suboptimal_outcome || 'Suboptimal outcome'
       };
     } else if (templateKey === 'problem_analysis_web') {
       replacementMap = {
