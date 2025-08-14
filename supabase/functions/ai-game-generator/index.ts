@@ -20,7 +20,8 @@ serve(async (req) => {
       templateId,
       gameType = 'critical-thinking',
       mode = 'single', // 'single' or 'batch'
-      allTemplates = null
+      allTemplates = null,
+      gameContexts = null
     } = await req.json();
 
     console.log('Generating game for:', { sessionNumber, lectureNumber, gameType, mode });
@@ -36,7 +37,8 @@ serve(async (req) => {
         sessionNumber,
         lectureNumber,
         lectureContent,
-        allTemplates
+        allTemplates,
+        gameContexts
       });
     } else {
       return await generateSingleGame(supabase, openAIApiKey, {
@@ -216,7 +218,7 @@ Return JSON with "instructions" and "hints" arrays.
 }
 
 async function generateGameSuite(supabase: any, openAIApiKey: string, params: any) {
-  const { sessionNumber, lectureNumber, lectureContent, allTemplates } = params;
+  const { sessionNumber, lectureNumber, lectureContent, allTemplates, gameContexts } = params;
 
   // Get all game templates
   const { data: templates, error: templateError } = await supabase
@@ -228,12 +230,25 @@ async function generateGameSuite(supabase: any, openAIApiKey: string, params: an
     throw new Error('Templates not found');
   }
 
+  // Build context section
+  let contextSection = '';
+  if (gameContexts) {
+    const contexts = [];
+    if (gameContexts.criticalDecisionPath) contexts.push(`**Critical Decision Path Context:** ${gameContexts.criticalDecisionPath}`);
+    if (gameContexts.problemAnalysisWeb) contexts.push(`**Problem Analysis Web Context:** ${gameContexts.problemAnalysisWeb}`);
+    if (gameContexts.systemMapping) contexts.push(`**System Mapping Context:** ${gameContexts.systemMapping}`);
+    
+    if (contexts.length > 0) {
+      contextSection = `\n\n**ADDITIONAL CONTEXT:**\n${contexts.join('\n')}\n\nUse this additional context to enhance the scenarios and make them more specific and engaging.`;
+    }
+  }
+
   const orchestratedPrompt = `
 **CRITICAL: Your response must be ONLY a valid JSON object with no additional text, explanations, or markdown formatting.**
 
 Generate a coordinated suite of three complementary critical thinking games for this lecture content:
 
-${lectureContent}
+${lectureContent}${contextSection}
 
 **Template Analysis:**
 ${Object.values(templates).map(t => `

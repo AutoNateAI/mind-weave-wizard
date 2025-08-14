@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { GameFlowCanvas } from "@/components/GraphEditor/GameFlowCanvas";
 import { toast } from "sonner";
@@ -44,6 +46,11 @@ export function GameSuiteBuilder({ sessionNumber, lectureNumber, lectureContent,
   const [currentStep, setCurrentStep] = useState('');
   const [generatedSuite, setGeneratedSuite] = useState<GameSuiteResponse | null>(null);
   const [previewGame, setPreviewGame] = useState<GeneratedGame | null>(null);
+  const [gameContexts, setGameContexts] = useState({
+    criticalDecisionPath: '',
+    problemAnalysisWeb: '',
+    systemMapping: ''
+  });
 
   useEffect(() => {
     loadSessionData();
@@ -113,7 +120,8 @@ export function GameSuiteBuilder({ sessionNumber, lectureNumber, lectureContent,
           sessionNumber,
           lectureNumber,
           lectureContent,
-          mode: 'batch'
+          mode: 'batch',
+          gameContexts
         }
       });
 
@@ -245,9 +253,19 @@ export function GameSuiteBuilder({ sessionNumber, lectureNumber, lectureContent,
                     <h5 className="font-medium">Critical Decision Path</h5>
                   </div>
                   <p className="text-sm text-muted-foreground mb-2">Enhances:</p>
-                  <div className="space-y-1">
+                  <div className="space-y-1 mb-3">
                     <Badge variant="outline" className="text-xs">Sequential Reasoning</Badge>
                     <Badge variant="outline" className="text-xs">Consequence Evaluation</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="critical-context" className="text-xs">Additional Context (Optional)</Label>
+                    <Textarea 
+                      id="critical-context"
+                      placeholder="Add specific context for decision-making scenarios..."
+                      value={gameContexts.criticalDecisionPath}
+                      onChange={(e) => setGameContexts(prev => ({ ...prev, criticalDecisionPath: e.target.value }))}
+                      className="min-h-[60px] text-xs"
+                    />
                   </div>
                 </Card>
 
@@ -257,9 +275,19 @@ export function GameSuiteBuilder({ sessionNumber, lectureNumber, lectureContent,
                     <h5 className="font-medium">Problem Analysis Web</h5>
                   </div>
                   <p className="text-sm text-muted-foreground mb-2">Enhances:</p>
-                  <div className="space-y-1">
+                  <div className="space-y-1 mb-3">
                     <Badge variant="outline" className="text-xs">Systematic Decomposition</Badge>
                     <Badge variant="outline" className="text-xs">Root Cause Analysis</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="analysis-context" className="text-xs">Additional Context (Optional)</Label>
+                    <Textarea 
+                      id="analysis-context"
+                      placeholder="Add specific context for problem analysis scenarios..."
+                      value={gameContexts.problemAnalysisWeb}
+                      onChange={(e) => setGameContexts(prev => ({ ...prev, problemAnalysisWeb: e.target.value }))}
+                      className="min-h-[60px] text-xs"
+                    />
                   </div>
                 </Card>
 
@@ -269,9 +297,19 @@ export function GameSuiteBuilder({ sessionNumber, lectureNumber, lectureContent,
                     <h5 className="font-medium">System Mapping</h5>
                   </div>
                   <p className="text-sm text-muted-foreground mb-2">Enhances:</p>
-                  <div className="space-y-1">
+                  <div className="space-y-1 mb-3">
                     <Badge variant="outline" className="text-xs">Holistic Thinking</Badge>
                     <Badge variant="outline" className="text-xs">Relationship Recognition</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="system-context" className="text-xs">Additional Context (Optional)</Label>
+                    <Textarea 
+                      id="system-context"
+                      placeholder="Add specific context for system mapping scenarios..."
+                      value={gameContexts.systemMapping}
+                      onChange={(e) => setGameContexts(prev => ({ ...prev, systemMapping: e.target.value }))}
+                      className="min-h-[60px] text-xs"
+                    />
                   </div>
                 </Card>
               </div>
