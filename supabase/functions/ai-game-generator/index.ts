@@ -165,49 +165,76 @@ Return ONLY a JSON object with keys matching the slot names and values being the
     };
   });
 
-  // Generate heuristic-specific instructions and hints
-  const instructionsPrompt = `
-Based on this game scenario for critical thinking development, create:
-1. Clear, engaging instructions that explain how to enhance the target heuristics (2-3 sentences)
-2. 3 helpful hints that guide cognitive application without giving away answers
+  // Generate instructor solution and rubric
+  const solutionPrompt = `
+Based on this ${template.name} game scenario, create:
+1. Complete instructor solution with all optimal connections/relationships
+2. Comprehensive grading rubric with performance criteria
+3. Game instructions and hints for students
 
 Game Type: ${template.name}
 Target Heuristics: ${template.heuristic_targets?.join(', ') || 'General critical thinking'}
-Scenario: ${JSON.stringify(generatedContent)}
-Validation Requirements: ${JSON.stringify(template.validation_rules)}
+Scenario Content: ${JSON.stringify(generatedContent)}
+Template Structure: ${JSON.stringify(template.template_data)}
 
-Return JSON with "instructions" and "hints" arrays.
+**CRITICAL: Return ONLY valid JSON with no additional text or formatting.**
+
+Return JSON format:
+{
+  "instructor_solution": [
+    {"source": "node_id", "target": "node_id", "relationship": "relationship_type", "points": 10}
+  ],
+  "grading_rubric": {
+    "excellent": {"min_score": 120, "criteria": "Complete understanding demonstrated"},
+    "good": {"min_score": 90, "criteria": "Strong performance with minor gaps"},
+    "satisfactory": {"min_score": 60, "criteria": "Basic understanding shown"},
+    "needs_improvement": {"min_score": 30, "criteria": "Limited understanding"},
+    "unsatisfactory": {"min_score": 0, "criteria": "Little to no understanding"}
+  },
+  "wrong_connections": [
+    {"source": "node_id", "target": "node_id", "why_wrong": "explanation", "penalty": -5}
+  ],
+  "instructions": "Clear game instructions for students",
+  "hints": ["Hint 1", "Hint 2", "Hint 3"]
+}
 `;
 
-  const instructionsResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+  const solutionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${openAIApiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4.1-2025-04-14',
       messages: [
-        { role: 'system', content: 'Generate clear, helpful game instructions and hints that focus on cognitive heuristic development.' },
-        { role: 'user', content: instructionsPrompt }
+        { role: 'system', content: 'You are an expert educational assessment designer. Generate comprehensive instructor solutions and grading rubrics for critical thinking games. Return ONLY valid JSON with no additional text or formatting.' },
+        { role: 'user', content: solutionPrompt }
       ],
-      temperature: 0.6,
+      temperature: 0.3,
     }),
   });
 
-  const instructionsData = await instructionsResponse.json();
-  let instructionsText = instructionsData.choices[0].message.content;
+  const solutionData = await solutionResponse.json();
+  let solutionText = solutionData.choices[0].message.content;
   
   // Remove markdown code block formatting if present
-  instructionsText = instructionsText.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
+  solutionText = solutionText.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
   
-  const gameInstructions = JSON.parse(instructionsText);
+  const gameSolution = JSON.parse(solutionText);
+
+  // Update game data with instructor solution
+  gameData.instructorSolution = gameSolution.instructor_solution || [];
+  gameData.wrongConnections = gameSolution.wrong_connections || [];
 
   return new Response(JSON.stringify({
     gameData,
     generatedContent,
-    instructions: gameInstructions.instructions,
-    hints: gameInstructions.hints,
+    instructions: gameSolution.instructions,
+    hints: gameSolution.hints,
+    instructorSolution: gameSolution.instructor_solution,
+    gradingRubric: gameSolution.grading_rubric,
+    wrongConnections: gameSolution.wrong_connections,
     templateName: template.name,
     heuristicTargets: template.heuristic_targets,
     validationRules: template.validation_rules,
@@ -259,6 +286,24 @@ Create complex hierarchical decision scenarios with:
 - At least 12 required connections for optimal solution
 - Progressive complexity where early decisions affect later options
 
+**PROBLEM ANALYSIS WEB REQUIREMENTS:**
+Create systematic problem breakdown with:
+- Central problem with 4+ observable symptoms
+- 4+ root causes that explain the symptoms
+- 3+ impacts/consequences of the problem
+- 4+ solution strategies targeting root causes
+- 2+ expected outcomes from implementing solutions
+- Clear causal relationships between all elements
+
+**SYSTEM MAPPING REQUIREMENTS:**
+Create interconnected system analysis with:
+- Central system core with 3+ inputs, 4+ processes, 3+ outputs
+- 2+ feedback loops connecting outputs back to processes
+- 3+ constraints affecting the system
+- 2+ stakeholder groups
+- 2+ system outcomes
+- Clear flow and influence relationships
+
 **Response Format (JSON ONLY):**
 {
   "critical_decision_path": {
@@ -285,19 +330,19 @@ Create complex hierarchical decision scenarios with:
     "optimal_outcome": "Best possible outcome considering all factors",
     "suboptimal_outcome": "Outcome when key connections are missed",
     "instructor_solution": [
-      {"source": "scenario", "target": "context1", "relationship": "requires understanding"},
-      {"source": "scenario", "target": "stakes", "relationship": "establishes"},
-      {"source": "context1", "target": "resource1", "relationship": "constrains"},
-      {"source": "context2", "target": "resource2", "relationship": "constrains"},
-      {"source": "stakes", "target": "decision1", "relationship": "influences"},
-      {"source": "resource1", "target": "decision1", "relationship": "limits"},
-      {"source": "resource2", "target": "decision2", "relationship": "limits"},
-      {"source": "decision1", "target": "consequence1a", "relationship": "leads to"},
-      {"source": "decision2", "target": "consequence2a", "relationship": "leads to"},
-      {"source": "consequence1a", "target": "stakeholder1", "relationship": "impacts"},
-      {"source": "consequence2a", "target": "stakeholder2", "relationship": "impacts"},
-      {"source": "stakeholder1", "target": "outcome_optimal", "relationship": "enables"},
-      {"source": "stakeholder2", "target": "outcome_optimal", "relationship": "enables"}
+      {"source": "scenario", "target": "context1", "relationship": "requires understanding", "points": 5},
+      {"source": "scenario", "target": "stakes", "relationship": "establishes", "points": 5},
+      {"source": "context1", "target": "resource1", "relationship": "constrains", "points": 8},
+      {"source": "context2", "target": "resource2", "relationship": "constrains", "points": 8},
+      {"source": "stakes", "target": "decision1", "relationship": "influences", "points": 10},
+      {"source": "resource1", "target": "decision1", "relationship": "limits", "points": 10},
+      {"source": "resource2", "target": "decision2", "relationship": "limits", "points": 10},
+      {"source": "decision1", "target": "consequence1a", "relationship": "leads to", "points": 15},
+      {"source": "decision2", "target": "consequence2a", "relationship": "leads to", "points": 15},
+      {"source": "consequence1a", "target": "stakeholder1", "relationship": "impacts", "points": 12},
+      {"source": "consequence2a", "target": "stakeholder2", "relationship": "impacts", "points": 12},
+      {"source": "stakeholder1", "target": "outcome_optimal", "relationship": "enables", "points": 20},
+      {"source": "stakeholder2", "target": "outcome_optimal", "relationship": "enables", "points": 20}
     ],
     "connection_rules": [
       "Scenario must connect to context and stakes before decisions",
@@ -307,32 +352,146 @@ Create complex hierarchical decision scenarios with:
       "Multiple stakeholder impacts required for optimal outcome"
     ],
     "wrong_connections": [
-      {"source": "scenario", "target": "decision1", "why_wrong": "Decisions cannot be made without understanding context and resources"},
-      {"source": "decision1", "target": "outcome_optimal", "why_wrong": "Decisions must go through consequences and stakeholder impacts first"},
-      {"source": "resource1", "target": "stakeholder1", "why_wrong": "Resources don't directly impact stakeholders without decisions"}
-    ]
+      {"source": "scenario", "target": "decision1", "why_wrong": "Decisions cannot be made without understanding context and resources", "penalty": -10},
+      {"source": "decision1", "target": "outcome_optimal", "why_wrong": "Decisions must go through consequences and stakeholder impacts first", "penalty": -15},
+      {"source": "resource1", "target": "stakeholder1", "why_wrong": "Resources don't directly impact stakeholders without decisions", "penalty": -8}
+    ],
+    "grading_rubric": {
+      "excellent": {"min_score": 130, "criteria": "All critical connections made, optimal path followed, demonstrates strategic thinking"},
+      "good": {"min_score": 100, "criteria": "Most critical connections made, minor gaps in strategic flow"},
+      "satisfactory": {"min_score": 70, "criteria": "Key connections identified, some logical flow present"},
+      "needs_improvement": {"min_score": 40, "criteria": "Some connections made but significant gaps in understanding"},
+      "unsatisfactory": {"min_score": 0, "criteria": "Few or no meaningful connections, lacks strategic coherence"}
+    }
   },
   "problem_analysis_web": {
-    "title": "Game title here", 
-    "description": "Brief description",
-    "central_problem": "Core problem statement",
-    "connected_concepts": ["Concept 1", "Concept 2", "Concept 3"],
-    "relationships": ["Relationship 1", "Relationship 2", "Relationship 3"],
-    "analysis_framework": "Framework for systematic analysis",
-    "instructor_solution": [{"source": "problem", "target": "root_cause", "relationship": "caused by"}],
-    "connection_rules": ["Root causes must connect to problems", "Problems connect to effects"],
-    "wrong_connections": [{"source": "symptom", "target": "unrelated_factor", "why_wrong": "Symptoms don't directly cause unrelated factors"}]
+    "title": "Problem Analysis Web title",
+    "description": "Systematic breakdown of complex problem",
+    "central_problem": "Core problem statement requiring analysis",
+    "symptom_1": "First observable symptom of the problem",
+    "symptom_2": "Second observable symptom",
+    "symptom_3": "Third observable symptom", 
+    "symptom_4": "Fourth observable symptom",
+    "root_cause_1": "First underlying root cause",
+    "root_cause_2": "Second underlying root cause",
+    "root_cause_3": "Third underlying root cause",
+    "root_cause_4": "Fourth underlying root cause",
+    "impact_1": "First consequence/impact",
+    "impact_2": "Second consequence/impact",
+    "impact_3": "Third consequence/impact",
+    "solution_1": "First solution strategy",
+    "solution_2": "Second solution strategy", 
+    "solution_3": "Third solution strategy",
+    "solution_4": "Fourth solution strategy",
+    "expected_outcome_1": "First expected positive outcome",
+    "expected_outcome_2": "Second expected positive outcome",
+    "instructor_solution": [
+      {"source": "problem_1", "target": "symptom_1", "relationship": "manifests as", "points": 5},
+      {"source": "problem_1", "target": "symptom_2", "relationship": "manifests as", "points": 5},
+      {"source": "problem_1", "target": "symptom_3", "relationship": "manifests as", "points": 5},
+      {"source": "problem_1", "target": "symptom_4", "relationship": "manifests as", "points": 5},
+      {"source": "symptom_1", "target": "root_cause_1", "relationship": "caused by", "points": 8},
+      {"source": "symptom_2", "target": "root_cause_2", "relationship": "caused by", "points": 8},
+      {"source": "symptom_3", "target": "root_cause_3", "relationship": "caused by", "points": 8},
+      {"source": "symptom_4", "target": "root_cause_4", "relationship": "caused by", "points": 8},
+      {"source": "root_cause_1", "target": "impact_1", "relationship": "leads to", "points": 6},
+      {"source": "root_cause_2", "target": "impact_2", "relationship": "leads to", "points": 6},
+      {"source": "root_cause_3", "target": "impact_3", "relationship": "leads to", "points": 6},
+      {"source": "root_cause_1", "target": "solution_1", "relationship": "addressed by", "points": 10},
+      {"source": "root_cause_2", "target": "solution_2", "relationship": "addressed by", "points": 10},
+      {"source": "root_cause_3", "target": "solution_3", "relationship": "addressed by", "points": 10},
+      {"source": "root_cause_4", "target": "solution_4", "relationship": "addressed by", "points": 10},
+      {"source": "solution_1", "target": "outcome_1", "relationship": "achieves", "points": 12},
+      {"source": "solution_2", "target": "outcome_2", "relationship": "achieves", "points": 12},
+      {"source": "solution_3", "target": "outcome_1", "relationship": "supports", "points": 8},
+      {"source": "solution_4", "target": "outcome_2", "relationship": "supports", "points": 8}
+    ],
+    "connection_rules": [
+      "Problems must connect to all observable symptoms",
+      "Symptoms must trace back to root causes", 
+      "Root causes must connect to impacts and solutions",
+      "Solutions must lead to expected outcomes"
+    ],
+    "wrong_connections": [
+      {"source": "symptom_1", "target": "solution_1", "why_wrong": "Solutions address root causes, not symptoms directly", "penalty": -8},
+      {"source": "impact_1", "target": "root_cause_1", "why_wrong": "Root causes lead to impacts, not the reverse", "penalty": -6},
+      {"source": "outcome_1", "target": "problem_1", "why_wrong": "Outcomes don't cause problems", "penalty": -5}
+    ],
+    "grading_rubric": {
+      "excellent": {"min_score": 140, "criteria": "Complete causal analysis, all connections logical and well-reasoned"},
+      "good": {"min_score": 110, "criteria": "Strong causal understanding, minor gaps in connection logic"},
+      "satisfactory": {"min_score": 80, "criteria": "Basic causal relationships identified, some logical flow"},
+      "needs_improvement": {"min_score": 50, "criteria": "Limited understanding of causal relationships"},
+      "unsatisfactory": {"min_score": 0, "criteria": "Poor or no understanding of problem structure"}
+    }
   },
   "system_mapping": {
-    "title": "Game title here",
-    "description": "Brief description", 
-    "system_components": ["Component 1", "Component 2", "Component 3"],
-    "interactions": ["Interaction 1", "Interaction 2", "Interaction 3"],
-    "feedback_loops": ["Loop 1", "Loop 2"],
-    "system_boundaries": "Description of system boundaries",
-    "instructor_solution": [{"source": "component1", "target": "component2", "relationship": "influences"}],
-    "connection_rules": ["Components must connect based on actual influence", "Feedback loops must form cycles"],
-    "wrong_connections": [{"source": "input", "target": "unrelated_output", "why_wrong": "No direct influence relationship"}]
+    "title": "System Mapping title",
+    "description": "Analysis of system components and interactions",
+    "system_core": "Central system being analyzed",
+    "input_1": "First system input",
+    "input_2": "Second system input", 
+    "input_3": "Third system input",
+    "process_1": "First system process",
+    "process_2": "Second system process",
+    "process_3": "Third system process",
+    "process_4": "Fourth system process",
+    "output_1": "First system output",
+    "output_2": "Second system output",
+    "output_3": "Third system output",
+    "feedback_1": "First feedback mechanism",
+    "feedback_2": "Second feedback mechanism",
+    "constraint_1": "First system constraint",
+    "constraint_2": "Second system constraint",
+    "constraint_3": "Third system constraint",
+    "stakeholder_1": "First stakeholder group",
+    "stakeholder_2": "Second stakeholder group",
+    "system_outcome_1": "First system outcome",
+    "system_outcome_2": "Second system outcome",
+    "instructor_solution": [
+      {"source": "input_1", "target": "process_1", "relationship": "feeds into", "points": 6},
+      {"source": "input_2", "target": "process_1", "relationship": "feeds into", "points": 6},
+      {"source": "input_3", "target": "process_2", "relationship": "feeds into", "points": 6},
+      {"source": "process_1", "target": "system_core", "relationship": "supports", "points": 8},
+      {"source": "process_2", "target": "system_core", "relationship": "supports", "points": 8},
+      {"source": "system_core", "target": "process_3", "relationship": "drives", "points": 10},
+      {"source": "system_core", "target": "process_4", "relationship": "drives", "points": 10},
+      {"source": "process_3", "target": "output_1", "relationship": "produces", "points": 8},
+      {"source": "process_4", "target": "output_2", "relationship": "produces", "points": 8},
+      {"source": "output_1", "target": "output_3", "relationship": "enables", "points": 6},
+      {"source": "output_2", "target": "feedback_1", "relationship": "generates", "points": 10},
+      {"source": "output_3", "target": "feedback_2", "relationship": "generates", "points": 10},
+      {"source": "feedback_1", "target": "process_1", "relationship": "improves", "points": 12},
+      {"source": "feedback_2", "target": "process_2", "relationship": "improves", "points": 12},
+      {"source": "constraint_1", "target": "process_1", "relationship": "limits", "points": 5},
+      {"source": "constraint_2", "target": "process_3", "relationship": "limits", "points": 5},
+      {"source": "constraint_3", "target": "output_1", "relationship": "affects", "points": 5},
+      {"source": "stakeholder_1", "target": "system_core", "relationship": "influences", "points": 8},
+      {"source": "stakeholder_2", "target": "outcome_2", "relationship": "benefits from", "points": 8},
+      {"source": "output_1", "target": "outcome_1", "relationship": "contributes to", "points": 10},
+      {"source": "output_2", "target": "outcome_1", "relationship": "supports", "points": 8},
+      {"source": "feedback_1", "target": "outcome_2", "relationship": "enhances", "points": 10}
+    ],
+    "connection_rules": [
+      "Inputs must flow into processes",
+      "Processes must connect to system core",
+      "System core drives other processes and outputs",
+      "Outputs must generate feedback loops back to processes",
+      "Constraints affect processes and outputs",
+      "Stakeholders influence core and benefit from outcomes"
+    ],
+    "wrong_connections": [
+      {"source": "output_1", "target": "input_1", "why_wrong": "Outputs don't directly become inputs without feedback loops", "penalty": -8},
+      {"source": "constraint_1", "target": "outcome_1", "why_wrong": "Constraints affect processes, not outcomes directly", "penalty": -6},
+      {"source": "feedback_1", "target": "constraint_1", "why_wrong": "Feedback improves processes, doesn't create constraints", "penalty": -5}
+    ],
+    "grading_rubric": {
+      "excellent": {"min_score": 160, "criteria": "Complete systems thinking, all flows and feedback loops identified"},
+      "good": {"min_score": 125, "criteria": "Strong systems understanding, minor gaps in flow logic"},
+      "satisfactory": {"min_score": 90, "criteria": "Basic systems relationships identified"},
+      "needs_improvement": {"min_score": 60, "criteria": "Limited understanding of system interactions"},
+      "unsatisfactory": {"min_score": 0, "criteria": "Poor or no systems thinking demonstrated"}
+    }
   }
 }
 `;
@@ -522,6 +681,21 @@ Return JSON format:
 
     console.log('Final processed game data:', gameData);
 
+    // Add instructor solution and grading rubric from orchestrated content
+    const instructorSolution = contentForTemplate.instructor_solution || [];
+    const gradingRubric = contentForTemplate.grading_rubric || {
+      excellent: { min_score: 100, criteria: "Excellent understanding demonstrated" },
+      good: { min_score: 75, criteria: "Good understanding shown" },
+      satisfactory: { min_score: 50, criteria: "Basic understanding evident" },
+      needs_improvement: { min_score: 25, criteria: "Limited understanding" },
+      unsatisfactory: { min_score: 0, criteria: "Poor understanding" }
+    };
+    const wrongConnections = contentForTemplate.wrong_connections || [];
+
+    // Update game data with instructor solution
+    gameData.instructorSolution = instructorSolution;
+    gameData.wrongConnections = wrongConnections;
+
     return {
       templateId: template.id,
       templateName: template.name,
@@ -529,6 +703,9 @@ Return JSON format:
       generatedContent: contentForTemplate,
       instructions: suiteInstructions.individual_instructions?.[templateKey] || `Play this ${template.name} game to enhance your thinking skills.`,
       hints: suiteInstructions.individual_hints?.[templateKey] || template.mechanics?.hints || [],
+      instructorSolution,
+      gradingRubric,
+      wrongConnections,
       heuristicTargets: template.heuristic_targets,
       validationRules: template.validation_rules,
       winConditions: template.win_conditions
