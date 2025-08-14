@@ -642,20 +642,47 @@ Return JSON format:
       };
     } else if (templateKey === 'problem_analysis_web') {
       replacementMap = {
-        'main_problem': contentForTemplate.central_problem || contentForTemplate.title || 'Main problem to analyze',
-        'cause_1': contentForTemplate.connected_concepts?.[0] || 'First cause',
-        'cause_2': contentForTemplate.connected_concepts?.[1] || 'Second cause',
-        'effect_1': contentForTemplate.relationships?.[0] || 'First effect',
-        'effect_2': contentForTemplate.relationships?.[1] || 'Second effect',
-        'solution': contentForTemplate.analysis_framework || 'Proposed solution'
+        'central_problem': contentForTemplate.central_problem || 'Main problem to analyze',
+        'symptom_1': contentForTemplate.symptom_1 || 'First symptom',
+        'symptom_2': contentForTemplate.symptom_2 || 'Second symptom',
+        'symptom_3': contentForTemplate.symptom_3 || 'Third symptom',
+        'symptom_4': contentForTemplate.symptom_4 || 'Fourth symptom',
+        'root_cause_1': contentForTemplate.root_cause_1 || 'First root cause',
+        'root_cause_2': contentForTemplate.root_cause_2 || 'Second root cause',
+        'root_cause_3': contentForTemplate.root_cause_3 || 'Third root cause',
+        'root_cause_4': contentForTemplate.root_cause_4 || 'Fourth root cause',
+        'impact_1': contentForTemplate.impact_1 || 'First impact',
+        'impact_2': contentForTemplate.impact_2 || 'Second impact',
+        'impact_3': contentForTemplate.impact_3 || 'Third impact',
+        'solution_1': contentForTemplate.solution_1 || 'First solution',
+        'solution_2': contentForTemplate.solution_2 || 'Second solution',
+        'solution_3': contentForTemplate.solution_3 || 'Third solution',
+        'solution_4': contentForTemplate.solution_4 || 'Fourth solution',
+        'expected_outcome_1': contentForTemplate.expected_outcome_1 || 'First expected outcome',
+        'expected_outcome_2': contentForTemplate.expected_outcome_2 || 'Second expected outcome'
       };
     } else if (templateKey === 'system_mapping') {
       replacementMap = {
-        'central_concept': contentForTemplate.system_boundaries || contentForTemplate.title || 'Central concept',
-        'factor_1': contentForTemplate.system_components?.[0] || 'First factor',
-        'factor_2': contentForTemplate.system_components?.[1] || 'Second factor',
-        'factor_3': contentForTemplate.system_components?.[2] || 'Third factor',
-        'factor_4': contentForTemplate.interactions?.[0] || 'Fourth factor'
+        'system_core': contentForTemplate.system_core || 'Central system',
+        'input_1': contentForTemplate.input_1 || 'First input',
+        'input_2': contentForTemplate.input_2 || 'Second input',
+        'input_3': contentForTemplate.input_3 || 'Third input',
+        'process_1': contentForTemplate.process_1 || 'First process',
+        'process_2': contentForTemplate.process_2 || 'Second process',
+        'process_3': contentForTemplate.process_3 || 'Third process',
+        'process_4': contentForTemplate.process_4 || 'Fourth process',
+        'output_1': contentForTemplate.output_1 || 'First output',
+        'output_2': contentForTemplate.output_2 || 'Second output',
+        'output_3': contentForTemplate.output_3 || 'Third output',
+        'feedback_1': contentForTemplate.feedback_1 || 'First feedback',
+        'feedback_2': contentForTemplate.feedback_2 || 'Second feedback',
+        'constraint_1': contentForTemplate.constraint_1 || 'First constraint',
+        'constraint_2': contentForTemplate.constraint_2 || 'Second constraint',
+        'constraint_3': contentForTemplate.constraint_3 || 'Third constraint',
+        'stakeholder_1': contentForTemplate.stakeholder_1 || 'First stakeholder',
+        'stakeholder_2': contentForTemplate.stakeholder_2 || 'Second stakeholder',
+        'system_outcome_1': contentForTemplate.system_outcome_1 || 'First outcome',
+        'system_outcome_2': contentForTemplate.system_outcome_2 || 'Second outcome'
       };
     }
     
