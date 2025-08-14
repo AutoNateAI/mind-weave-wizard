@@ -63,6 +63,14 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
         correctConnections: [...prev.correctConnections, { source, target }]
       }));
       
+      // Update edge style to green for correct connection
+      setEdges(edges => edges.map(edge => {
+        if (edge.source === source && edge.target === target) {
+          return { ...edge, style: { ...edge.style, stroke: '#22c55e', strokeWidth: 3 } };
+        }
+        return edge;
+      }));
+      
       toast.success("Excellent connection!", {
         description: "This relationship demonstrates good systems thinking",
         icon: <CheckCircle className="w-4 h-4" />
@@ -74,6 +82,14 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
       );
       
       if (wrongConnection) {
+        // Update edge style to red for incorrect connection
+        setEdges(edges => edges.map(edge => {
+          if (edge.source === source && edge.target === target) {
+            return { ...edge, style: { ...edge.style, stroke: '#ef4444', strokeWidth: 3 } };
+          }
+          return edge;
+        }));
+        
         toast.error("Incorrect connection", {
           description: wrongConnection.why_wrong || "This connection doesn't follow the logical pattern",
           icon: <XCircle className="w-4 h-4" />
@@ -91,7 +107,7 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
         });
       }
     }
-  }, [instructorSolution, wrongConnections]);
+  }, [instructorSolution, wrongConnections, setEdges]);
 
   const onConnect = useCallback((params: Connection) => {
     if (!params.source || !params.target) return;
@@ -168,6 +184,23 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
         hintsUsed: prev.hintsUsed + 1
       }));
       
+      // Highlight correct connections when hint is used
+      setEdges(edges => edges.map(edge => {
+        const isCorrectConnection = instructorSolution.some((solution: any) => 
+          solution.source === edge.source && solution.target === edge.target
+        );
+        const isWrongConnection = wrongConnections.some((wrong: any) => 
+          wrong.source === edge.source && wrong.target === edge.target
+        );
+        
+        if (isCorrectConnection) {
+          return { ...edge, style: { ...edge.style, stroke: '#22c55e', strokeWidth: 3 } };
+        } else if (isWrongConnection) {
+          return { ...edge, style: { ...edge.style, stroke: '#ef4444', strokeWidth: 3 } };
+        }
+        return edge;
+      }));
+      
       trackInteraction('hint_used', {
         hintIndex: gameState.hintsUsed,
         hintText: hintsArray[gameState.hintsUsed],
@@ -176,14 +209,15 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
 
       toast.info(hintsArray[gameState.hintsUsed], {
         icon: <Lightbulb className="w-4 h-4" />,
-        duration: 8000
+        duration: 8000,
+        description: "Connections are now color-coded: Green = Correct, Red = Incorrect"
       });
     }
   };
 
   const calculateScore = () => {
     const timeSpent = (Date.now() - gameState.startTime) / 1000;
-    let score = gameState.score;
+    let score = gameState.score || 0; // Ensure score is not undefined
     
     // Time bonus (under 5 minutes)
     if (timeSpent < 300) {
@@ -198,12 +232,15 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
     }
     
     // Connection accuracy bonus
-    const totalRequired = instructorSolution.length;
-    const correctMade = gameState.correctConnections.length;
-    const accuracyBonus = Math.floor((correctMade / totalRequired) * 30);
-    score += accuracyBonus;
+    const totalRequired = instructorSolution?.length || 0;
+    const correctMade = gameState.correctConnections?.length || 0;
     
-    return Math.min(100, Math.max(0, score));
+    if (totalRequired > 0) {
+      const accuracyBonus = Math.floor((correctMade / totalRequired) * 30);
+      score += accuracyBonus;
+    }
+    
+    return Math.min(100, Math.max(0, Math.round(score)));
   };
 
   const checkGameCompletion = () => {
