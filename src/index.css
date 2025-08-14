@@ -222,7 +222,9 @@ All colors MUST be HSL.
 
   /* Game node type specific styling */
   .react-flow__node[data-node-type="scenario"],
-  .react-flow__node[data-node-type="information"] {
+  .react-flow__node[data-node-type="information"],
+  .react-flow__node[data-node-type="problem"],
+  .react-flow__node[data-node-type="system_core"] {
     min-width: 280px !important;
     max-width: 320px !important;
     padding: 16px !important;
@@ -232,9 +234,34 @@ All colors MUST be HSL.
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
   }
 
+  /* Root causes and solutions get special styling */
+  .react-flow__node[data-node-type="root_cause"],
+  .react-flow__node[data-node-type="solution"] {
+    min-width: 240px !important;
+    max-width: 280px !important;
+    padding: 14px !important;
+    background: linear-gradient(135deg, hsl(var(--accent) / 0.1), hsl(var(--primary) / 0.05)) !important;
+    border: 2px solid hsl(var(--accent) / 0.4) !important;
+  }
+
+  /* System nodes get distinct styling */
+  .react-flow__node[data-node-type="process"],
+  .react-flow__node[data-node-type="feedback"] {
+    min-width: 200px !important;
+    max-width: 240px !important;
+    background: linear-gradient(135deg, hsl(var(--secondary) / 0.8), hsl(var(--muted) / 0.6)) !important;
+    border: 2px solid hsl(var(--border)) !important;
+  }
+
   /* Other node types remain compact */
   .react-flow__node[data-node-type="decision"],
-  .react-flow__node[data-node-type="outcome"] {
+  .react-flow__node[data-node-type="outcome"],
+  .react-flow__node[data-node-type="symptom"],
+  .react-flow__node[data-node-type="impact"],
+  .react-flow__node[data-node-type="input"],
+  .react-flow__node[data-node-type="output"],
+  .react-flow__node[data-node-type="constraint"],
+  .react-flow__node[data-node-type="stakeholder"] {
     min-width: 180px !important;
     max-width: 220px !important;
   }
