@@ -356,22 +356,52 @@ Return JSON format:
     const templateKey = template.name.toLowerCase().replace(/\s+/g, '_');
     const contentForTemplate = orchestratedContent[templateKey];
     
-    if (!contentForTemplate) return null;
+    if (!contentForTemplate) {
+      console.log(`No content found for template key: ${templateKey}`);
+      console.log('Available content keys:', Object.keys(orchestratedContent));
+      return null;
+    }
 
     // Replace placeholders in template data
     let gameData = JSON.parse(JSON.stringify(template.template_data));
     
+    console.log(`Processing template: ${template.name}`);
+    console.log('Content for template:', contentForTemplate);
+    console.log('Original game data:', gameData);
+    
     // Replace placeholders in nodes
     gameData.nodes = gameData.nodes.map((node: any) => {
       let label = node.data.label;
+      
+      // Replace template variables with actual content
       Object.entries(contentForTemplate).forEach(([key, value]) => {
-        label = label.replace(`{{${key}}}`, value as string);
+        const placeholder = `{{${key}}}`;
+        if (typeof value === 'string') {
+          label = label.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
+        } else if (Array.isArray(value)) {
+          // For arrays, join with appropriate separators or use first item
+          label = label.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value[0] || '');
+        }
       });
+      
+      // Additional placeholder replacements for common patterns
+      if (templateKey === 'critical_decision_path') {
+        label = label.replace(/\{\{scenario_description\}\}/g, contentForTemplate.scenario || '');
+        label = label.replace(/\{\{decision_point_1\}\}/g, contentForTemplate.decision_points?.[0] || '');
+        label = label.replace(/\{\{option_1a\}\}/g, contentForTemplate.decision_points?.[0] || '');
+        label = label.replace(/\{\{option_1b\}\}/g, contentForTemplate.decision_points?.[1] || '');
+        label = label.replace(/\{\{final_outcome\}\}/g, contentForTemplate.optimal_path || '');
+      }
+      
+      console.log(`Node ${node.id} label transformed from "${node.data.label}" to "${label}"`);
+      
       return {
         ...node,
         data: { ...node.data, label }
       };
     });
+
+    console.log('Final processed game data:', gameData);
 
     return {
       templateId: template.id,
