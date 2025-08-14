@@ -246,70 +246,124 @@ export function GameSuiteBuilder({ sessionNumber, lectureNumber, lectureContent,
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                <Card className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Target className="w-4 h-4 text-blue-500" />
-                    <h5 className="font-medium">Critical Decision Path</h5>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                <Card className="p-6 group hover:shadow-lg transition-all duration-300 border-2 hover:border-blue-200 dark:hover:border-blue-800">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+                      <Target className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <h5 className="font-semibold text-base">Critical Decision Path</h5>
+                      <p className="text-xs text-muted-foreground">Sequential thinking mastery</p>
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-2">Enhances:</p>
-                  <div className="space-y-1 mb-3">
-                    <Badge variant="outline" className="text-xs">Sequential Reasoning</Badge>
-                    <Badge variant="outline" className="text-xs">Consequence Evaluation</Badge>
+                  <div className="space-y-3 mb-4">
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                        Sequential Reasoning
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+                        Consequence Evaluation
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="critical-context" className="text-xs">Additional Context (Optional)</Label>
-                    <Textarea 
-                      id="critical-context"
-                      placeholder="Add specific context for decision-making scenarios..."
-                      value={gameContexts.criticalDecisionPath}
-                      onChange={(e) => setGameContexts(prev => ({ ...prev, criticalDecisionPath: e.target.value }))}
-                      className="min-h-[60px] text-xs"
-                    />
-                  </div>
-                </Card>
-
-                <Card className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Brain className="w-4 h-4 text-purple-500" />
-                    <h5 className="font-medium">Problem Analysis Web</h5>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-2">Enhances:</p>
-                  <div className="space-y-1 mb-3">
-                    <Badge variant="outline" className="text-xs">Systematic Decomposition</Badge>
-                    <Badge variant="outline" className="text-xs">Root Cause Analysis</Badge>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="analysis-context" className="text-xs">Additional Context (Optional)</Label>
-                    <Textarea 
-                      id="analysis-context"
-                      placeholder="Add specific context for problem analysis scenarios..."
-                      value={gameContexts.problemAnalysisWeb}
-                      onChange={(e) => setGameContexts(prev => ({ ...prev, problemAnalysisWeb: e.target.value }))}
-                      className="min-h-[60px] text-xs"
-                    />
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                      <Label htmlFor="critical-context" className="text-sm font-medium">Scenario Context</Label>
+                    </div>
+                    <div className="relative">
+                      <Textarea 
+                        id="critical-context"
+                        placeholder="e.g., 'Corporate leadership crisis requiring rapid decision-making under uncertainty...'"
+                        value={gameContexts.criticalDecisionPath}
+                        onChange={(e) => setGameContexts(prev => ({ ...prev, criticalDecisionPath: e.target.value }))}
+                        className="min-h-[80px] resize-none border-dashed border-2 focus:border-solid transition-all"
+                      />
+                      <div className="absolute top-2 right-2 text-xs text-muted-foreground opacity-60">
+                        Optional
+                      </div>
+                    </div>
                   </div>
                 </Card>
 
-                <Card className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Award className="w-4 h-4 text-green-500" />
-                    <h5 className="font-medium">System Mapping</h5>
+                <Card className="p-6 group hover:shadow-lg transition-all duration-300 border-2 hover:border-purple-200 dark:hover:border-purple-800">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50 transition-colors">
+                      <Brain className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                      <h5 className="font-semibold text-base">Problem Analysis Web</h5>
+                      <p className="text-xs text-muted-foreground">Systematic decomposition</p>
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-2">Enhances:</p>
-                  <div className="space-y-1 mb-3">
-                    <Badge variant="outline" className="text-xs">Holistic Thinking</Badge>
-                    <Badge variant="outline" className="text-xs">Relationship Recognition</Badge>
+                  <div className="space-y-3 mb-4">
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="secondary" className="text-xs bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                        Systematic Decomposition
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+                        Root Cause Analysis
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="system-context" className="text-xs">Additional Context (Optional)</Label>
-                    <Textarea 
-                      id="system-context"
-                      placeholder="Add specific context for system mapping scenarios..."
-                      value={gameContexts.systemMapping}
-                      onChange={(e) => setGameContexts(prev => ({ ...prev, systemMapping: e.target.value }))}
-                      className="min-h-[60px] text-xs"
-                    />
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-purple-400"></div>
+                      <Label htmlFor="analysis-context" className="text-sm font-medium">Problem Context</Label>
+                    </div>
+                    <div className="relative">
+                      <Textarea 
+                        id="analysis-context"
+                        placeholder="e.g., 'Multi-layered organizational inefficiency with interconnected root causes...'"
+                        value={gameContexts.problemAnalysisWeb}
+                        onChange={(e) => setGameContexts(prev => ({ ...prev, problemAnalysisWeb: e.target.value }))}
+                        className="min-h-[80px] resize-none border-dashed border-2 focus:border-solid transition-all"
+                      />
+                      <div className="absolute top-2 right-2 text-xs text-muted-foreground opacity-60">
+                        Optional
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-6 group hover:shadow-lg transition-all duration-300 border-2 hover:border-green-200 dark:hover:border-green-800">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30 group-hover:bg-green-200 dark:group-hover:bg-green-900/50 transition-colors">
+                      <Award className="w-5 h-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <h5 className="font-semibold text-base">System Mapping</h5>
+                      <p className="text-xs text-muted-foreground">Holistic relationship mapping</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3 mb-4">
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="secondary" className="text-xs bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                        Holistic Thinking
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                        Relationship Recognition
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                      <Label htmlFor="system-context" className="text-sm font-medium">System Context</Label>
+                    </div>
+                    <div className="relative">
+                      <Textarea 
+                        id="system-context"
+                        placeholder="e.g., 'Complex ecosystem with multiple stakeholders and interdependent variables...'"
+                        value={gameContexts.systemMapping}
+                        onChange={(e) => setGameContexts(prev => ({ ...prev, systemMapping: e.target.value }))}
+                        className="min-h-[80px] resize-none border-dashed border-2 focus:border-solid transition-all"
+                      />
+                      <div className="absolute top-2 right-2 text-xs text-muted-foreground opacity-60">
+                        Optional
+                      </div>
+                    </div>
                   </div>
                 </Card>
               </div>
