@@ -202,28 +202,53 @@ async function generateGameSuite(supabase: any, openAIApiKey: string, params: an
   }
 
   const orchestratedPrompt = `
-Create a comprehensive game suite for Session ${sessionNumber}, Lecture ${lectureNumber} that develops critical thinking through three different approaches.
+**CRITICAL: Your response must be ONLY a valid JSON object with no additional text, explanations, or markdown formatting.**
 
-Lecture Content: ${lectureContent}
+Generate a coordinated suite of three complementary critical thinking games for this lecture content:
 
-Generate content for ALL THREE game types that complement each other:
+${lectureContent}
 
-1. CRITICAL DECISION PATH - Enhances Sequential Reasoning & Consequence Evaluation
-   Content Slots: ${JSON.stringify(templates.find(t => t.name === 'Critical Decision Path')?.content_slots)}
+**Template Analysis:**
+${Object.values(templates).map(t => `
+${t.name}: ${t.description}
+- Heuristics: ${t.heuristic_targets.join(', ')}
+- Content Slots: ${t.content_slots.map(slot => slot.name).join(', ')}
+`).join('\n')}
 
-2. PROBLEM ANALYSIS WEB - Enhances Systematic Decomposition & Root Cause Analysis  
-   Content Slots: ${JSON.stringify(templates.find(t => t.name === 'Problem Analysis Web')?.content_slots)}
-
-3. SYSTEM MAPPING - Enhances Holistic Thinking & Relationship Recognition
-   Content Slots: ${JSON.stringify(templates.find(t => t.name === 'System Mapping')?.content_slots)}
-
+**Requirements:**
 Create ONE cohesive scenario that can be adapted for all three games, ensuring:
 - Each game targets different cognitive heuristics
 - Content progresses in logical complexity
 - All three games relate to the same core concept from the lecture
 - Games complement rather than duplicate each other
 
-Return JSON with THREE objects: "critical_decision_path", "problem_analysis_web", and "system_mapping", each containing content for their respective slots.
+**Response Format (JSON ONLY):**
+{
+  "critical_decision_path": {
+    "title": "Game title here",
+    "description": "Brief description",
+    "scenario": "Main scenario text",
+    "decision_points": ["Point 1", "Point 2", "Point 3"],
+    "consequences": ["Consequence 1", "Consequence 2", "Consequence 3"],
+    "optimal_path": "Description of optimal decision sequence"
+  },
+  "problem_analysis_web": {
+    "title": "Game title here", 
+    "description": "Brief description",
+    "central_problem": "Core problem statement",
+    "connected_concepts": ["Concept 1", "Concept 2", "Concept 3"],
+    "relationships": ["Relationship 1", "Relationship 2", "Relationship 3"],
+    "analysis_framework": "Framework for systematic analysis"
+  },
+  "system_mapping": {
+    "title": "Game title here",
+    "description": "Brief description", 
+    "system_components": ["Component 1", "Component 2", "Component 3"],
+    "interactions": ["Interaction 1", "Interaction 2", "Interaction 3"],
+    "feedback_loops": ["Loop 1", "Loop 2"],
+    "system_boundaries": "Description of system boundaries"
+  }
+}
 `;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -237,7 +262,7 @@ Return JSON with THREE objects: "critical_decision_path", "problem_analysis_web"
       messages: [
         { 
           role: 'system', 
-          content: 'You are an expert in orchestrated educational game design. Create coordinated game suites that systematically develop different critical thinking heuristics through complementary experiences.' 
+          content: 'You are an expert game designer. Return ONLY valid JSON with no additional text, explanations, or formatting. Never include markdown code blocks or explanatory text.' 
         },
         { role: 'user', content: orchestratedPrompt }
       ],
@@ -248,23 +273,45 @@ Return JSON with THREE objects: "critical_decision_path", "problem_analysis_web"
   const aiData = await response.json();
   let orchestratedContentText = aiData.choices[0].message.content;
   
-  // Remove markdown code block formatting if present
-  orchestratedContentText = orchestratedContentText.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
+  // Clean up response text more thoroughly
+  orchestratedContentText = orchestratedContentText
+    .replace(/^```json\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .replace(/^.*?({.*}.*?}.*?}).*$/s, '$1')
+    .trim();
   
-  const orchestratedContent = JSON.parse(orchestratedContentText);
+  console.log('Cleaned orchestrated content:', orchestratedContentText);
+  
+  let orchestratedContent;
+  try {
+    orchestratedContent = JSON.parse(orchestratedContentText);
+  } catch (parseError) {
+    console.error('JSON Parse Error:', parseError);
+    console.error('Raw content:', orchestratedContentText);
+    throw new Error(`Failed to parse AI response as JSON: ${parseError.message}`);
+  }
 
-  // Generate instructions for the complete suite
   const suiteInstructionsPrompt = `
-Create instructions and hints for a complete game suite designed to enhance critical thinking heuristics:
+**CRITICAL: Your response must be ONLY a valid JSON object with no additional text or formatting.**
+
+Create instructions and hints for this game suite:
 
 Suite Content: ${JSON.stringify(orchestratedContent)}
 
-Generate:
-1. Suite overview instructions explaining the cognitive development journey
-2. Individual instructions for each game type
-3. Hints for each game that guide heuristic application
-
-Return JSON with "suite_overview", "individual_instructions" object, and "individual_hints" object.
+Return JSON format:
+{
+  "suite_overview": "Overview instructions explaining the cognitive development journey",
+  "individual_instructions": {
+    "critical_decision_path": "Instructions for decision path game",
+    "problem_analysis_web": "Instructions for analysis web game", 
+    "system_mapping": "Instructions for system mapping game"
+  },
+  "individual_hints": {
+    "critical_decision_path": ["Hint 1", "Hint 2", "Hint 3"],
+    "problem_analysis_web": ["Hint 1", "Hint 2", "Hint 3"],
+    "system_mapping": ["Hint 1", "Hint 2", "Hint 3"]
+  }
+}
 `;
 
   const instructionsResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -276,20 +323,33 @@ Return JSON with "suite_overview", "individual_instructions" object, and "indivi
     body: JSON.stringify({
       model: 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: 'Generate comprehensive instructions for cognitive heuristic development game suites.' },
+        { role: 'system', content: 'Return ONLY valid JSON with no additional text, explanations, or formatting. Never include markdown code blocks.' },
         { role: 'user', content: suiteInstructionsPrompt }
       ],
-      temperature: 0.6,
+      temperature: 0.3,
     }),
   });
 
   const instructionsData = await instructionsResponse.json();
   let instructionsText = instructionsData.choices[0].message.content;
   
-  // Remove markdown code block formatting if present
-  instructionsText = instructionsText.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
+  // Clean up instructions response thoroughly
+  instructionsText = instructionsText
+    .replace(/^```json\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .replace(/^.*?({.*}).*$/s, '$1')
+    .trim();
   
-  const suiteInstructions = JSON.parse(instructionsText);
+  console.log('Cleaned instructions:', instructionsText);
+  
+  let suiteInstructions;
+  try {
+    suiteInstructions = JSON.parse(instructionsText);
+  } catch (parseError) {
+    console.error('Instructions JSON Parse Error:', parseError);
+    console.error('Raw instructions content:', instructionsText);
+    throw new Error(`Failed to parse instructions as JSON: ${parseError.message}`);
+  }
 
   // Process each template
   const processedGames = await Promise.all(templates.map(async (template) => {
