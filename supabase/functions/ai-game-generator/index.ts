@@ -246,7 +246,7 @@ async function generateGameSuite(supabase: any, openAIApiKey: string, params: an
   const orchestratedPrompt = `
 **CRITICAL: Your response must be ONLY a valid JSON object with no additional text, explanations, or markdown formatting.**
 
-Generate a coordinated suite of three complementary critical thinking games for this lecture content:
+Generate a coordinated suite of three CONNECTION-BASED puzzle games for this lecture content:
 
 ${lectureContent}${contextSection}
 
@@ -257,12 +257,12 @@ ${t.name}: ${t.description}
 - Content Slots: ${t.content_slots.map(slot => slot.name).join(', ')}
 `).join('\n')}
 
-**Requirements:**
-Create ONE cohesive scenario that can be adapted for all three games, ensuring:
-- Each game targets different cognitive heuristics
-- Content progresses in logical complexity
-- All three games relate to the same core concept from the lecture
-- Games complement rather than duplicate each other
+**CRITICAL REQUIREMENTS:**
+Create ONE cohesive scenario for CONNECTION-BASED games where students must:
+- WIRE nodes together based on logical relationships 
+- Each game has correct connection patterns that students must discover
+- Students are judged on the CORRECTNESS of their wiring, not just clicking nodes
+- Games require systematic thinking to find the right connections
 
 **Response Format (JSON ONLY):**
 {
@@ -272,7 +272,10 @@ Create ONE cohesive scenario that can be adapted for all three games, ensuring:
     "scenario": "Main scenario text",
     "decision_points": ["Point 1", "Point 2", "Point 3"],
     "consequences": ["Consequence 1", "Consequence 2", "Consequence 3"],
-    "optimal_path": "Description of optimal decision sequence"
+    "optimal_path": "Description of optimal decision sequence",
+    "instructor_solution": [{"source": "node1_id", "target": "node2_id", "relationship": "leads to"}],
+    "connection_rules": ["Rule 1: Environmental factors must connect to outcomes", "Rule 2: Decisions lead to consequences"],
+    "wrong_connections": [{"source": "node1_id", "target": "wrong_node", "why_wrong": "This connection ignores causality"}]
   },
   "problem_analysis_web": {
     "title": "Game title here", 
@@ -280,7 +283,10 @@ Create ONE cohesive scenario that can be adapted for all three games, ensuring:
     "central_problem": "Core problem statement",
     "connected_concepts": ["Concept 1", "Concept 2", "Concept 3"],
     "relationships": ["Relationship 1", "Relationship 2", "Relationship 3"],
-    "analysis_framework": "Framework for systematic analysis"
+    "analysis_framework": "Framework for systematic analysis",
+    "instructor_solution": [{"source": "problem", "target": "root_cause", "relationship": "caused by"}],
+    "connection_rules": ["Root causes must connect to problems", "Problems connect to effects"],
+    "wrong_connections": [{"source": "symptom", "target": "unrelated_factor", "why_wrong": "Symptoms don't directly cause unrelated factors"}]
   },
   "system_mapping": {
     "title": "Game title here",
@@ -288,7 +294,10 @@ Create ONE cohesive scenario that can be adapted for all three games, ensuring:
     "system_components": ["Component 1", "Component 2", "Component 3"],
     "interactions": ["Interaction 1", "Interaction 2", "Interaction 3"],
     "feedback_loops": ["Loop 1", "Loop 2"],
-    "system_boundaries": "Description of system boundaries"
+    "system_boundaries": "Description of system boundaries",
+    "instructor_solution": [{"source": "component1", "target": "component2", "relationship": "influences"}],
+    "connection_rules": ["Components must connect based on actual influence", "Feedback loops must form cycles"],
+    "wrong_connections": [{"source": "input", "target": "unrelated_output", "why_wrong": "No direct influence relationship"}]
   }
 }
 `;

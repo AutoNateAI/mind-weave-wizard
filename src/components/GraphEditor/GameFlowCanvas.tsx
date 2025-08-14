@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Lightbulb, Trophy, Target, X, Info } from "lucide-react";
-import { handleDecisionNode, handleScenarioNode, handleOutcomeNode, checkGameCompletion, calculateDynamicScore } from "./GameLogic";
+import { Lightbulb, Trophy, Target, X, Info, CheckCircle, XCircle } from "lucide-react";
 import "@xyflow/react/dist/style.css";
 
 interface GameFlowCanvasProps {
@@ -33,84 +32,120 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
   const [nodes, setNodes, onNodesChange] = useNodesState(gameData?.nodes || []);
   const [edges, setEdges, onEdgesChange] = useEdgesState(gameData?.edges || []);
   const [gameState, setGameState] = useState({
-    currentStep: 0,
     interactions: 0,
     hintsUsed: 0,
     startTime: Date.now(),
-    decisionPath: [],
     isCompleted: false,
     revealedNodes: new Set<string>(),
-    selectedPath: [],
-    currentScenario: null as string | null,
-    score: 0
+    score: 0,
+    connections: [] as Array<{source: string, target: string}>,
+    correctConnections: [] as Array<{source: string, target: string}>,
+    incorrectConnections: [] as Array<{source: string, target: string}>
   });
-  const [showHint, setShowHint] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true);
   const [selectedNodeDetails, setSelectedNodeDetails] = useState<{ node: GameNode; position: { x: number; y: number } } | null>(null);
 
-  const onConnect = useCallback((params: Connection | Edge) => {
-    const newEdge = { ...params, id: `edge-${Date.now()}` };
+  // Get instructor solution and rules from gameData
+  const instructorSolution = gameData?.instructorSolution || [];
+  const connectionRules = gameData?.connectionRules || [];
+  const wrongConnections = gameData?.wrongConnections || [];
+
+  const evaluateConnection = useCallback((source: string, target: string) => {
+    // Check if this connection is in the instructor solution
+    const isCorrect = instructorSolution.some((solution: any) => 
+      solution.source === source && solution.target === target
+    );
+
+    if (isCorrect) {
+      setGameState(prev => ({
+        ...prev,
+        score: prev.score + 20,
+        correctConnections: [...prev.correctConnections, { source, target }]
+      }));
+      
+      toast.success("Excellent connection!", {
+        description: "This relationship demonstrates good systems thinking",
+        icon: <CheckCircle className="w-4 h-4" />
+      });
+    } else {
+      // Check if it's a known wrong connection
+      const wrongConnection = wrongConnections.find((wrong: any) => 
+        wrong.source === source && wrong.target === target
+      );
+      
+      if (wrongConnection) {
+        toast.error("Incorrect connection", {
+          description: wrongConnection.why_wrong || "This connection doesn't follow the logical pattern",
+          icon: <XCircle className="w-4 h-4" />
+        });
+        
+        setGameState(prev => ({
+          ...prev,
+          score: Math.max(0, prev.score - 5),
+          incorrectConnections: [...prev.incorrectConnections, { source, target }]
+        }));
+      } else {
+        // Neutral connection - not explicitly wrong but not in solution
+        toast.info("Connection noted", {
+          description: "Consider if this relationship is essential to the solution"
+        });
+      }
+    }
+  }, [instructorSolution, wrongConnections]);
+
+  const onConnect = useCallback((params: Connection) => {
+    if (!params.source || !params.target) return;
+    
+    const newEdge = { 
+      ...params, 
+      type: 'smoothstep' as const, 
+      id: `${params.source}-${params.target}`,
+      style: { stroke: '#8b5cf6', strokeWidth: 2 }
+    } as Edge;
     setEdges((eds) => addEdge(newEdge, eds));
     
-    // Track interaction
-    trackInteraction('edge_create', {
-      source: params.source,
-      target: params.target,
-      timestamp: Date.now()
+    // Track the connection
+    trackInteraction('connection_made', { 
+      source: params.source, 
+      target: params.target 
     });
-  }, [setEdges]);
+
+    // Update game state with new connection
+    setGameState(prev => ({
+      ...prev,
+      connections: [...prev.connections, { source: params.source!, target: params.target! }],
+      interactions: prev.interactions + 1
+    }));
+
+    // Evaluate connection correctness
+    evaluateConnection(params.source!, params.target!);
+  }, [evaluateConnection]);
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     const gameNode = node as GameNode;
     
-    // Check if node is unlocked
-    const isUnlocked = gameNode.data.unlocked !== false && 
-      (!gameNode.data.requiredNodes || 
-       gameNode.data.requiredNodes.every(reqId => gameState.revealedNodes.has(reqId)));
-    
-    if (!isUnlocked) {
-      toast.error("This option is not yet available. Complete previous steps first.");
-      return;
-    }
-
-    trackInteraction('node_click', {
-      nodeId: node.id,
-      nodeType: gameNode.data.nodeType,
-      position: node.position,
-      timestamp: Date.now()
-    });
-
-    // Show detailed information for the node
+    // In connection-based gameplay, clicking just reveals node info
     setSelectedNodeDetails({
       node: gameNode,
       position: { x: event.clientX, y: event.clientY }
     });
-
-    // Handle different node types
-    const nodeType = gameNode.data.nodeType || 'information';
     
-    if (nodeType === 'decision') {
-      handleDecisionNodeClick(gameNode);
-    } else if (nodeType === 'scenario') {
-      handleScenarioNodeClick(gameNode);
-    } else if (nodeType === 'outcome') {
-      handleOutcomeNodeClick(gameNode);
-    }
+    // Track the interaction
+    trackInteraction('node_inspected', { nodeId: node.id, nodeType: gameNode.data.nodeType });
+
+    // Reveal node information
+    setNodes(nds => nds.map(n => {
+      if (n.id === node.id) {
+        return { ...n, data: { ...n.data, revealed: true } };
+      }
+      return n;
+    }));
 
     setGameState(prev => ({
       ...prev,
-      interactions: prev.interactions + 1,
-      decisionPath: [...prev.decisionPath, node.id],
       revealedNodes: new Set([...prev.revealedNodes, node.id])
     }));
-
-    // Update node visual state
-    setNodes(nds => nds.map(n => 
-      n.id === node.id 
-        ? { ...n, data: { ...n.data, revealed: true } }
-        : n
-    ));
-  }, [gameState.revealedNodes]);
+  }, []);
 
   const trackInteraction = async (type: string, data: any) => {
     try {
@@ -128,7 +163,6 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
   const useHint = () => {
     const hintsArray = Array.isArray(hints) ? hints : [];
     if (gameState.hintsUsed < hintsArray.length) {
-      setShowHint(true);
       setGameState(prev => ({
         ...prev,
         hintsUsed: prev.hintsUsed + 1
@@ -142,9 +176,42 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
 
       toast.info(hintsArray[gameState.hintsUsed], {
         icon: <Lightbulb className="w-4 h-4" />,
-        duration: 5000
+        duration: 8000
       });
     }
+  };
+
+  const calculateScore = () => {
+    const timeSpent = (Date.now() - gameState.startTime) / 1000;
+    let score = gameState.score;
+    
+    // Time bonus (under 5 minutes)
+    if (timeSpent < 300) {
+      score += 25;
+    }
+    
+    // Efficiency bonus (fewer hints used)
+    if (gameState.hintsUsed === 0) {
+      score += 20;
+    } else if (gameState.hintsUsed <= 1) {
+      score += 10;
+    }
+    
+    // Connection accuracy bonus
+    const totalRequired = instructorSolution.length;
+    const correctMade = gameState.correctConnections.length;
+    const accuracyBonus = Math.floor((correctMade / totalRequired) * 30);
+    score += accuracyBonus;
+    
+    return Math.min(100, Math.max(0, score));
+  };
+
+  const checkGameCompletion = () => {
+    // Game is complete when all required connections are made
+    const requiredConnections = instructorSolution.length;
+    const correctConnections = gameState.correctConnections.length;
+    
+    return correctConnections >= requiredConnections;
   };
 
   const completeGame = async () => {
@@ -155,7 +222,9 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
       timeSpent,
       interactions: gameState.interactions,
       hintsUsed: gameState.hintsUsed,
-      decisionPath: gameState.decisionPath,
+      connectionsAttempted: gameState.connections.length,
+      correctConnections: gameState.correctConnections.length,
+      incorrectConnections: gameState.incorrectConnections.length,
       completionScore: score,
       finalSolution: { nodes, edges }
     };
@@ -169,7 +238,7 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
         hints_used: gameState.hintsUsed,
         completion_score: score,
         time_spent_seconds: Math.floor(timeSpent),
-        decision_path: JSON.stringify(gameState.decisionPath),
+        decision_path: JSON.stringify(gameState.connections),
         final_solution: JSON.stringify({ nodes, edges })
       });
 
@@ -186,50 +255,30 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
     }
   };
 
-  // Add the handler functions
-  const handleDecisionNodeClick = useCallback((node: GameNode) => {
-    handleDecisionNode(node, gameState, setGameState, setNodes, toast);
-  }, [gameState, setGameState, setNodes]);
-
-  const handleScenarioNodeClick = useCallback((node: GameNode) => {
-    handleScenarioNode(node, gameState, setGameState, toast);
-  }, [gameState, setGameState]);
-
-  const handleOutcomeNodeClick = useCallback((node: GameNode) => {
-    handleOutcomeNode(node, gameState, setGameState, toast);
-  }, [gameState, setGameState]);
-
-  const calculateScore = () => {
-    const timeSpent = (Date.now() - gameState.startTime) / 1000;
-    return calculateDynamicScore(gameState, timeSpent);
-  };
-
   const resetGame = () => {
     setNodes(gameData?.nodes || []);
     setEdges(gameData?.edges || []);
     setGameState({
-      currentStep: 0,
       interactions: 0,
       hintsUsed: 0,
       startTime: Date.now(),
-      decisionPath: [],
       isCompleted: false,
       revealedNodes: new Set<string>(),
-      selectedPath: [],
-      currentScenario: null,
-      score: 0
+      score: 0,
+      connections: [],
+      correctConnections: [],
+      incorrectConnections: []
     });
-    setShowHint(false);
     setShowInstructions(true);
     setSelectedNodeDetails(null);
   };
 
   // Check for game completion
   useEffect(() => {
-    if (checkGameCompletion(gameState, nodes.length) && !gameState.isCompleted) {
+    if (checkGameCompletion() && !gameState.isCompleted) {
       completeGame();
     }
-  }, [gameState.revealedNodes, gameState.isCompleted, nodes.length]);
+  }, [gameState.correctConnections, gameState.isCompleted]);
 
   const getGameInstructions = () => {
     const templateName = gameData?.templateName || "Interactive Game";
@@ -237,50 +286,50 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
     if (templateName.includes("Critical Decision")) {
       return {
         title: "Critical Decision Path Game",
-        objective: "Navigate through the decision tree to reach the optimal outcome",
+        objective: "Wire the correct decision sequence to reach the optimal outcome",
         instructions: [
-          "Read each scenario node carefully",
-          "Click on decision nodes to explore different paths",
-          "Connect related concepts by dragging between nodes",
-          "Try to identify the most effective decision sequence",
-          "Use hints if you get stuck on the optimal path"
+          "Click nodes to inspect their content",
+          "Drag from one node to another to create connections",
+          "Connect decisions to their logical consequences",
+          "Build the optimal decision path by wiring cause and effect",
+          "You win when all correct connections are made"
         ]
       };
     } else if (templateName.includes("Problem Analysis")) {
       return {
         title: "Problem Analysis Web Game",
-        objective: "Map the relationships between causes, effects, and solutions",
+        objective: "Wire the correct relationships between causes, effects, and solutions",
         instructions: [
-          "Identify the central problem in the main node",
-          "Connect causes to their effects by dragging between nodes",
-          "Look for patterns and feedback loops in the system",
-          "Build a complete web showing all relationships",
-          "Find the most effective intervention points"
+          "Identify the central problem by inspecting nodes",
+          "Connect root causes to their effects",
+          "Wire problems to their potential solutions",
+          "Look for systematic relationships in the network",
+          "Complete all essential connections to solve the web"
         ]
       };
     } else if (templateName.includes("System Mapping")) {
       return {
         title: "System Mapping Game",
-        objective: "Understand how different factors interact within the system",
+        objective: "Map the correct influence patterns within the system",
         instructions: [
-          "Examine each system component in the nodes",
-          "Create connections between related factors",
-          "Look for reinforcing and balancing loops",
-          "Identify leverage points for system change",
-          "Map the complete system dynamics"
+          "Examine each system component by clicking nodes",
+          "Wire components based on their actual influence relationships",
+          "Create feedback loops where appropriate",
+          "Connect inputs to outputs through the system",
+          "Map the complete system dynamics to win"
         ]
       };
     }
     
     return {
-      title: "Graph Thinking Game",
-      objective: "Explore connections and build understanding through interaction",
+      title: "Connection Puzzle Game",
+      objective: "Build understanding by wiring the correct relationships",
       instructions: [
         "Click on nodes to explore concepts",
-        "Drag between nodes to create connections",
-        "Look for patterns and relationships",
-        "Build your understanding through exploration",
-        "Use hints when you need guidance"
+        "Drag between nodes to create logical connections",
+        "Look for cause-and-effect relationships",
+        "Build your understanding through systematic wiring",
+        "Use hints when you need guidance on connections"
       ]
     };
   };
@@ -313,7 +362,7 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
             
             <div className="flex justify-center">
               <Button onClick={() => setShowInstructions(false)} className="cyber-glow">
-                Start Playing
+                Start Wiring
               </Button>
             </div>
           </div>
@@ -333,7 +382,11 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
           </Button>
           <div className="flex items-center gap-1">
             <Target className="w-4 h-4" />
-            <span>Interactions: {gameState.interactions}</span>
+            <span>Connections: {gameState.connections.length}</span>
+          </div>
+          <div className="flex items-center gap-1 text-green-600">
+            <CheckCircle className="w-4 h-4" />
+            <span>Correct: {gameState.correctConnections.length}/{instructorSolution.length}</span>
           </div>
           <div className="flex items-center gap-1">
             <Trophy className="w-4 h-4" />
@@ -356,13 +409,13 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
           {!gameState.isCompleted && (
             <Button size="sm" onClick={completeGame} className="cyber-glow gap-1">
               <Trophy className="w-3 h-3" />
-              Complete
+              Finish
             </Button>
           )}
           
           {gameState.isCompleted && (
             <Button size="sm" variant="secondary" onClick={resetGame}>
-              Play Again
+              Wire Again
             </Button>
           )}
         </div>
@@ -397,6 +450,7 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
             className={theme === 'dark' ? 'dark' : ''}
           />
         </ReactFlow>
+
         {/* Node Details Modal */}
         {selectedNodeDetails && (
           <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-20 flex items-center justify-center p-4">
@@ -427,23 +481,9 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
                   <p className="text-sm">{selectedNodeDetails.node.data.label}</p>
                 </div>
                 
-                {selectedNodeDetails.node.data.consequences && (
-                  <div>
-                    <span className="text-sm font-medium text-muted-foreground">Consequences:</span>
-                    <ul className="text-sm space-y-1">
-                      {selectedNodeDetails.node.data.consequences.map((consequence, idx) => (
-                        <li key={idx} className="text-muted-foreground">• {consequence}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                
-                {selectedNodeDetails.node.data.points && (
-                  <div>
-                    <span className="text-sm font-medium text-muted-foreground">Points:</span>
-                    <p className="text-sm">+{selectedNodeDetails.node.data.points}</p>
-                  </div>
-                )}
+                <div className="text-xs text-muted-foreground pt-2 border-t">
+                  <p>💡 Tip: Drag from this node to create connections with related concepts</p>
+                </div>
               </div>
             </div>
           </div>
@@ -454,11 +494,12 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-10">
             <div className="text-center p-8 rounded-lg bg-card border shadow-lg">
               <Trophy className="w-16 h-16 mx-auto mb-4 text-yellow-500" />
-              <h3 className="text-2xl font-bold mb-2">Game Completed!</h3>
-              <p className="text-lg mb-4">Final Score: {calculateScore()}</p>
+              <h3 className="text-2xl font-bold mb-2">Network Complete!</h3>
+              <p className="text-lg mb-4">Final Score: {calculateScore()}%</p>
               <div className="text-sm text-muted-foreground space-y-1">
                 <p>Time: {Math.floor((Date.now() - gameState.startTime) / 1000 / 60)} minutes</p>
-                <p>Nodes explored: {gameState.revealedNodes.size}/{nodes.length}</p>
+                <p>Correct connections: {gameState.correctConnections.length}/{instructorSolution.length}</p>
+                <p>Total attempts: {gameState.connections.length}</p>
                 <p>Hints used: {gameState.hintsUsed}</p>
               </div>
             </div>
