@@ -235,9 +235,9 @@ export function GameSuiteBuilder({ sessionNumber, lectureNumber, lectureContent,
 
       {!generatedSuite ? (
         /* Generation Interface */
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <Card className="p-8 text-center">
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div>
                 <Zap className="w-16 h-16 mx-auto mb-4 text-primary" />
                 <h4 className="text-xl font-semibold mb-2">AI-Powered Game Suite</h4>
@@ -278,7 +278,8 @@ export function GameSuiteBuilder({ sessionNumber, lectureNumber, lectureContent,
                         placeholder="e.g., 'Corporate leadership crisis requiring rapid decision-making under uncertainty...'"
                         value={gameContexts.criticalDecisionPath}
                         onChange={(e) => setGameContexts(prev => ({ ...prev, criticalDecisionPath: e.target.value }))}
-                        className="min-h-[80px] resize-none border-dashed border-2 focus:border-solid transition-all"
+                        className="min-h-[100px] resize-none border-dashed border-2 focus:border-solid transition-all overflow-hidden scrollbar-hide"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                       />
                       <div className="absolute top-2 right-2 text-xs text-muted-foreground opacity-60">
                         Optional
@@ -318,7 +319,8 @@ export function GameSuiteBuilder({ sessionNumber, lectureNumber, lectureContent,
                         placeholder="e.g., 'Multi-layered organizational inefficiency with interconnected root causes...'"
                         value={gameContexts.problemAnalysisWeb}
                         onChange={(e) => setGameContexts(prev => ({ ...prev, problemAnalysisWeb: e.target.value }))}
-                        className="min-h-[80px] resize-none border-dashed border-2 focus:border-solid transition-all"
+                        className="min-h-[100px] resize-none border-dashed border-2 focus:border-solid transition-all overflow-hidden scrollbar-hide"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                       />
                       <div className="absolute top-2 right-2 text-xs text-muted-foreground opacity-60">
                         Optional
@@ -358,7 +360,8 @@ export function GameSuiteBuilder({ sessionNumber, lectureNumber, lectureContent,
                         placeholder="e.g., 'Complex ecosystem with multiple stakeholders and interdependent variables...'"
                         value={gameContexts.systemMapping}
                         onChange={(e) => setGameContexts(prev => ({ ...prev, systemMapping: e.target.value }))}
-                        className="min-h-[80px] resize-none border-dashed border-2 focus:border-solid transition-all"
+                        className="min-h-[100px] resize-none border-dashed border-2 focus:border-solid transition-all overflow-hidden scrollbar-hide"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                       />
                       <div className="absolute top-2 right-2 text-xs text-muted-foreground opacity-60">
                         Optional

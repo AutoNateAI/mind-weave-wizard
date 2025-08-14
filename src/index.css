@@ -333,4 +333,14 @@ All colors MUST be HSL.
     border: 2px solid var(--rf-node-border) !important;
     color: var(--rf-node-text) !important;
   }
+
+  /* Hide scrollbars */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
