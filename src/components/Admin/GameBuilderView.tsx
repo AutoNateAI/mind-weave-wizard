@@ -5,10 +5,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { GameBuilder } from "./GameBuilder";
+import { GameSuiteBuilder } from "./GameSuiteBuilder";
 import { GameFlowCanvas } from "@/components/GraphEditor/GameFlowCanvas";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Play, Settings, BarChart3 } from "lucide-react";
+import { Play, Settings, BarChart3, Zap } from "lucide-react";
 
 interface Session {
   session_number: number;
@@ -49,6 +50,7 @@ export function GameBuilderView({ selectedCourseId }: GameBuilderViewProps) {
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [selectedLecture, setSelectedLecture] = useState<Lecture | null>(null);
   const [showBuilder, setShowBuilder] = useState(false);
+  const [showSuiteBuilder, setShowSuiteBuilder] = useState(false);
   const [previewGame, setPreviewGame] = useState<LectureGame | null>(null);
 
   useEffect(() => {
@@ -146,6 +148,7 @@ export function GameBuilderView({ selectedCourseId }: GameBuilderViewProps) {
 
   const handleGameSaved = () => {
     setShowBuilder(false);
+    setShowSuiteBuilder(false);
     if (selectedLecture) {
       loadGames(selectedLecture.session_number, selectedLecture.lecture_number);
     }
@@ -170,7 +173,7 @@ export function GameBuilderView({ selectedCourseId }: GameBuilderViewProps) {
 
   return (
     <div className="space-y-6">
-      {!showBuilder ? (
+      {!showBuilder && !showSuiteBuilder ? (
         <>
           {/* Selection Controls */}
           <Card className="p-6">
@@ -224,14 +227,24 @@ export function GameBuilderView({ selectedCourseId }: GameBuilderViewProps) {
                 </Select>
               </div>
 
-              <div className="flex items-end">
+              <div className="flex items-end gap-2">
+                <Button 
+                  onClick={() => setShowSuiteBuilder(true)}
+                  disabled={!selectedLecture}
+                  className="flex-1 gap-2"
+                  variant="default"
+                >
+                  <Zap className="w-4 h-4" />
+                  Generate Complete Game Suite
+                </Button>
                 <Button 
                   onClick={() => setShowBuilder(true)}
                   disabled={!selectedLecture}
-                  className="w-full gap-2"
+                  className="flex-1 gap-2"
+                  variant="outline"
                 >
                   <Settings className="w-4 h-4" />
-                  Create Game
+                  Create Single Game
                 </Button>
               </div>
             </div>
@@ -297,6 +310,13 @@ export function GameBuilderView({ selectedCourseId }: GameBuilderViewProps) {
             </Card>
           )}
         </>
+      ) : showSuiteBuilder ? (
+        <GameSuiteBuilder
+          sessionNumber={selectedLecture!.session_number}
+          lectureNumber={selectedLecture!.lecture_number}
+          lectureContent={selectedLecture!.content}
+          onGamesSaved={handleGameSaved}
+        />
       ) : (
         <GameBuilder
           sessionNumber={selectedLecture!.session_number}

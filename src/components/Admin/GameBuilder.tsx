@@ -18,6 +18,12 @@ interface GameTemplate {
   template_data: any;
   mechanics: any;
   content_slots: any;
+  heuristic_targets?: any;
+  validation_rules?: any;
+  win_conditions?: any;
+  created_at?: string;
+  created_by?: string;
+  updated_at?: string;
 }
 
 interface LectureGame {
@@ -159,7 +165,7 @@ export function GameBuilder({ sessionNumber, lectureNumber, lectureContent, onGa
       setGameData({
         ...gameData,
         title: `${selectedTemplate.name}: Session ${sessionNumber}, Lecture ${lectureNumber}`,
-        description: `Interactive ${selectedTemplate.category} game based on lecture content`,
+        description: `Interactive ${selectedTemplate.category} game enhancing ${data.heuristicTargets?.join(', ') || 'critical thinking'}`,
         instructions: data.instructions,
         game_data: data.gameData,
         hints: data.hints,
@@ -259,6 +265,15 @@ export function GameBuilder({ sessionNumber, lectureNumber, lectureContent, onGa
                     <p className="text-sm text-muted-foreground">
                       {template.description}
                     </p>
+                    {template.heuristic_targets && Array.isArray(template.heuristic_targets) && template.heuristic_targets.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {template.heuristic_targets.map((heuristic: string, index: number) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {heuristic}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </Card>
               ))}

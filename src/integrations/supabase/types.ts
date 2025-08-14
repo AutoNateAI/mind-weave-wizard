@@ -196,11 +196,14 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          heuristic_targets: Json | null
           id: string
           mechanics: Json
           name: string
           template_data: Json
           updated_at: string
+          validation_rules: Json | null
+          win_conditions: Json | null
         }
         Insert: {
           category?: string
@@ -208,11 +211,14 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          heuristic_targets?: Json | null
           id?: string
           mechanics?: Json
           name: string
           template_data: Json
           updated_at?: string
+          validation_rules?: Json | null
+          win_conditions?: Json | null
         }
         Update: {
           category?: string
@@ -220,11 +226,14 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          heuristic_targets?: Json | null
           id?: string
           mechanics?: Json
           name?: string
           template_data?: Json
           updated_at?: string
+          validation_rules?: Json | null
+          win_conditions?: Json | null
         }
         Relationships: []
       }
@@ -283,6 +292,7 @@ export type Database = {
           estimated_duration_minutes: number | null
           game_data: Json
           game_template_id: string
+          heuristic_targets: Json | null
           hints: Json | null
           id: string
           instructions: string | null
@@ -292,6 +302,8 @@ export type Database = {
           session_number: number
           title: string
           updated_at: string
+          validation_rules: Json | null
+          win_conditions: Json | null
         }
         Insert: {
           created_at?: string
@@ -300,6 +312,7 @@ export type Database = {
           estimated_duration_minutes?: number | null
           game_data: Json
           game_template_id: string
+          heuristic_targets?: Json | null
           hints?: Json | null
           id?: string
           instructions?: string | null
@@ -309,6 +322,8 @@ export type Database = {
           session_number: number
           title: string
           updated_at?: string
+          validation_rules?: Json | null
+          win_conditions?: Json | null
         }
         Update: {
           created_at?: string
@@ -317,6 +332,7 @@ export type Database = {
           estimated_duration_minutes?: number | null
           game_data?: Json
           game_template_id?: string
+          heuristic_targets?: Json | null
           hints?: Json | null
           id?: string
           instructions?: string | null
@@ -326,6 +342,8 @@ export type Database = {
           session_number?: number
           title?: string
           updated_at?: string
+          validation_rules?: Json | null
+          win_conditions?: Json | null
         }
         Relationships: [
           {
