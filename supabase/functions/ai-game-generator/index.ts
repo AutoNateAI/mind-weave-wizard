@@ -369,29 +369,47 @@ Return JSON format:
     console.log('Content for template:', contentForTemplate);
     console.log('Original game data:', gameData);
     
+    // Create mapping based on template type
+    let replacementMap = {};
+    
+    if (templateKey === 'critical_decision_path') {
+      replacementMap = {
+        'scenario_description': contentForTemplate.scenario || contentForTemplate.description || 'Make critical decisions in this scenario',
+        'decision_point_1': contentForTemplate.decision_points?.[0] || 'First decision point',
+        'option_1a': contentForTemplate.decision_points?.[0] || 'Option A',
+        'option_1b': contentForTemplate.decision_points?.[1] || 'Option B',
+        'final_outcome': contentForTemplate.optimal_path || contentForTemplate.consequences?.[0] || 'Final outcome'
+      };
+    } else if (templateKey === 'problem_analysis_web') {
+      replacementMap = {
+        'main_problem': contentForTemplate.central_problem || contentForTemplate.title || 'Main problem to analyze',
+        'cause_1': contentForTemplate.connected_concepts?.[0] || 'First cause',
+        'cause_2': contentForTemplate.connected_concepts?.[1] || 'Second cause',
+        'effect_1': contentForTemplate.relationships?.[0] || 'First effect',
+        'effect_2': contentForTemplate.relationships?.[1] || 'Second effect',
+        'solution': contentForTemplate.analysis_framework || 'Proposed solution'
+      };
+    } else if (templateKey === 'system_mapping') {
+      replacementMap = {
+        'central_concept': contentForTemplate.system_boundaries || contentForTemplate.title || 'Central concept',
+        'factor_1': contentForTemplate.system_components?.[0] || 'First factor',
+        'factor_2': contentForTemplate.system_components?.[1] || 'Second factor',
+        'factor_3': contentForTemplate.system_components?.[2] || 'Third factor',
+        'factor_4': contentForTemplate.interactions?.[0] || 'Fourth factor'
+      };
+    }
+    
+    console.log('Replacement map:', replacementMap);
+    
     // Replace placeholders in nodes
     gameData.nodes = gameData.nodes.map((node: any) => {
       let label = node.data.label;
       
-      // Replace template variables with actual content
-      Object.entries(contentForTemplate).forEach(([key, value]) => {
-        const placeholder = `{{${key}}}`;
-        if (typeof value === 'string') {
-          label = label.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
-        } else if (Array.isArray(value)) {
-          // For arrays, join with appropriate separators or use first item
-          label = label.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value[0] || '');
-        }
+      // Replace all placeholders using the mapping
+      Object.entries(replacementMap).forEach(([placeholder, value]) => {
+        const pattern = new RegExp(`\\{\\{${placeholder}\\}\\}`, 'g');
+        label = label.replace(pattern, value as string);
       });
-      
-      // Additional placeholder replacements for common patterns
-      if (templateKey === 'critical_decision_path') {
-        label = label.replace(/\{\{scenario_description\}\}/g, contentForTemplate.scenario || '');
-        label = label.replace(/\{\{decision_point_1\}\}/g, contentForTemplate.decision_points?.[0] || '');
-        label = label.replace(/\{\{option_1a\}\}/g, contentForTemplate.decision_points?.[0] || '');
-        label = label.replace(/\{\{option_1b\}\}/g, contentForTemplate.decision_points?.[1] || '');
-        label = label.replace(/\{\{final_outcome\}\}/g, contentForTemplate.optimal_path || '');
-      }
       
       console.log(`Node ${node.id} label transformed from "${node.data.label}" to "${label}"`);
       
