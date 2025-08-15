@@ -224,9 +224,6 @@ export function SlideViewer({ sessionNumber, lectureNumber }: SlideViewerProps) 
                 // Side-by-side layout for image and text
                 return (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                    <div className="space-y-3">
-                      {formatTextContent(textLines)}
-                    </div>
                     <div className="flex justify-center">
                       <div className="responsive-image-container max-w-full w-full">
                         <img
@@ -243,6 +240,9 @@ export function SlideViewer({ sessionNumber, lectureNumber }: SlideViewerProps) 
                           }}
                         />
                       </div>
+                    </div>
+                    <div className="space-y-3">
+                      {formatTextContent(textLines)}
                     </div>
                   </div>
                 );

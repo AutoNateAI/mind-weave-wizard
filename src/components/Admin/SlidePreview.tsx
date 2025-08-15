@@ -105,27 +105,6 @@ export function SlidePreview({ slide }: SlidePreviewProps) {
               if (slide.slide_type === 'image' || imageLines.length > 0) {
                 return (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                    <div className="space-y-3">
-                      <div className="prose prose-lg dark:prose-invert max-w-none">
-                        <ReactMarkdown
-                          components={{
-                            ul: ({ children }) => (
-                              <ul className="space-y-2 text-lg list-disc pl-6">
-                                {children}
-                              </ul>
-                            ),
-                            li: ({ children }) => (
-                              <li className="leading-relaxed">{children}</li>
-                            ),
-                            p: ({ children }) => (
-                              <p className="text-lg leading-relaxed mb-4">{children}</p>
-                            )
-                          }}
-                        >
-                          {textLines.length > 0 ? formatContent(textLines.join('\n')) : formatContent(slide.content)}
-                        </ReactMarkdown>
-                      </div>
-                    </div>
                     <div className="flex justify-center">
                       {imageLines.length > 0 ? (
                         <div className="w-full">
@@ -177,6 +156,27 @@ export function SlidePreview({ slide }: SlidePreviewProps) {
                           </div>
                         </div>
                       )}
+                    </div>
+                    <div className="space-y-3">
+                      <div className="prose prose-lg dark:prose-invert max-w-none">
+                        <ReactMarkdown
+                          components={{
+                            ul: ({ children }) => (
+                              <ul className="space-y-2 text-lg list-disc pl-6">
+                                {children}
+                              </ul>
+                            ),
+                            li: ({ children }) => (
+                              <li className="leading-relaxed">{children}</li>
+                            ),
+                            p: ({ children }) => (
+                              <p className="text-lg leading-relaxed mb-4">{children}</p>
+                            )
+                          }}
+                        >
+                          {textLines.length > 0 ? formatContent(textLines.join('\n')) : formatContent(slide.content)}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   </div>
                 );
