@@ -2,6 +2,44 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
+// Helper function to fetch and process prompts from the AI prompt library
+async function getPromptTemplate(supabase: any, promptName: string, variables = {}) {
+  try {
+    const { data: prompt, error } = await supabase
+      .from('ai_prompts')
+      .select('prompt_template, variables')
+      .eq('prompt_name', promptName)
+      .eq('is_active', true)
+      .single();
+
+    if (error || !prompt) {
+      console.warn(`Prompt not found in library: ${promptName}, using fallback`);
+      return null;
+    }
+
+    // Replace variables in the template
+    let processedTemplate = prompt.prompt_template;
+    Object.entries(variables).forEach(([key, value]) => {
+      const placeholder = `{{${key}}}`;
+      processedTemplate = processedTemplate.replace(new RegExp(placeholder, 'g'), String(value));
+    });
+
+    // Update usage tracking
+    await supabase
+      .from('ai_prompts')
+      .update({
+        usage_count: supabase.rpc('increment', { row_id: prompt.id }),
+        last_used_at: new Date().toISOString()
+      })
+      .eq('prompt_name', promptName);
+
+    return processedTemplate;
+  } catch (error) {
+    console.error(`Error fetching prompt ${promptName}:`, error);
+    return null;
+  }
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -79,7 +117,15 @@ async function generateSingleGame(supabase: any, openAIApiKey: string, params: a
     `Focus on enhancing these cognitive heuristics: ${template.heuristic_targets.join(', ')}` : '';
 
   // Generate game content with AI
-  const prompt = `
+  const promptTemplate = await getPromptTemplate(supabase, 'game_generation_prompt', {
+    lecture_content: lectureContent,
+    template_name: template.name,
+    template_description: template.description,
+    heuristic_context: heuristicContext,
+    content_slots: JSON.stringify(template.content_slots)
+  });
+
+  const prompt = promptTemplate || `
 Based on this lecture content and template, create an engaging game scenario that enhances critical thinking:
 
 Lecture Content: ${lectureContent}

@@ -1,5 +1,48 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.54.0';
+
+// Helper function to fetch and process prompts from the AI prompt library
+async function getPromptTemplate(promptName: string, variables = {}) {
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { data: prompt, error } = await supabase
+      .from('ai_prompts')
+      .select('prompt_template, variables')
+      .eq('prompt_name', promptName)
+      .eq('is_active', true)
+      .single();
+
+    if (error || !prompt) {
+      console.warn(`Prompt not found in library: ${promptName}, using fallback`);
+      return null;
+    }
+
+    // Replace variables in the template
+    let processedTemplate = prompt.prompt_template;
+    Object.entries(variables).forEach(([key, value]) => {
+      const placeholder = `{{${key}}}`;
+      processedTemplate = processedTemplate.replace(new RegExp(placeholder, 'g'), String(value));
+    });
+
+    // Update usage tracking
+    await supabase
+      .from('ai_prompts')
+      .update({
+        usage_count: supabase.rpc('increment', { row_id: prompt.id }),
+        last_used_at: new Date().toISOString()
+      })
+      .eq('prompt_name', promptName);
+
+    return processedTemplate;
+  } catch (error) {
+    console.error(`Error fetching prompt ${promptName}:`, error);
+    return null;
+  }
+}
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
@@ -20,42 +63,55 @@ serve(async (req) => {
 
     const { prompt, content_type, location_context, critical_thinking_concepts } = await req.json();
 
+    // Get prompt template from the AI prompt library
+    const promptTemplateKey = `social_content_generation_${content_type}`;
+    const promptTemplate = await getPromptTemplate(promptTemplateKey, {
+      content_type,
+      location_context: location_context ? JSON.stringify(location_context) : '',
+      critical_thinking_concepts: critical_thinking_concepts ? critical_thinking_concepts.join(', ') : ''
+    });
+
     // Build enhanced prompt based on content type
     let systemPrompt = '';
     let maxTokens = 500;
 
-    switch (content_type) {
-      case 'linkedin_post':
-        systemPrompt = `You are an expert social media content creator specializing in LinkedIn posts for professionals. Create engaging, thought-provoking LinkedIn posts that incorporate critical thinking concepts naturally. The post should be professional yet conversational, include relevant hashtags, and encourage meaningful discussion.`;
-        maxTokens = 500;
-        break;
-      case 'linkedin_article':
-        systemPrompt = `You are an expert content creator specializing in LinkedIn articles. Create comprehensive, well-structured articles that explore critical thinking concepts in depth. The article should be educational, professional, and provide actionable insights for business professionals.`;
-        maxTokens = 2000;
-        break;
-      case 'instagram_post':
-        systemPrompt = `You are an expert social media content creator specializing in Instagram posts. Create visually engaging post captions that make critical thinking concepts accessible and relatable. The content should be inspiring, use relevant hashtags, and encourage engagement.`;
-        maxTokens = 400;
-        break;
-      case 'instagram_story':
-        systemPrompt = `You are an expert social media content creator specializing in Instagram Stories. Create brief, impactful story content that highlights critical thinking concepts in bite-sized, shareable formats. The content should be visual-first and engaging.`;
-        maxTokens = 200;
-        break;
-      default:
-        systemPrompt = `You are an expert content creator specializing in social media content that incorporates critical thinking concepts for professional audiences.`;
-    }
+    if (promptTemplate) {
+      systemPrompt = promptTemplate;
+    } else {
+      // Fallback prompts if not found in database
+      switch (content_type) {
+        case 'linkedin_post':
+          systemPrompt = `You are an expert social media content creator specializing in LinkedIn posts for professionals. Create engaging, thought-provoking LinkedIn posts that incorporate critical thinking concepts naturally. The post should be professional yet conversational, include relevant hashtags, and encourage meaningful discussion.`;
+          maxTokens = 500;
+          break;
+        case 'linkedin_article':
+          systemPrompt = `You are an expert content creator specializing in LinkedIn articles. Create comprehensive, well-structured articles that explore critical thinking concepts in depth. The article should be educational, professional, and provide actionable insights for business professionals.`;
+          maxTokens = 2000;
+          break;
+        case 'instagram_post':
+          systemPrompt = `You are an expert social media content creator specializing in Instagram posts. Create visually engaging post captions that make critical thinking concepts accessible and relatable. The content should be inspiring, use relevant hashtags, and encourage engagement.`;
+          maxTokens = 400;
+          break;
+        case 'instagram_story':
+          systemPrompt = `You are an expert social media content creator specializing in Instagram Stories. Create brief, impactful story content that highlights critical thinking concepts in bite-sized, shareable formats. The content should be visual-first and engaging.`;
+          maxTokens = 200;
+          break;
+        default:
+          systemPrompt = `You are an expert content creator specializing in social media content that incorporates critical thinking concepts for professional audiences.`;
+      }
 
-    // Add location context if provided
-    if (location_context) {
-      systemPrompt += ` The content is targeted at professionals in the ${location_context.city}, ${location_context.state} area, particularly those connected to ${location_context.company_name}.`;
-    }
+      // Add location context if provided
+      if (location_context) {
+        systemPrompt += ` The content is targeted at professionals in the ${location_context.city}, ${location_context.state} area, particularly those connected to ${location_context.company_name}.`;
+      }
 
-    // Add critical thinking focus
-    if (critical_thinking_concepts && critical_thinking_concepts.length > 0) {
-      systemPrompt += ` Focus particularly on these critical thinking concepts: ${critical_thinking_concepts.join(', ')}.`;
-    }
+      // Add critical thinking focus
+      if (critical_thinking_concepts && critical_thinking_concepts.length > 0) {
+        systemPrompt += ` Focus particularly on these critical thinking concepts: ${critical_thinking_concepts.join(', ')}.`;
+      }
 
-    systemPrompt += ` The content should relate to our thinking skills course offerings and position us as thought leaders in critical thinking education.`;
+      systemPrompt += ` The content should relate to our thinking skills course offerings and position us as thought leaders in critical thinking education.`;
+    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',

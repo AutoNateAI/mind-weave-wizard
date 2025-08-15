@@ -13,6 +13,44 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Helper function to fetch and process prompts from the AI prompt library
+async function getPromptTemplate(promptName: string, variables = {}) {
+  try {
+    const { data: prompt, error } = await supabase
+      .from('ai_prompts')
+      .select('prompt_template, variables')
+      .eq('prompt_name', promptName)
+      .eq('is_active', true)
+      .single();
+
+    if (error || !prompt) {
+      console.warn(`Prompt not found in library: ${promptName}, using fallback`);
+      return null;
+    }
+
+    // Replace variables in the template
+    let processedTemplate = prompt.prompt_template;
+    Object.entries(variables).forEach(([key, value]) => {
+      const placeholder = `{{${key}}}`;
+      processedTemplate = processedTemplate.replace(new RegExp(placeholder, 'g'), String(value));
+    });
+
+    // Update usage tracking
+    await supabase
+      .from('ai_prompts')
+      .update({
+        usage_count: supabase.rpc('increment', { row_id: prompt.id }),
+        last_used_at: new Date().toISOString()
+      })
+      .eq('prompt_name', promptName);
+
+    return processedTemplate;
+  } catch (error) {
+    console.error(`Error fetching prompt ${promptName}:`, error);
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -50,7 +88,12 @@ serve(async (req) => {
 async function planCourse(payload: any) {
   const { courseDescription, chatHistory, userId } = payload;
   
-  const prompt = `You are an expert course designer creating the "AutoNateAI: Thinking Wizard Course" - a 10-session mental mastery journey focused on graph theory and thinking models.
+  const promptTemplate = await getPromptTemplate('course_planning_system', {
+    course_description: courseDescription,
+    chat_history: JSON.stringify(chatHistory)
+  });
+
+  const prompt = promptTemplate || `You are an expert course designer creating the "AutoNateAI: Thinking Wizard Course" - a 10-session mental mastery journey focused on graph theory and thinking models.
 
 FRAMEWORK CONSTRAINTS: You MUST create courses that follow this exact structure:
 - Exactly 10 sessions
@@ -178,8 +221,8 @@ Make sure each session has exactly 3 lectures, each 5-7 minutes long. Focus on e
 async function planningChat(payload: any) {
   const { chatHistory } = payload;
 
-  const messages = [
-    { role: 'system', content: `You are an expert course planning assistant for the "AutoNateAI: Thinking Wizard Course" - a 10-session mental mastery journey focused on graph theory and thinking models.
+  const systemPromptTemplate = await getPromptTemplate('course_planning_chat_system');
+  const systemPrompt = systemPromptTemplate || `You are an expert course planning assistant for the "AutoNateAI: Thinking Wizard Course" - a 10-session mental mastery journey focused on graph theory and thinking models.
 
 FRAMEWORK CONSTRAINTS: You can ONLY help create variations of this specific course:
 - Title: "AutoNateAI: Thinking Wizard Course" (variations allowed)
@@ -189,7 +232,10 @@ FRAMEWORK CONSTRAINTS: You can ONLY help create variations of this specific cour
 
 Your role: Help customize the themes, examples, and applications based on the user's interests while maintaining this exact structure. Ask clarifying questions about their background, goals, and learning preferences to tailor the content.
 
-Keep replies concise and conversational. Focus on how to adapt the course themes to their specific needs.` },
+Keep replies concise and conversational. Focus on how to adapt the course themes to their specific needs.`;
+
+  const messages = [
+    { role: 'system', content: systemPrompt },
     ...chatHistory.map((m: any) => ({ role: m.role, content: m.content }))
   ];
 
@@ -279,7 +325,12 @@ async function generateContent(payload: any) {
 }
 
 async function generateSlides(lectureId: string, lectureTitle: string, sessionTheme: string) {
-  const prompt = `Create detailed slide content for a lecture titled "${lectureTitle}" with the session theme "${sessionTheme}".
+  const promptTemplate = await getPromptTemplate('slide_generation_prompt', {
+    lecture_title: lectureTitle,
+    session_theme: sessionTheme
+  });
+
+  const prompt = promptTemplate || `Create detailed slide content for a lecture titled "${lectureTitle}" with the session theme "${sessionTheme}".
 
 This is part of the AutoNateAI: Thinking Wizard Course - a journey through graph theory and mental models.
 
@@ -414,7 +465,14 @@ Return the response in this exact JSON format:
 }
 
 async function generateAssessmentsContent(sessionNumber: number, lectureNumber: number, lectureTitle: string, sessionTheme: string) {
-  const prompt = `Based on the lecture "${lectureTitle}" (Session ${sessionNumber}, Lecture ${lectureNumber}) with theme "${sessionTheme}" from the AutoNateAI: Thinking Wizard Course, generate comprehensive educational assessments.
+  const promptTemplate = await getPromptTemplate('assessment_generation_prompt', {
+    lecture_title: lectureTitle,
+    session_number: sessionNumber.toString(),
+    lecture_number: lectureNumber.toString(),
+    session_theme: sessionTheme
+  });
+
+  const prompt = promptTemplate || `Based on the lecture "${lectureTitle}" (Session ${sessionNumber}, Lecture ${lectureNumber}) with theme "${sessionTheme}" from the AutoNateAI: Thinking Wizard Course, generate comprehensive educational assessments.
 
 This course teaches structured thinking using graphs, mental models, and cognitive frameworks. Create assessments that:
 1. Test understanding of key concepts
