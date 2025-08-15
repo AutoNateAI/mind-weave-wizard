@@ -70,8 +70,8 @@ export default function Dashboard() {
           <header className="mb-8 flex flex-col sm:flex-row justify-between items-start gap-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Session Dashboard</h1>
-                <p className="text-sm sm:text-base text-muted-foreground">Complete each session to unlock the next.</p>
+                <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Modules</h1>
+                <p className="text-sm sm:text-base text-muted-foreground">Complete each module to unlock the next.</p>
               </div>
               {isAdmin && (
                 <Badge variant={isStudentView ? "secondary" : "default"} className="gap-2 text-xs">
