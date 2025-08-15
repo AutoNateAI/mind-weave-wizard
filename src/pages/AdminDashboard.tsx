@@ -137,48 +137,50 @@ export default function AdminDashboard() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-10">
-              <TabsTrigger value="overview" className="gap-2">
-                <BarChart3 className="w-4 h-4" />
-                Overview
-              </TabsTrigger>
-              <TabsTrigger value="planning" className="gap-2">
-                <MessageSquare className="w-4 h-4" />
-                Course Planning
-              </TabsTrigger>
-              <TabsTrigger value="chat-history" className="gap-2">
-                <MessageSquare className="w-4 h-4" />
-                Chat History
-              </TabsTrigger>
-              <TabsTrigger value="locations" className="gap-2">
-                <MapPin className="w-4 h-4" />
-                Locations
-              </TabsTrigger>
-              <TabsTrigger value="social-media" className="gap-2">
-                <Share2 className="w-4 h-4" />
-                Social Media
-              </TabsTrigger>
-              <TabsTrigger value="content-creation" className="gap-2">
-                <Sparkles className="w-4 h-4" />
-                Content Creation
-              </TabsTrigger>
-              <TabsTrigger value="structure" className="gap-2">
-                <BookOpen className="w-4 h-4" />
-                Course Structure
-              </TabsTrigger>
-              <TabsTrigger value="slides" className="gap-2">
-                <FileText className="w-4 h-4" />
-                Slides
-              </TabsTrigger>
-              <TabsTrigger value="games" className="gap-2">
-                <Gamepad2 className="w-4 h-4" />
-                Games
-              </TabsTrigger>
-              <TabsTrigger value="users" className="gap-2">
-                <Users className="w-4 h-4" />
-                Users
-              </TabsTrigger>
-            </TabsList>
+            <div className="w-full overflow-x-auto">
+              <TabsList className="inline-flex w-max min-w-full lg:grid lg:grid-cols-10 h-auto p-1">
+                <TabsTrigger value="overview" className="gap-2 whitespace-nowrap">
+                  <BarChart3 className="w-4 h-4" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="planning" className="gap-2 whitespace-nowrap">
+                  <MessageSquare className="w-4 h-4" />
+                  Course Planning
+                </TabsTrigger>
+                <TabsTrigger value="chat-history" className="gap-2 whitespace-nowrap">
+                  <MessageSquare className="w-4 h-4" />
+                  Chat History
+                </TabsTrigger>
+                <TabsTrigger value="locations" className="gap-2 whitespace-nowrap">
+                  <MapPin className="w-4 h-4" />
+                  Locations
+                </TabsTrigger>
+                <TabsTrigger value="social-media" className="gap-2 whitespace-nowrap">
+                  <Share2 className="w-4 h-4" />
+                  Social Media
+                </TabsTrigger>
+                <TabsTrigger value="content-creation" className="gap-2 whitespace-nowrap">
+                  <Sparkles className="w-4 h-4" />
+                  Content Creation
+                </TabsTrigger>
+                <TabsTrigger value="structure" className="gap-2 whitespace-nowrap">
+                  <BookOpen className="w-4 h-4" />
+                  Course Structure
+                </TabsTrigger>
+                <TabsTrigger value="slides" className="gap-2 whitespace-nowrap">
+                  <FileText className="w-4 h-4" />
+                  Slides
+                </TabsTrigger>
+                <TabsTrigger value="games" className="gap-2 whitespace-nowrap">
+                  <Gamepad2 className="w-4 h-4" />
+                  Games
+                </TabsTrigger>
+                <TabsTrigger value="users" className="gap-2 whitespace-nowrap">
+                  <Users className="w-4 h-4" />
+                  Users
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="overview" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
