@@ -15,7 +15,8 @@ import {
   FileText,
   MapPin,
   Share2,
-  Sparkles
+  Sparkles,
+  Bot
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -29,6 +30,7 @@ import { CoursePublishing } from "@/components/Admin/CoursePublishing";
 import { LocationsTab } from "@/components/Admin/LocationsTab";
 import { SocialMediaTab } from "@/components/Admin/SocialMediaTab";
 import { ContentCreationTab } from "@/components/Admin/ContentCreationTab";
+import { AIPromptManagerTab } from "@/components/Admin/AIPromptManagerTab";
 import { PageMeta } from "@/components/UI/PageMeta";
 import { useAdminViewSwitch } from "@/hooks/useAdminViewSwitch";
 import { Navigate } from "react-router-dom";
@@ -138,7 +140,7 @@ export default function AdminDashboard() {
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <div className="w-full overflow-x-auto scrollbar-hide">
-              <TabsList className="inline-flex w-max min-w-full lg:grid lg:grid-cols-10 h-auto p-1">
+              <TabsList className="inline-flex w-max min-w-full lg:grid lg:grid-cols-11 h-auto p-1">
                 <TabsTrigger value="overview" className="gap-2 whitespace-nowrap">
                   <BarChart3 className="w-4 h-4" />
                   Overview
@@ -162,6 +164,10 @@ export default function AdminDashboard() {
                 <TabsTrigger value="content-creation" className="gap-2 whitespace-nowrap">
                   <Sparkles className="w-4 h-4" />
                   Content Creation
+                </TabsTrigger>
+                <TabsTrigger value="ai-prompts" className="gap-2 whitespace-nowrap">
+                  <Bot className="w-4 h-4" />
+                  AI Prompts
                 </TabsTrigger>
                 <TabsTrigger value="structure" className="gap-2 whitespace-nowrap">
                   <BookOpen className="w-4 h-4" />
@@ -319,6 +325,10 @@ export default function AdminDashboard() {
 
             <TabsContent value="content-creation">
               <ContentCreationTab />
+            </TabsContent>
+
+            <TabsContent value="ai-prompts">
+              <AIPromptManagerTab />
             </TabsContent>
 
             <TabsContent value="structure">

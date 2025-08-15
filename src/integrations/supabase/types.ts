@@ -52,6 +52,57 @@ export type Database = {
           },
         ]
       }
+      ai_prompts: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          feature_page: string | null
+          id: string
+          is_active: boolean | null
+          last_used_at: string | null
+          prompt_category: string
+          prompt_description: string | null
+          prompt_name: string
+          prompt_template: string
+          updated_at: string | null
+          usage_count: number | null
+          variables: Json | null
+          version: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          feature_page?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          prompt_category: string
+          prompt_description?: string | null
+          prompt_name: string
+          prompt_template: string
+          updated_at?: string | null
+          usage_count?: number | null
+          variables?: Json | null
+          version?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          feature_page?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          prompt_category?: string
+          prompt_description?: string | null
+          prompt_name?: string
+          prompt_template?: string
+          updated_at?: string | null
+          usage_count?: number | null
+          variables?: Json | null
+          version?: number | null
+        }
+        Relationships: []
+      }
       content_campaigns: {
         Row: {
           campaign_name: string
@@ -817,6 +868,80 @@ export type Database = {
           question_text?: string
           session_number?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      prompt_history: {
+        Row: {
+          change_reason: string | null
+          changed_by: string | null
+          created_at: string | null
+          id: string
+          old_template: string
+          old_variables: Json | null
+          prompt_id: string
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_by?: string | null
+          created_at?: string | null
+          id?: string
+          old_template: string
+          old_variables?: Json | null
+          prompt_id: string
+        }
+        Update: {
+          change_reason?: string | null
+          changed_by?: string | null
+          created_at?: string | null
+          id?: string
+          old_template?: string
+          old_variables?: Json | null
+          prompt_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_history_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prompt_variables: {
+        Row: {
+          created_at: string | null
+          default_value: string | null
+          description: string | null
+          id: string
+          is_global: boolean | null
+          possible_values: Json | null
+          updated_at: string | null
+          variable_name: string
+          variable_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          default_value?: string | null
+          description?: string | null
+          id?: string
+          is_global?: boolean | null
+          possible_values?: Json | null
+          updated_at?: string | null
+          variable_name: string
+          variable_type: string
+        }
+        Update: {
+          created_at?: string | null
+          default_value?: string | null
+          description?: string | null
+          id?: string
+          is_global?: boolean | null
+          possible_values?: Json | null
+          updated_at?: string | null
+          variable_name?: string
+          variable_type?: string
         }
         Relationships: []
       }
