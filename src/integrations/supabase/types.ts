@@ -52,6 +52,68 @@ export type Database = {
           },
         ]
       }
+      content_campaigns: {
+        Row: {
+          campaign_name: string
+          content_prompt: string | null
+          content_status: string | null
+          content_type: string
+          created_at: string | null
+          created_by: string | null
+          critical_thinking_concepts: Json | null
+          generated_content: string | null
+          id: string
+          performance_metrics: Json | null
+          published_at: string | null
+          scheduled_publish_at: string | null
+          target_audience_analysis: Json | null
+          target_location_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          campaign_name: string
+          content_prompt?: string | null
+          content_status?: string | null
+          content_type: string
+          created_at?: string | null
+          created_by?: string | null
+          critical_thinking_concepts?: Json | null
+          generated_content?: string | null
+          id?: string
+          performance_metrics?: Json | null
+          published_at?: string | null
+          scheduled_publish_at?: string | null
+          target_audience_analysis?: Json | null
+          target_location_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          campaign_name?: string
+          content_prompt?: string | null
+          content_status?: string | null
+          content_type?: string
+          created_at?: string | null
+          created_by?: string | null
+          critical_thinking_concepts?: Json | null
+          generated_content?: string | null
+          id?: string
+          performance_metrics?: Json | null
+          published_at?: string | null
+          scheduled_publish_at?: string | null
+          target_audience_analysis?: Json | null
+          target_location_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_campaigns_target_location_id_fkey"
+            columns: ["target_location_id"]
+            isOneToOne: false
+            referencedRelation: "targeted_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           created_at: string | null
@@ -446,6 +508,238 @@ export type Database = {
           },
         ]
       }
+      linkedin_posts: {
+        Row: {
+          author_full_name: string | null
+          author_headline: string | null
+          author_profile_id: string | null
+          author_profile_url: string | null
+          author_type: string | null
+          comments: Json | null
+          created_at: string | null
+          id: string
+          images: Json | null
+          is_repost: boolean | null
+          linkedin_post_urn: string | null
+          num_comments: number | null
+          num_likes: number | null
+          num_shares: number | null
+          post_type: string | null
+          post_url: string | null
+          posted_at_iso: string | null
+          posted_at_timestamp: number | null
+          raw_data: Json | null
+          reactions: Json | null
+          text_content: string | null
+          time_since_posted: string | null
+          updated_at: string | null
+          upload_batch_id: string | null
+        }
+        Insert: {
+          author_full_name?: string | null
+          author_headline?: string | null
+          author_profile_id?: string | null
+          author_profile_url?: string | null
+          author_type?: string | null
+          comments?: Json | null
+          created_at?: string | null
+          id?: string
+          images?: Json | null
+          is_repost?: boolean | null
+          linkedin_post_urn?: string | null
+          num_comments?: number | null
+          num_likes?: number | null
+          num_shares?: number | null
+          post_type?: string | null
+          post_url?: string | null
+          posted_at_iso?: string | null
+          posted_at_timestamp?: number | null
+          raw_data?: Json | null
+          reactions?: Json | null
+          text_content?: string | null
+          time_since_posted?: string | null
+          updated_at?: string | null
+          upload_batch_id?: string | null
+        }
+        Update: {
+          author_full_name?: string | null
+          author_headline?: string | null
+          author_profile_id?: string | null
+          author_profile_url?: string | null
+          author_type?: string | null
+          comments?: Json | null
+          created_at?: string | null
+          id?: string
+          images?: Json | null
+          is_repost?: boolean | null
+          linkedin_post_urn?: string | null
+          num_comments?: number | null
+          num_likes?: number | null
+          num_shares?: number | null
+          post_type?: string | null
+          post_url?: string | null
+          posted_at_iso?: string | null
+          posted_at_timestamp?: number | null
+          raw_data?: Json | null
+          reactions?: Json | null
+          text_content?: string | null
+          time_since_posted?: string | null
+          updated_at?: string | null
+          upload_batch_id?: string | null
+        }
+        Relationships: []
+      }
+      linkedin_profiles: {
+        Row: {
+          certifications: Json | null
+          company_linkedin_url: string | null
+          company_name: string | null
+          country_code: string | null
+          cover_image_url: string | null
+          created_at: string | null
+          educations: Json | null
+          first_name: string | null
+          full_name: string | null
+          geo_location_name: string | null
+          headline: string | null
+          id: string
+          industry_name: string | null
+          languages: Json | null
+          last_name: string | null
+          linkedin_profile_id: string | null
+          location: string | null
+          occupation: string | null
+          picture_url: string | null
+          positions: Json | null
+          profile_url: string | null
+          public_id: string | null
+          raw_data: Json | null
+          skills: Json | null
+          summary: string | null
+          updated_at: string | null
+          upload_batch_id: string | null
+        }
+        Insert: {
+          certifications?: Json | null
+          company_linkedin_url?: string | null
+          company_name?: string | null
+          country_code?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          educations?: Json | null
+          first_name?: string | null
+          full_name?: string | null
+          geo_location_name?: string | null
+          headline?: string | null
+          id?: string
+          industry_name?: string | null
+          languages?: Json | null
+          last_name?: string | null
+          linkedin_profile_id?: string | null
+          location?: string | null
+          occupation?: string | null
+          picture_url?: string | null
+          positions?: Json | null
+          profile_url?: string | null
+          public_id?: string | null
+          raw_data?: Json | null
+          skills?: Json | null
+          summary?: string | null
+          updated_at?: string | null
+          upload_batch_id?: string | null
+        }
+        Update: {
+          certifications?: Json | null
+          company_linkedin_url?: string | null
+          company_name?: string | null
+          country_code?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          educations?: Json | null
+          first_name?: string | null
+          full_name?: string | null
+          geo_location_name?: string | null
+          headline?: string | null
+          id?: string
+          industry_name?: string | null
+          languages?: Json | null
+          last_name?: string | null
+          linkedin_profile_id?: string | null
+          location?: string | null
+          occupation?: string | null
+          picture_url?: string | null
+          positions?: Json | null
+          profile_url?: string | null
+          public_id?: string | null
+          raw_data?: Json | null
+          skills?: Json | null
+          summary?: string | null
+          updated_at?: string | null
+          upload_batch_id?: string | null
+        }
+        Relationships: []
+      }
+      location_social_mapping: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          distance_km: number | null
+          id: string
+          linkedin_profile_id: string | null
+          location_id: string
+          mapping_type: string
+          notes: string | null
+          social_account_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          distance_km?: number | null
+          id?: string
+          linkedin_profile_id?: string | null
+          location_id: string
+          mapping_type: string
+          notes?: string | null
+          social_account_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          distance_km?: number | null
+          id?: string
+          linkedin_profile_id?: string | null
+          location_id?: string
+          mapping_type?: string
+          notes?: string | null
+          social_account_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_social_mapping_linkedin_profile_id_fkey"
+            columns: ["linkedin_profile_id"]
+            isOneToOne: false
+            referencedRelation: "linkedin_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_social_mapping_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "targeted_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_social_mapping_social_account_id_fkey"
+            columns: ["social_account_id"]
+            isOneToOne: false
+            referencedRelation: "social_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       multiple_choice_interactions: {
         Row: {
           created_at: string
@@ -600,6 +894,118 @@ export type Database = {
           },
         ]
       }
+      social_accounts: {
+        Row: {
+          access_token_encrypted: string | null
+          account_display_name: string | null
+          account_metadata: Json | null
+          account_profile_url: string | null
+          account_username: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_connected: boolean | null
+          last_sync_at: string | null
+          phyllo_account_id: string | null
+          phyllo_user_id: string | null
+          platform: string
+          sync_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          access_token_encrypted?: string | null
+          account_display_name?: string | null
+          account_metadata?: Json | null
+          account_profile_url?: string | null
+          account_username?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_connected?: boolean | null
+          last_sync_at?: string | null
+          phyllo_account_id?: string | null
+          phyllo_user_id?: string | null
+          platform: string
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          access_token_encrypted?: string | null
+          account_display_name?: string | null
+          account_metadata?: Json | null
+          account_profile_url?: string | null
+          account_username?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_connected?: boolean | null
+          last_sync_at?: string | null
+          phyllo_account_id?: string | null
+          phyllo_user_id?: string | null
+          platform?: string
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      social_analytics: {
+        Row: {
+          additional_data: Json | null
+          campaign_id: string | null
+          created_at: string | null
+          id: string
+          location_id: string | null
+          metric_date: string | null
+          metric_type: string
+          metric_value: number | null
+          social_account_id: string | null
+        }
+        Insert: {
+          additional_data?: Json | null
+          campaign_id?: string | null
+          created_at?: string | null
+          id?: string
+          location_id?: string | null
+          metric_date?: string | null
+          metric_type: string
+          metric_value?: number | null
+          social_account_id?: string | null
+        }
+        Update: {
+          additional_data?: Json | null
+          campaign_id?: string | null
+          created_at?: string | null
+          id?: string
+          location_id?: string | null
+          metric_date?: string | null
+          metric_type?: string
+          metric_value?: number | null
+          social_account_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_analytics_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "content_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_analytics_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "targeted_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_analytics_social_account_id_fkey"
+            columns: ["social_account_id"]
+            isOneToOne: false
+            referencedRelation: "social_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_game_interactions: {
         Row: {
           id: string
@@ -637,6 +1043,108 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      targeted_locations: {
+        Row: {
+          city: string | null
+          company_name: string
+          country: string | null
+          created_at: string | null
+          created_by: string | null
+          custom_boundaries: Json | null
+          id: string
+          is_active: boolean | null
+          latitude: number | null
+          longitude: number | null
+          notes: string | null
+          office_address: string
+          predefined_zone: string | null
+          state: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          city?: string | null
+          company_name: string
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          custom_boundaries?: Json | null
+          id?: string
+          is_active?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          office_address: string
+          predefined_zone?: string | null
+          state?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          city?: string | null
+          company_name?: string
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          custom_boundaries?: Json | null
+          id?: string
+          is_active?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          office_address?: string
+          predefined_zone?: string | null
+          state?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      upload_batches: {
+        Row: {
+          batch_name: string
+          created_at: string | null
+          created_by: string | null
+          data_source: string
+          error_log: Json | null
+          failed_records: number | null
+          file_name: string | null
+          id: string
+          metadata: Json | null
+          processed_records: number | null
+          status: string | null
+          total_records: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          batch_name: string
+          created_at?: string | null
+          created_by?: string | null
+          data_source: string
+          error_log?: Json | null
+          failed_records?: number | null
+          file_name?: string | null
+          id?: string
+          metadata?: Json | null
+          processed_records?: number | null
+          status?: string | null
+          total_records?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          batch_name?: string
+          created_at?: string | null
+          created_by?: string | null
+          data_source?: string
+          error_log?: Json | null
+          failed_records?: number | null
+          file_name?: string | null
+          id?: string
+          metadata?: Json | null
+          processed_records?: number | null
+          status?: string | null
+          total_records?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       user_quiz_answers: {
         Row: {
