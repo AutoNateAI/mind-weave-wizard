@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/UI/GlassCard";
 import { useProgress } from "@/lib/progress";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,8 @@ export default function Dashboard() {
   const { isAdmin, isStudentView, isAdminView, toggleView } = useAdminViewSwitch();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [sessionData, setSessionData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
   console.log('🎯 Dashboard render:', { 
     isAdmin, 
@@ -29,6 +31,26 @@ export default function Dashboard() {
   useEffect(() => {
     checkAdminStatus();
   }, [checkAdminStatus]);
+
+  // Fetch session data from database
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        const { data } = await supabase
+          .from('sessions_dynamic')
+          .select('*')
+          .order('session_number');
+        
+        setSessionData(data || []);
+      } catch (error) {
+        console.error('Error fetching sessions:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSessions();
+  }, []);
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -96,24 +118,38 @@ export default function Dashboard() {
             </div>
           </header>
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Array.from({ length: 10 }).map((_, idx) => {
-          const n = idx + 1;
-          const locked = !isUnlocked(n);
-          const complete = isCompleted(n);
-          return (
-            <GlassCard key={n} className={`p-5 animate-fade-in hover-scale ${complete ? "ring-1 ring-primary cyber-glow" : "light-glow"}`}>
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-xl font-semibold">Session {n}</h2>
-                {complete && <span className="text-xs text-accent-foreground bg-accent/30 rounded px-2 py-1">Completed</span>}
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">{locked ? "Locked" : "Ready"}</p>
-              <Button disabled={locked} onClick={() => navigate(`/session/${n}`)}>
-                {locked ? "Locked" : "Enter"}
-              </Button>
+        {loading ? (
+          Array.from({ length: 10 }).map((_, idx) => (
+            <GlassCard key={idx + 1} className="p-5 animate-pulse">
+              <div className="h-6 bg-muted rounded mb-2"></div>
+              <div className="h-4 bg-muted rounded mb-4"></div>
+              <div className="h-9 bg-muted rounded"></div>
             </GlassCard>
-          );
-        })}
-          </section>
+          ))
+        ) : (
+          Array.from({ length: 10 }).map((_, idx) => {
+            const n = idx + 1;
+            const locked = !isUnlocked(n);
+            const complete = isCompleted(n);
+            const sessionInfo = sessionData.find(s => s.session_number === n);
+            
+            return (
+              <GlassCard key={n} className={`p-5 animate-fade-in hover-scale ${complete ? "ring-1 ring-primary cyber-glow" : "light-glow"}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-xl font-semibold">{sessionInfo?.title || sessionInfo?.theme || `Session ${n}`}</h2>
+                  {complete && <span className="text-xs text-accent-foreground bg-accent/30 rounded px-2 py-1">Completed</span>}
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {locked ? "Locked" : `Module ${n}`}
+                </p>
+                <Button disabled={locked} onClick={() => navigate(`/session/${n}`)}>
+                  {locked ? "Locked" : "Enter"}
+                </Button>
+              </GlassCard>
+            );
+          })
+        )}
+      </section>
         </main>
       </div>
     </>
