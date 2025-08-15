@@ -49,7 +49,7 @@ export function LessonStructure({
         </TabsContent>
 
         <TabsContent value="concepts" className="space-y-4">
-          <div className="glass rounded-lg p-3 sm:p-6 h-[calc(100vh-20rem)] sm:h-[calc(100vh-18rem)] lg:h-[calc(100vh-14rem)] flex flex-col">
+          <div className="glass rounded-lg p-3 sm:p-6 h-[calc(100vh-16rem)] sm:h-[calc(100vh-14rem)] lg:h-[calc(100vh-10rem)] flex flex-col">
             <FlashcardViewer 
               sessionNumber={sessionNumber} 
               lectureNumber={lectureNumber} 

@@ -121,13 +121,13 @@ export function FlashcardViewer({ sessionNumber, lectureNumber }: FlashcardViewe
         <div className="text-center space-y-4">
           {!isFlipped ? (
             <>
-              <h3 className="text-lg sm:text-xl font-bold gradient-text">{currentCard.title}</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground">Click or swipe to reveal concept</p>
+              <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text">{currentCard.title}</h3>
+              <p className="text-sm sm:text-base text-muted-foreground">Click or swipe to reveal concept</p>
             </>
           ) : (
             <div className="space-y-4">
-              <h3 className="text-base sm:text-lg font-semibold text-primary">{currentCard.title}</h3>
-              <p className="text-sm sm:text-base leading-relaxed">{currentCard.content}</p>
+              <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-primary">{currentCard.title}</h3>
+              <p className="text-base sm:text-lg lg:text-xl leading-relaxed">{currentCard.content}</p>
             </div>
           )}
         </div>
