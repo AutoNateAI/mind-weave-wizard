@@ -388,5 +388,16 @@ All colors MUST be HSL.
 
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+}
+
+/* Custom utility classes */
+@layer utilities {
+  .scrollbar-hide {
+    /* Firefox */
+    scrollbar-width: none;
+    /* Safari and Chrome */
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 }

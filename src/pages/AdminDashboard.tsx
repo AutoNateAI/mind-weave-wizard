@@ -137,7 +137,7 @@ export default function AdminDashboard() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <div className="w-full overflow-x-auto">
+            <div className="w-full overflow-x-auto scrollbar-hide">
               <TabsList className="inline-flex w-max min-w-full lg:grid lg:grid-cols-10 h-auto p-1">
                 <TabsTrigger value="overview" className="gap-2 whitespace-nowrap">
                   <BarChart3 className="w-4 h-4" />
