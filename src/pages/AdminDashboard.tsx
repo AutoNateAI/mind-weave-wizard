@@ -12,7 +12,10 @@ import {
   Wand2,
   Gamepad2,
   MessageSquare,
-  FileText
+  FileText,
+  MapPin,
+  Share2,
+  Sparkles
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -134,7 +137,7 @@ export default function AdminDashboard() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-10">
               <TabsTrigger value="overview" className="gap-2">
                 <BarChart3 className="w-4 h-4" />
                 Overview
@@ -146,6 +149,18 @@ export default function AdminDashboard() {
               <TabsTrigger value="chat-history" className="gap-2">
                 <MessageSquare className="w-4 h-4" />
                 Chat History
+              </TabsTrigger>
+              <TabsTrigger value="locations" className="gap-2">
+                <MapPin className="w-4 h-4" />
+                Locations
+              </TabsTrigger>
+              <TabsTrigger value="social-media" className="gap-2">
+                <Share2 className="w-4 h-4" />
+                Social Media
+              </TabsTrigger>
+              <TabsTrigger value="content-creation" className="gap-2">
+                <Sparkles className="w-4 h-4" />
+                Content Creation
               </TabsTrigger>
               <TabsTrigger value="structure" className="gap-2">
                 <BookOpen className="w-4 h-4" />
@@ -290,6 +305,18 @@ export default function AdminDashboard() {
 
             <TabsContent value="chat-history">
               <ChatHistoryView />
+            </TabsContent>
+
+            <TabsContent value="locations">
+              <LocationsTab />
+            </TabsContent>
+
+            <TabsContent value="social-media">
+              <SocialMediaTab />
+            </TabsContent>
+
+            <TabsContent value="content-creation">
+              <ContentCreationTab />
             </TabsContent>
 
             <TabsContent value="structure">
