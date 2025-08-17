@@ -102,43 +102,33 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
         icon: <CheckCircle className="w-4 h-4" />
       });
     } else {
-      // Check if it's a known wrong connection
-      const wrongConnection = wrongConnections.find((wrong: any) => 
-        wrong.source === source && wrong.target === target
-      );
+      // Any connection not in the instructor solution counts as incorrect.
+      setEdges(edges => edges.map(edge => {
+        if (edge.source === source && edge.target === target) {
+          return { ...edge, style: { ...edge.style, stroke: '#ef4444', strokeWidth: 3 } };
+        }
+        return edge;
+      }));
+
+      const wrongConnection = wrongConnections.find((wrong: any) => wrong.source === source && wrong.target === target);
+
+      toast.error("Incorrect connection", {
+        description: wrongConnection?.why_wrong || "This connection doesn't follow the logical pattern",
+        icon: <XCircle className="w-4 h-4" />
+      });
       
-      if (wrongConnection) {
-        // Update edge style to red for incorrect connection
-        setEdges(edges => edges.map(edge => {
-          if (edge.source === source && edge.target === target) {
-            return { ...edge, style: { ...edge.style, stroke: '#ef4444', strokeWidth: 3 } };
-          }
-          return edge;
-        }));
-        
-        toast.error("Incorrect connection", {
-          description: wrongConnection.why_wrong || "This connection doesn't follow the logical pattern",
-          icon: <XCircle className="w-4 h-4" />
-        });
-        
-        setGameState(prev => ({
-          ...prev,
-          score: Math.max(0, prev.score - 5),
-          incorrectConnections: [...prev.incorrectConnections, { source, target }],
-          connectionHistory: [...prev.connectionHistory, {
-            source,
-            target,
-            isCorrect: false,
-            timestamp: Date.now(),
-            action: 'connected'
-          }]
-        }));
-      } else {
-        // Neutral connection - not explicitly wrong but not in solution
-        toast.info("Connection noted", {
-          description: "Consider if this relationship is essential to the solution"
-        });
-      }
+      setGameState(prev => ({
+        ...prev,
+        score: Math.max(0, prev.score - 5),
+        incorrectConnections: [...prev.incorrectConnections, { source, target }],
+        connectionHistory: [...prev.connectionHistory, {
+          source,
+          target,
+          isCorrect: false,
+          timestamp: Date.now(),
+          action: 'connected'
+        }]
+      }));
     }
   }, [instructorSolution, wrongConnections, setEdges]);
 
@@ -299,31 +289,29 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
   };
 
   const calculateScore = () => {
-    const timeSpent = (Date.now() - gameState.startTime) / 1000;
-    let score = gameState.score || 0; // Ensure score is not undefined
-    
-    // Time bonus (under 5 minutes)
-    if (timeSpent < 300) {
-      score += 25;
-    }
-    
-    // Efficiency bonus (fewer hints used)
-    if (gameState.hintsUsed === 0) {
-      score += 20;
-    } else if (gameState.hintsUsed <= 1) {
-      score += 10;
-    }
-    
-    // Connection accuracy bonus
+    const timeSpentSec = (Date.now() - gameState.startTime) / 1000;
+
     const totalRequired = instructorSolution?.length || 0;
-    const correctMade = gameState.correctConnections?.length || 0;
-    
-    if (totalRequired > 0) {
-      const accuracyBonus = Math.floor((correctMade / totalRequired) * 30);
-      score += accuracyBonus;
-    }
-    
-    return Math.min(100, Math.max(0, Math.round(score)));
+    const correct = gameState.correctConnections?.length || 0;
+    const incorrect = gameState.incorrectConnections?.length || 0;
+    const attempts = correct + incorrect;
+
+    // Base completion: how much of the required solution was achieved
+    const baseCompletion = totalRequired > 0 ? (correct / totalRequired) * 100 : 0;
+
+    // Penalty for incorrect attempts (up to 30 points)
+    const wrongPenalty = attempts > 0 ? Math.min(30, (incorrect / attempts) * 30) : 0;
+
+    // Time efficiency bonus: target ~30s per correct connection (up to 10 points)
+    const expectedSecPerConn = 30;
+    const efficiency = correct > 0 ? Math.min(1, (expectedSecPerConn * correct) / Math.max(1, timeSpentSec)) : 0;
+    const timeBonus = efficiency * 10;
+
+    // Hints penalty (up to 20 points)
+    const hintsPenalty = Math.min(20, gameState.hintsUsed * 5);
+
+    let score = baseCompletion - wrongPenalty - hintsPenalty + timeBonus;
+    return Math.max(0, Math.min(100, Math.round(score)));
   };
 
   const checkGameCompletion = () => {
@@ -350,7 +338,10 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
       hintsUsed: gameState.hintsUsed,
       totalInteractions: gameState.interactions,
       completionScore: score,
-      decisionPath: gameState.connectionHistory
+      decisionPath: gameState.connectionHistory,
+      totalRequiredConnections: instructorSolution?.length || 0,
+      totalAttempts: (gameState.correctConnections.length + gameState.incorrectConnections.length),
+      connectionsPerMinute: timeSpent > 0 ? (gameState.correctConnections.length / (timeSpent / 60)) : 0,
     };
 
     try {

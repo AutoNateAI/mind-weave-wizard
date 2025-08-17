@@ -45,17 +45,44 @@ export const GameCompletionReport: React.FC<GameCompletionReportProps> = ({
     decisionPath
   } = analytics;
 
-  // Calculate critical thinking metrics
+  // Calculate critical thinking metrics (normalized 0-100)
+  const attempts = correctConnections + incorrectConnections;
+  const totalRequired = (analytics as any)?.totalRequiredConnections ?? 0;
+  const minutes = Math.max(1 / 60, timeSpent / 60);
+
+  // Error recovery: how often a wrong is followed by a right on the next move
+  const history = Array.isArray(decisionPath) ? decisionPath : [];
+  let wrongs = 0;
+  let corrections = 0;
+  for (let i = 0; i < history.length - 1; i++) {
+    const cur = history[i];
+    const nxt = history[i + 1];
+    if (cur?.action === 'connected' && cur?.isCorrect === false) {
+      wrongs++;
+      if (nxt?.action === 'connected' && nxt?.isCorrect === true) {
+        corrections++;
+      }
+    }
+  }
+  const errorRecovery = wrongs > 0 ? (corrections / wrongs) * 100 : (correctConnections > 0 ? 100 : 0);
+
+  const patternRecognition = attempts > 0 ? (correctConnections / attempts) * 100 : 0;
+  const strategicReasoning = totalRequired > 0 ? (correctConnections / totalRequired) * 100 : patternRecognition;
+
+  const targetRate = 2; // connections per minute
+  const rate = correctConnections / minutes;
+  const cognitiveEfficiency = Math.min(100, Math.max(0, (rate / targetRate) * 100));
+
+  const hintImpact = totalRequired > 0 ? Math.min(60, (hintsUsed / totalRequired) * 60) : Math.min(60, hintsUsed * 15);
+  const errorImpact = attempts > 0 ? (incorrectConnections / attempts) * 40 : 0;
+  const metacognition = Math.min(100, Math.max(0, 100 - hintImpact - errorImpact));
+
   const sessionMetrics = {
-    patternRecognition: Math.min(100, Math.max(0, correctConnections / Math.max(1, correctConnections + incorrectConnections) * 100)),
-    strategicReasoning: (() => {
-      const pathLength = Array.isArray(decisionPath) ? decisionPath.length : 0;
-      const efficiency = pathLength > 0 ? (correctConnections / pathLength) * 100 : 0;
-      return Math.min(100, Math.max(0, efficiency));
-    })(),
-    metacognition: Math.min(100, Math.max(0, 100 - (hintsUsed * 20))),
-    cognitiveEfficiency: Math.min(100, Math.max(0, 100 - (timeSpent / Math.max(1, correctConnections) / 60) * 10)),
-    errorRecovery: Math.min(100, Math.max(0, 100 - (incorrectConnections / Math.max(1, correctConnections + incorrectConnections) * 100)))
+    patternRecognition,
+    strategicReasoning,
+    metacognition,
+    cognitiveEfficiency,
+    errorRecovery,
   };
 
   const metrics = [
