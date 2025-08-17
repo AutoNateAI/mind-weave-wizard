@@ -3,39 +3,40 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 // Helper function to fetch and process prompts from the AI prompt library
-async function getPromptTemplate(supabase: any, promptName: string, variables = {}) {
+async function getPromptTemplate(supabase: any, promptName: string, variables: Record<string, any> = {}) {
   try {
     const { data: prompt, error } = await supabase
       .from('ai_prompts')
-      .select('prompt_template, variables')
+      .select('id, prompt_template, variables, usage_count')
       .eq('prompt_name', promptName)
       .eq('is_active', true)
       .single();
 
     if (error || !prompt) {
-      console.warn(`Prompt not found in library: ${promptName}, using fallback`);
+      console.warn(`Prompt not found in library: ${promptName}`);
       return null;
     }
 
-    // Replace variables in the template
-    let processedTemplate = prompt.prompt_template;
+    // Replace variables in the template; support both {var} and {{var}}
+    let processedTemplate = prompt.prompt_template as string;
     Object.entries(variables).forEach(([key, value]) => {
-      const placeholder = `{{${key}}}`;
-      processedTemplate = processedTemplate.replace(new RegExp(placeholder, 'g'), String(value));
+      const valueStr = typeof value === 'string' ? value : JSON.stringify(value);
+      const curlyOnce = new RegExp(`\\{${key}\\}`, 'g');
+      const curlyTwice = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
+      processedTemplate = processedTemplate.replace(curlyOnce, valueStr);
+      processedTemplate = processedTemplate.replace(curlyTwice, valueStr);
     });
 
-    // Update usage tracking
+    // Update usage tracking safely
+    const newUsage = (prompt.usage_count || 0) + 1;
     await supabase
       .from('ai_prompts')
-      .update({
-        usage_count: supabase.rpc('increment', { row_id: prompt.id }),
-        last_used_at: new Date().toISOString()
-      })
-      .eq('prompt_name', promptName);
+      .update({ usage_count: newUsage, last_used_at: new Date().toISOString() })
+      .eq('id', prompt.id);
 
     return processedTemplate;
-  } catch (error) {
-    console.error(`Error fetching prompt ${promptName}:`, error);
+  } catch (err) {
+    console.error(`Error fetching prompt ${promptName}:`, err);
     return null;
   }
 }
@@ -116,158 +117,28 @@ async function generateSingleGame(supabase: any, openAIApiKey: string, params: a
   const heuristicContext = template.heuristic_targets ? 
     `Focus on enhancing these cognitive heuristics: ${template.heuristic_targets.join(', ')}` : '';
 
-  // TWO-PASS APPROACH: First generate content, then generate solution based on actual node IDs
+  // TWO-PASS APPROACH using DB-managed prompts (no hardcoded prompts)
   
-  // PASS 1: Generate game content with AI using the exact node IDs from template
-  const actualNodeIds = template.template_data.nodes.map((node: any) => node.id);
-  
-  const contentPrompt = `
-**CRITICAL: Generate content for the exact node IDs provided. Do not create new node names.**
+  // PASS 1: Generate full game_data using exact node IDs from the template via Prompt Manager
+  const exactNodeIds = (template.template_data?.nodes || []).map((n: any) => n.id);
 
-Based on this lecture content and template, create engaging game scenario content:
+  const pass1Variables = {
+    sessionNumber,
+    lectureNumber,
+    lectureContent,
+    templateMechanics: template.mechanics || {},
+    templateSlots: template.content_slots || [],
+    templateValidationRules: template.validation_rules || {},
+    templateWinConditions: template.win_conditions || {},
+    exactNodeIds
+  };
 
-Lecture Content: ${lectureContent}
-Template: ${template.name} - ${template.description}
-${heuristicContext}
+  const pass1Prompt = await getPromptTemplate(supabase, 'pass1-generate-game-graph', pass1Variables);
+  if (!pass1Prompt) {
+    throw new Error('Pass 1 prompt not found or inactive in ai_prompts');
+  }
 
-Available Node IDs (use EXACTLY these): ${actualNodeIds.join(', ')}
-Content Slots: ${JSON.stringify(template.content_slots)}
-
-Generate realistic, thought-provoking content for each slot. Use the EXACT slot names provided.
-Make it:
-1. Relevant to the lecture material
-2. Challenging but solvable with the target heuristics
-3. Realistic scenario-based that requires the specific thinking skills
-4. Engaging for students learning critical thinking
-
-**Return ONLY a JSON object with keys matching the EXACT slot names and values being the generated content.**
-`;
-
-  const contentResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        { 
-          role: 'system', 
-          content: 'You are an expert educational game designer. Generate content using ONLY the exact slot names provided. Return valid JSON with no additional text or formatting.' 
-        },
-        { role: 'user', content: contentPrompt }
-      ],
-      temperature: 0.7,
-    }),
-  });
-
-  const contentData = await contentResponse.json();
-  let generatedContentText = contentData.choices[0].message.content;
-  
-  // Remove markdown code block formatting if present
-  generatedContentText = generatedContentText.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
-  
-  const generatedContent = JSON.parse(generatedContentText);
-
-  // Replace placeholders in template data
-  let gameData = JSON.parse(JSON.stringify(template.template_data));
-  
-  // Helper to safely build regex from keys
-  const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  
-  // Replace placeholders in nodes and add interactive properties
-  gameData.nodes = gameData.nodes.map((node: any, index: number) => {
-    let label = node.data.label;
-    Object.entries(generatedContent).forEach(([key, value]) => {
-      const reCurly = new RegExp(`\\{\\{\\s*${escapeRegex(key)}\\s*\\}\\}`, 'g');
-      label = label.replace(reCurly, String(value));
-      const reBare = new RegExp(`\\b${escapeRegex(key)}\\b`, 'g');
-      label = label.replace(reBare, String(value));
-      if (label.trim() === key) label = String(value);
-    });
-    
-    // Determine node type based on position and content
-    let nodeType = 'information';
-    const isFirstNode = index === 0;
-    const hasDecisionWords = label.toLowerCase().includes('choose') || 
-                           label.toLowerCase().includes('decide') || 
-                           label.toLowerCase().includes('option');
-    const hasOutcomeWords = label.toLowerCase().includes('result') || 
-                          label.toLowerCase().includes('outcome') || 
-                          label.toLowerCase().includes('consequence');
-    
-    if (isFirstNode) {
-      nodeType = 'scenario';
-    } else if (hasDecisionWords) {
-      nodeType = 'decision';
-    } else if (hasOutcomeWords) {
-      nodeType = 'outcome';
-    }
-    
-    return {
-      ...node,
-      data: { 
-        ...node.data, 
-        label,
-        nodeType,
-        unlocked: isFirstNode, // Only first node starts unlocked
-        revealed: false,
-        points: nodeType === 'decision' ? 15 : nodeType === 'outcome' ? 25 : 5,
-        consequences: nodeType === 'decision' ? [`Choice made: ${label.substring(0, 50)}...`] : undefined
-      }
-    };
-  });
-
-  // PASS 2: Generate instructor solution using ONLY the actual node IDs from the populated game
-  const finalNodeIds = gameData.nodes.map((node: any) => node.id);
-  const nodeLabelsMap = gameData.nodes.reduce((acc: any, node: any) => {
-    acc[node.id] = node.data.label;
-    return acc;
-  }, {});
-
-  const solutionPrompt = `
-**CRITICAL: Use ONLY the exact node IDs provided below. Do not create new node names or IDs.**
-
-Based on this ${template.name} game scenario, create instructor solution using ONLY these exact node IDs:
-
-**AVAILABLE NODE IDS:** ${finalNodeIds.join(', ')}
-
-**NODE LABELS FOR REFERENCE:**
-${JSON.stringify(nodeLabelsMap, null, 2)}
-
-Game Type: ${template.name}
-Target Heuristics: ${template.heuristic_targets?.join(', ') || 'General critical thinking'}
-
-Create:
-1. Complete instructor solution with optimal connections using ONLY the node IDs listed above
-2. Comprehensive grading rubric with performance criteria
-3. Wrong connections (common student mistakes) using ONLY the node IDs listed above
-4. Game instructions and hints for students
-
-**CRITICAL: Return ONLY valid JSON with no additional text or formatting. Use EXACT node IDs from the list above.**
-
-Return JSON format:
-{
-  "instructor_solution": [
-    {"source": "exact_node_id_from_list", "target": "exact_node_id_from_list", "relationship": "relationship_type", "points": 10}
-  ],
-  "grading_rubric": {
-    "excellent": {"min_score": 120, "criteria": "Complete understanding demonstrated"},
-    "good": {"min_score": 90, "criteria": "Strong performance with minor gaps"},
-    "satisfactory": {"min_score": 60, "criteria": "Basic understanding shown"},
-    "needs_improvement": {"min_score": 30, "criteria": "Limited understanding"},
-    "unsatisfactory": {"min_score": 0, "criteria": "Little to no understanding"}
-  },
-  "wrong_connections": [
-    {"source": "exact_node_id_from_list", "target": "exact_node_id_from_list", "why_wrong": "explanation", "penalty": -5}
-  ],
-  "instructions": "Clear game instructions for students",
-  "hints": ["Hint 1", "Hint 2", "Hint 3"]
-}
-`;
-
-  const solutionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+  const pass1Response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${openAIApiKey}`,
@@ -276,52 +147,113 @@ Return JSON format:
     body: JSON.stringify({
       model: 'gpt-4.1-2025-04-14',
       messages: [
-        { role: 'system', content: 'You are an expert educational assessment designer. Generate instructor solutions using ONLY the exact node IDs provided. Return ONLY valid JSON with no additional text or formatting.' },
-        { role: 'user', content: solutionPrompt }
+        { role: 'system', content: 'Return ONLY valid JSON. Do not include markdown, code fences, or commentary.' },
+        { role: 'user', content: pass1Prompt }
       ],
-      temperature: 0.2, // Lower temperature for more consistent ID usage
+      temperature: 0.4,
     }),
   });
 
-  const solutionData = await solutionResponse.json();
-  let solutionText = solutionData.choices[0].message.content;
-  
-  // Remove markdown code block formatting if present
-  solutionText = solutionText.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
-  
-  const gameSolution = JSON.parse(solutionText);
+  const pass1Data = await pass1Response.json();
+  let pass1Text = pass1Data.choices?.[0]?.message?.content || '';
+  pass1Text = pass1Text.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+
+  let gameData;
+  try {
+    gameData = JSON.parse(pass1Text);
+  } catch (e) {
+    console.error('Pass 1 JSON parse error:', e, pass1Text);
+    throw new Error('AI response for Pass 1 was not valid JSON');
+  }
+
+  // PASS 2: Generate instructor solution using the actual node IDs present in gameData
+  const finalNodeIds = (gameData.nodes || []).map((n: any) => n.id);
+
+  const pass2Variables = {
+    gameData,
+    exactNodeIds: finalNodeIds
+  };
+
+  const pass2Prompt = await getPromptTemplate(supabase, 'pass2-generate-instructor-solution', pass2Variables);
+  if (!pass2Prompt) {
+    throw new Error('Pass 2 prompt not found or inactive in ai_prompts');
+  }
+
+  const pass2Response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4.1-2025-04-14',
+      messages: [
+        { role: 'system', content: 'Return ONLY valid JSON. Use ONLY provided node IDs. No markdown or extra text.' },
+        { role: 'user', content: pass2Prompt }
+      ],
+      temperature: 0.2,
+    }),
+  });
+
+  const pass2Data = await pass2Response.json();
+  let pass2Text = pass2Data.choices?.[0]?.message?.content || '';
+  pass2Text = pass2Text.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+
+  let gameSolution;
+  try {
+    gameSolution = JSON.parse(pass2Text);
+  } catch (e) {
+    console.error('Pass 2 JSON parse error:', e, pass2Text);
+    throw new Error('AI response for Pass 2 was not valid JSON');
+  }
 
   // VALIDATION: Ensure all solution node IDs exist in the actual game
   const validateConnection = (connection: any) => {
-    const sourceExists = gameData.nodes.some((node: any) => node.id === connection.source);
-    const targetExists = gameData.nodes.some((node: any) => node.id === connection.target);
-    
+    if (!connection) return null;
+    const s = connection.source;
+    const t = connection.target;
+    const sourceExists = (gameData.nodes || []).some((node: any) => node.id === s);
+    const targetExists = (gameData.nodes || []).some((node: any) => node.id === t);
     if (!sourceExists || !targetExists) {
-      console.warn(`Invalid connection: ${connection.source} -> ${connection.target}`);
+      console.warn(`Invalid connection: ${s} -> ${t}`);
       return null;
     }
     return connection;
   };
 
-  const validInstructorSolution = (gameSolution.instructor_solution || [])
-    .map(validateConnection)
-    .filter(Boolean);
-    
-  const validWrongConnections = (gameSolution.wrong_connections || [])
+  const instructorSolutionRaw = gameSolution.instructor_solution;
+  const instructorConnections = Array.isArray(instructorSolutionRaw)
+    ? instructorSolutionRaw
+    : (instructorSolutionRaw?.correct_connections || []);
+
+  const wrongConnectionsRaw = gameSolution.wrong_connections 
+    || instructorSolutionRaw?.wrong_connections 
+    || [];
+
+  const validInstructorSolution = (instructorConnections || [])
     .map(validateConnection)
     .filter(Boolean);
 
+  const validWrongConnections = (wrongConnectionsRaw || [])
+    .map(validateConnection)
+    .filter(Boolean);
+
+  const gradingRubric = gameSolution.grading_rubric 
+    || instructorSolutionRaw?.grading_rubric 
+    || null;
+
+  // Attach validated solutions back onto the game data for instructor view
   gameData.instructorSolution = validInstructorSolution;
   gameData.wrongConnections = validWrongConnections;
 
   return new Response(JSON.stringify({
     gameData,
-    generatedContent,
-    instructions: gameSolution.instructions,
-    hints: gameSolution.hints,
-    instructorSolution: gameSolution.instructor_solution,
-    gradingRubric: gameSolution.grading_rubric,
-    wrongConnections: gameSolution.wrong_connections,
+    generatedContent: null,
+    instructions: gameSolution.instructions || '',
+    hints: gameSolution.hints || [],
+    instructorSolution: validInstructorSolution,
+    gradingRubric,
+    wrongConnections: validWrongConnections,
     templateName: template.name,
     heuristicTargets: template.heuristic_targets,
     validationRules: template.validation_rules,
