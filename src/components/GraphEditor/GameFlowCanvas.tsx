@@ -31,6 +31,14 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
   const { theme } = useTheme();
   const [nodes, setNodes, onNodesChange] = useNodesState(gameData?.nodes || []);
   const [edges, setEdges, onEdgesChange] = useEdgesState(gameData?.edges || []);
+
+  // Update edges when gameData changes (e.g., when Show Solution is toggled)
+  useEffect(() => {
+    if (gameData?.edges) {
+      console.log("🐛 DEBUG - Updating edges from gameData:", gameData.edges);
+      setEdges(gameData.edges);
+    }
+  }, [gameData?.edges, setEdges]);
   const [gameState, setGameState] = useState({
     interactions: 0,
     hintsUsed: 0,
