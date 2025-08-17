@@ -220,7 +220,7 @@ export const AnalyticsDashboard: React.FC = () => {
     }
   ] : [];
 
-  // Learning Journey Timeline Data (last 10 sessions)
+  // Learning Journey Timeline Data (last 10 sessions) - Normalized to 0-100%
   const learningJourneyData = sessions.slice(-10).reverse().map((session, index) => {
     const path = Array.isArray(session.decision_path) ? session.decision_path : 
                  (typeof session.decision_path === 'string' ? JSON.parse(session.decision_path) : []);
@@ -229,11 +229,11 @@ export const AnalyticsDashboard: React.FC = () => {
     
     return {
       session: `Game ${sessions.length - 9 + index}`,
-      patternRecognition: session.correct_connections / Math.max(1, session.correct_connections + session.incorrect_connections) * 100,
-      strategicReasoning: efficiency,
-      metacognition: Math.max(0, 100 - (session.hints_used * 20)),
-      cognitiveEfficiency: Math.max(0, 100 - (session.time_spent_seconds / Math.max(1, session.correct_connections) / 60) * 10),
-      errorRecovery: Math.max(0, 100 - (session.incorrect_connections / Math.max(1, session.correct_connections + session.incorrect_connections) * 100))
+      patternRecognition: Math.min(100, Math.max(0, session.correct_connections / Math.max(1, session.correct_connections + session.incorrect_connections) * 100)),
+      strategicReasoning: Math.min(100, Math.max(0, efficiency)),
+      metacognition: Math.min(100, Math.max(0, 100 - (session.hints_used * 20))),
+      cognitiveEfficiency: Math.min(100, Math.max(0, 100 - (session.time_spent_seconds / Math.max(1, session.correct_connections) / 60) * 10)),
+      errorRecovery: Math.min(100, Math.max(0, 100 - (session.incorrect_connections / Math.max(1, session.correct_connections + session.incorrect_connections) * 100)))
     };
   });
 
@@ -869,30 +869,73 @@ export const AnalyticsDashboard: React.FC = () => {
                 <div className="space-y-2">
                   {filteredSessions
                     .slice((currentPage - 1) * sessionsPerPage, currentPage * sessionsPerPage)
-                    .map((session) => (
-                    <div key={session.id} 
-                         className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                         onClick={() => setSelectedSession(session)}>
-                      <div>
-                        <p className="font-medium">{session.lecture_games?.title}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(session.started_at).toLocaleDateString()} • 
-                          Session {session.lecture_games?.session_number} - Lecture {session.lecture_games?.lecture_number}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <Badge variant={session.completion_score >= 80 ? "default" : "secondary"}>
-                            {Math.round(session.completion_score || 0)}%
-                          </Badge>
-                          <p className="text-xs text-muted-foreground">
-                            {session.correct_connections}C / {session.incorrect_connections}I / {session.hints_used}H
-                          </p>
+                    .map((session) => {
+                      // Calculate critical thinking metrics for this session
+                      const sessionMetrics = {
+                        patternRecognition: Math.min(100, Math.max(0, session.correct_connections / Math.max(1, session.correct_connections + session.incorrect_connections) * 100)),
+                        strategicReasoning: (() => {
+                          const path = Array.isArray(session.decision_path) ? session.decision_path : 
+                                      (typeof session.decision_path === 'string' ? JSON.parse(session.decision_path) : []);
+                          const pathLength = Array.isArray(path) ? path.length : 0;
+                          const efficiency = pathLength > 0 ? (session.correct_connections / pathLength) * 100 : 0;
+                          return Math.min(100, Math.max(0, efficiency));
+                        })(),
+                        metacognition: Math.min(100, Math.max(0, 100 - (session.hints_used * 20))),
+                        cognitiveEfficiency: Math.min(100, Math.max(0, 100 - (session.time_spent_seconds / Math.max(1, session.correct_connections) / 60) * 10)),
+                        errorRecovery: Math.min(100, Math.max(0, 100 - (session.incorrect_connections / Math.max(1, session.correct_connections + session.incorrect_connections) * 100)))
+                      };
+
+                      return (
+                        <div key={session.id} 
+                             className="p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                             onClick={() => setSelectedSession(session)}>
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <p className="font-medium">{session.lecture_games?.title}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(session.started_at).toLocaleDateString()} • 
+                                Session {session.lecture_games?.session_number} - Lecture {session.lecture_games?.lecture_number}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <div className="text-right">
+                                <Badge variant={session.completion_score >= 80 ? "default" : "secondary"}>
+                                  {Math.round(session.completion_score || 0)}%
+                                </Badge>
+                                <p className="text-xs text-muted-foreground">
+                                  {session.correct_connections}C / {session.incorrect_connections}I / {session.hints_used}H
+                                </p>
+                              </div>
+                              <ChevronRight className="w-4 h-4" />
+                            </div>
+                          </div>
+                          
+                          {/* Critical Thinking Metrics */}
+                          <div className="grid grid-cols-5 gap-2 text-xs">
+                            <div className="text-center">
+                              <div className="text-primary font-medium">{Math.round(sessionMetrics.patternRecognition)}%</div>
+                              <div className="text-muted-foreground">Pattern Recognition</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-secondary font-medium">{Math.round(sessionMetrics.strategicReasoning)}%</div>
+                              <div className="text-muted-foreground">Strategic Reasoning</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-accent font-medium">{Math.round(sessionMetrics.metacognition)}%</div>
+                              <div className="text-muted-foreground">Metacognition</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-orange-500 font-medium">{Math.round(sessionMetrics.cognitiveEfficiency)}%</div>
+                              <div className="text-muted-foreground">Cognitive Efficiency</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-blue-500 font-medium">{Math.round(sessionMetrics.errorRecovery)}%</div>
+                              <div className="text-muted-foreground">Error Recovery</div>
+                            </div>
+                          </div>
                         </div>
-                        <ChevronRight className="w-4 h-4" />
-                      </div>
-                    </div>
-                  ))}
+                      );
+                    })}
                   {filteredSessions.length === 0 && (
                     <p className="text-center text-muted-foreground py-8">
                       {selectedModule !== 'all' || selectedLecture !== 'all' ? 'No sessions found matching the selected filters.' : 'No game sessions completed yet.'}
