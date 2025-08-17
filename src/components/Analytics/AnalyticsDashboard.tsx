@@ -134,15 +134,56 @@ export const AnalyticsDashboard: React.FC = () => {
   const quizAccuracy = quizAnswers.length > 0 ?
     (quizAnswers.filter(q => q.is_correct).length / quizAnswers.length) * 100 : 0;
 
-  // Critical thinking metrics
-  const problemSolvingEfficiency = sessions.length > 0 ? 
-    sessions.reduce((sum, s) => sum + (s.correct_connections / (s.time_spent_seconds / 60)), 0) / sessions.length : 0;
-  
-  const adaptabilityScore = sessions.length > 0 ? 
-    100 - (sessions.reduce((sum, s) => sum + s.incorrect_connections, 0) / sessions.length * 10) : 0;
-  
-  const strategicThinkingScore = sessions.length > 0 ? 
-    100 - (sessions.reduce((sum, s) => sum + s.hints_used, 0) / sessions.length * 15) : 0;
+  // Dynamic strategy rating for dashboard
+  const getStrategyRating = () => {
+    if (sessions.length === 0) return "No Data";
+    
+    const avgAccuracy = sessions.reduce((sum, s) => {
+      const total = s.correct_connections + s.incorrect_connections;
+      return sum + (total > 0 ? (s.correct_connections / total) * 100 : 0);
+    }, 0) / sessions.length;
+    
+    const avgEfficiency = sessions.reduce((sum, s) => {
+      const timeInMinutes = Math.max(1 / 60, s.time_spent_seconds / 60);
+      const targetRate = 2; // connections per minute
+      const rate = s.correct_connections / timeInMinutes;
+      return sum + Math.min(100, Math.max(0, (rate / targetRate) * 100));
+    }, 0) / sessions.length;
+    
+    const avgMetacognition = sessions.reduce((sum, s) => {
+      const totalConnections = s.correct_connections + s.incorrect_connections;
+      const hintImpact = totalConnections > 0 ? Math.min(60, (s.hints_used / totalConnections) * 60) : Math.min(60, s.hints_used * 15);
+      const errorImpact = totalConnections > 0 ? (s.incorrect_connections / totalConnections) * 40 : 0;
+      return sum + Math.min(100, Math.max(0, 100 - hintImpact - errorImpact));
+    }, 0) / sessions.length;
+    
+    const strategyScore = (avgAccuracy * 0.4) + (avgEfficiency * 0.3) + (avgMetacognition * 0.3);
+    
+    if (strategyScore >= 80) return "Masterful";
+    if (strategyScore >= 65) return "Strategic";
+    if (strategyScore >= 50) return "Developing";
+    if (strategyScore >= 35) return "Learning";
+    return "Exploring";
+  };
+
+  // Dynamic overall performance rating for dashboard
+  const getOverallPerformance = () => {
+    if (!criticalThinkingMetrics) return "No Data";
+    
+    const avgScore = (
+      criticalThinkingMetrics.patternRecognition + 
+      criticalThinkingMetrics.strategicReasoning + 
+      criticalThinkingMetrics.metacognition + 
+      criticalThinkingMetrics.cognitiveEfficiency + 
+      criticalThinkingMetrics.errorRecovery
+    ) / 5;
+    
+    if (avgScore >= 85) return "Exceptional";
+    if (avgScore >= 70) return "Proficient";
+    if (avgScore >= 55) return "Developing";
+    if (avgScore >= 40) return "Emerging";
+    return "Beginning";
+  };
 
   // Enhanced Critical Thinking Analytics
   const calculateCriticalThinkingMetrics = () => {
@@ -1265,8 +1306,36 @@ export const AnalyticsDashboard: React.FC = () => {
 
                       <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
                         <span className="text-sm font-medium">Strategy Score</span>
-                        <Badge variant={selectedSession.hints_used <= 2 ? "default" : "outline"}>
-                          {selectedSession.hints_used <= 2 ? "Strategic" : "Learning Mode"}
+                        <Badge variant={(() => {
+                          const total = selectedSession.correct_connections + selectedSession.incorrect_connections;
+                          const accuracy = total > 0 ? (selectedSession.correct_connections / total) * 100 : 0;
+                          const timeInMinutes = Math.max(1 / 60, selectedSession.time_spent_seconds / 60);
+                          const targetRate = 2;
+                          const rate = selectedSession.correct_connections / timeInMinutes;
+                          const efficiency = Math.min(100, Math.max(0, (rate / targetRate) * 100));
+                          const hintImpact = total > 0 ? Math.min(60, (selectedSession.hints_used / total) * 60) : Math.min(60, selectedSession.hints_used * 15);
+                          const errorImpact = total > 0 ? (selectedSession.incorrect_connections / total) * 40 : 0;
+                          const metacognition = Math.min(100, Math.max(0, 100 - hintImpact - errorImpact));
+                          const strategyScore = (accuracy * 0.4) + (efficiency * 0.3) + (metacognition * 0.3);
+                          return strategyScore >= 65 ? "default" : strategyScore >= 35 ? "secondary" : "outline";
+                        })()}>
+                          {(() => {
+                            const total = selectedSession.correct_connections + selectedSession.incorrect_connections;
+                            const accuracy = total > 0 ? (selectedSession.correct_connections / total) * 100 : 0;
+                            const timeInMinutes = Math.max(1 / 60, selectedSession.time_spent_seconds / 60);
+                            const targetRate = 2;
+                            const rate = selectedSession.correct_connections / timeInMinutes;
+                            const efficiency = Math.min(100, Math.max(0, (rate / targetRate) * 100));
+                            const hintImpact = total > 0 ? Math.min(60, (selectedSession.hints_used / total) * 60) : Math.min(60, selectedSession.hints_used * 15);
+                            const errorImpact = total > 0 ? (selectedSession.incorrect_connections / total) * 40 : 0;
+                            const metacognition = Math.min(100, Math.max(0, 100 - hintImpact - errorImpact));
+                            const strategyScore = (accuracy * 0.4) + (efficiency * 0.3) + (metacognition * 0.3);
+                            if (strategyScore >= 80) return "Masterful";
+                            if (strategyScore >= 65) return "Strategic";
+                            if (strategyScore >= 50) return "Developing";
+                            if (strategyScore >= 35) return "Learning";
+                            return "Exploring";
+                          })()}
                         </Badge>
                       </div>
 
