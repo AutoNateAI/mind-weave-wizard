@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { GameAnalyticsReport } from '@/components/Analytics/GameAnalyticsReport';
 import { Lightbulb, Trophy, Target, X, Info, CheckCircle, XCircle } from "lucide-react";
 import "@xyflow/react/dist/style.css";
 
@@ -60,6 +61,8 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
   const [showInstructions, setShowInstructions] = useState(true);
   const [selectedNodeDetails, setSelectedNodeDetails] = useState<{ node: GameNode; position: { x: number; y: number } } | null>(null);
   const [showConnectionHistory, setShowConnectionHistory] = useState(false);
+  const [showAnalyticsReport, setShowAnalyticsReport] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState(null);
 
   // Get instructor solution and rules from gameData
   const instructorSolution = gameData?.instructorSolution || [];
@@ -341,14 +344,13 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
     const score = calculateScore();
     
     const analytics = {
-      timeSpent,
-      interactions: gameState.interactions,
-      hintsUsed: gameState.hintsUsed,
-      connectionsAttempted: gameState.connections.length,
+      timeSpent: Math.floor(timeSpent),
       correctConnections: gameState.correctConnections.length,
       incorrectConnections: gameState.incorrectConnections.length,
+      hintsUsed: gameState.hintsUsed,
+      totalInteractions: gameState.interactions,
       completionScore: score,
-      finalSolution: { nodes, edges }
+      decisionPath: gameState.connectionHistory
     };
 
     try {
@@ -360,18 +362,18 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
         hints_used: gameState.hintsUsed,
         completion_score: score,
         time_spent_seconds: Math.floor(timeSpent),
-        decision_path: JSON.stringify(gameState.connections),
+        correct_connections: gameState.correctConnections.length,
+        incorrect_connections: gameState.incorrectConnections.length,
+        decision_path: JSON.stringify(gameState.connectionHistory),
         final_solution: JSON.stringify({ nodes, edges })
       });
 
       trackInteraction('completed', analytics);
       
       setGameState(prev => ({ ...prev, isCompleted: true }));
-      onComplete?.(score, analytics);
+      setAnalyticsData(analytics);
+      setShowAnalyticsReport(true);
       
-      toast.success(`Game completed! Score: ${score}%`, {
-        icon: <Trophy className="w-4 h-4" />
-      });
     } catch (error) {
       console.error('Failed to save completion:', error);
     }
@@ -679,21 +681,20 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
           </div>
         )}
 
-        {/* Game Completed Overlay */}
-        {gameState.isCompleted && (
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-10">
-            <div className="text-center p-8 rounded-lg bg-card border shadow-lg">
-              <Trophy className="w-16 h-16 mx-auto mb-4 text-yellow-500" />
-              <h3 className="text-2xl font-bold mb-2">Network Complete!</h3>
-              <p className="text-lg mb-4">Final Score: {calculateScore()}%</p>
-              <div className="text-sm text-muted-foreground space-y-1">
-                <p>Time: {Math.floor((Date.now() - gameState.startTime) / 1000 / 60)} minutes</p>
-                <p>Correct connections: {gameState.correctConnections.length}/{instructorSolution.length}</p>
-                <p>Total attempts: {gameState.connections.length}</p>
-                <p>Hints used: {gameState.hintsUsed}</p>
-              </div>
-            </div>
-          </div>
+        {/* Analytics Report Modal */}
+        {showAnalyticsReport && analyticsData && (
+          <GameAnalyticsReport
+            analytics={analyticsData}
+            gameTitle={gameData?.title || 'Mind Puzzle'}
+            onClose={() => {
+              setShowAnalyticsReport(false);
+              onComplete?.(analyticsData.completionScore, analyticsData);
+            }}
+            onViewFullAnalytics={() => {
+              setShowAnalyticsReport(false);
+              onComplete?.(analyticsData.completionScore, analyticsData);
+            }}
+          />
         )}
       </div>
     </div>
