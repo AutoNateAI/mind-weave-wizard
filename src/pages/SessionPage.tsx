@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageMeta } from "@/components/UI/PageMeta";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowLeft, LogOut } from "lucide-react";
+import { ArrowLeft, LogOut, BarChart3, User } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import flowData from "@/flows/session1Flow.json";
 import { useEffect, useState } from "react";
@@ -118,10 +118,19 @@ export default function SessionPage() {
           </Link>
         </Button>
         <div className="flex items-center gap-2">
-          <ThemeToggle />
           <Button variant="outline" asChild className="hover-scale">
-            <Link to="/profile">Profile</Link>
+            <Link to="/dashboard" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Analytics
+            </Link>
           </Button>
+          <Button variant="outline" asChild className="hover-scale">
+            <Link to="/profile" className="flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Profile
+            </Link>
+          </Button>
+          <ThemeToggle />
           <Button variant="outline" onClick={handleSignOut} className="flex items-center gap-2 hover-scale">
             <LogOut className="w-4 h-4" />
             Sign Out

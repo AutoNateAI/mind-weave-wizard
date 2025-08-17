@@ -72,8 +72,12 @@ export default function Dashboard() {
           <header className="mb-8 flex flex-col sm:flex-row justify-between items-start gap-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Modules</h1>
-                <p className="text-sm sm:text-base text-muted-foreground">Complete each module to unlock the next.</p>
+                <h1 className="text-2xl sm:text-3xl font-bold gradient-text">
+                  {showAnalytics ? "Analytics Dashboard" : "Modules"}
+                </h1>
+                <p className="text-sm sm:text-base text-muted-foreground">
+                  {showAnalytics ? "Track your learning progress and performance." : "Complete each module to unlock the next."}
+                </p>
               </div>
               {isAdmin && (
                 <Badge variant={isStudentView ? "secondary" : "default"} className="gap-2 text-xs">
@@ -83,27 +87,6 @@ export default function Dashboard() {
               )}
             </div>
             <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-              <Button 
-                variant="outline" 
-                onClick={() => setShowAnalytics(!showAnalytics)}
-                size="sm"
-                className="gap-1 sm:gap-2 text-xs sm:text-sm whitespace-nowrap"
-              >
-                <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">{showAnalytics ? 'Modules' : 'Analytics'}</span>
-              </Button>
-              <ThemeToggle />
-              {isAdmin && (
-                <Button
-                  onClick={toggleView}
-                  variant="outline"
-                  size="sm"
-                  className="gap-1 sm:gap-2 text-xs sm:text-sm whitespace-nowrap"
-                >
-                  <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden xs:inline">Switch to</span> {isStudentView ? "Admin" : "Student"}
-                </Button>
-              )}
               {isAdminView && (
                 <Button variant="outline" asChild className="hover-scale">
                   <Link 
@@ -116,12 +99,33 @@ export default function Dashboard() {
                   </Link>
                 </Button>
               )}
+              <Button 
+                variant="outline" 
+                onClick={() => setShowAnalytics(!showAnalytics)}
+                size="sm"
+                className="gap-1 sm:gap-2 text-xs sm:text-sm whitespace-nowrap"
+              >
+                <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">{showAnalytics ? 'Modules' : 'Analytics'}</span>
+              </Button>
+              {isAdmin && (
+                <Button
+                  onClick={toggleView}
+                  variant="outline"
+                  size="sm"
+                  className="gap-1 sm:gap-2 text-xs sm:text-sm whitespace-nowrap"
+                >
+                  <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden xs:inline">Switch to</span> {isStudentView ? "Admin" : "Student"}
+                </Button>
+              )}
               <Button variant="outline" asChild className="hover-scale">
                 <Link to="/profile" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm whitespace-nowrap">
                   <User className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span className="hidden sm:inline">Profile</span>
                 </Link>
               </Button>
+              <ThemeToggle />
               <Button variant="outline" onClick={handleSignOut} className="flex items-center gap-1 sm:gap-2 hover-scale text-xs sm:text-sm whitespace-nowrap">
                 <LogOut className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">Sign Out</span>
