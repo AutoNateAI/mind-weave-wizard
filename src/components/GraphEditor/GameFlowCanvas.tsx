@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { GameAnalyticsReport } from '@/components/Analytics/GameAnalyticsReport';
+import { GameCompletionReport } from '@/components/Analytics/GameCompletionReport';
 import { Lightbulb, Trophy, Target, X, Info, CheckCircle, XCircle } from "lucide-react";
 import "@xyflow/react/dist/style.css";
 
@@ -683,7 +683,7 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
 
         {/* Analytics Report Modal */}
         {showAnalyticsReport && analyticsData && (
-          <GameAnalyticsReport
+          <GameCompletionReport
             analytics={analyticsData}
             gameTitle={gameData?.title || 'Mind Puzzle'}
             onClose={() => {
