@@ -755,7 +755,34 @@ Return JSON format:
     console.log('Final processed game data:', gameData);
 
     // Add instructor solution and grading rubric from orchestrated content
-    const instructorSolution = contentForTemplate.instructor_solution || [];
+    let instructorSolution = contentForTemplate.instructor_solution || [];
+    
+    // CRITICAL FIX: Map instructor solution placeholder IDs to actual node IDs
+    instructorSolution = instructorSolution.map((connection: any) => {
+      const sourceNode = gameData.nodes.find((node: any) => 
+        node.data.label.toLowerCase().includes(connection.source.toLowerCase()) ||
+        node.id === connection.source ||
+        node.id.includes(connection.source) ||
+        connection.source.includes(node.id)
+      );
+      const targetNode = gameData.nodes.find((node: any) => 
+        node.data.label.toLowerCase().includes(connection.target.toLowerCase()) ||
+        node.id === connection.target ||
+        node.id.includes(connection.target) ||
+        connection.target.includes(node.id)
+      );
+      
+      console.log(`Mapping connection: ${connection.source} -> ${connection.target}`);
+      console.log(`Found source node: ${sourceNode?.id} (${sourceNode?.data?.label})`);
+      console.log(`Found target node: ${targetNode?.id} (${targetNode?.data?.label})`);
+      
+      return {
+        ...connection,
+        source: sourceNode?.id || connection.source,
+        target: targetNode?.id || connection.target
+      };
+    });
+    
     const gradingRubric = contentForTemplate.grading_rubric || {
       excellent: { min_score: 100, criteria: "Excellent understanding demonstrated" },
       good: { min_score: 75, criteria: "Good understanding shown" },
@@ -763,7 +790,29 @@ Return JSON format:
       needs_improvement: { min_score: 25, criteria: "Limited understanding" },
       unsatisfactory: { min_score: 0, criteria: "Poor understanding" }
     };
-    const wrongConnections = contentForTemplate.wrong_connections || [];
+    
+    // Also fix wrong connections
+    let wrongConnections = contentForTemplate.wrong_connections || [];
+    wrongConnections = wrongConnections.map((connection: any) => {
+      const sourceNode = gameData.nodes.find((node: any) => 
+        node.data.label.toLowerCase().includes(connection.source.toLowerCase()) ||
+        node.id === connection.source ||
+        node.id.includes(connection.source) ||
+        connection.source.includes(node.id)
+      );
+      const targetNode = gameData.nodes.find((node: any) => 
+        node.data.label.toLowerCase().includes(connection.target.toLowerCase()) ||
+        node.id === connection.target ||
+        node.id.includes(connection.target) ||
+        connection.target.includes(node.id)
+      );
+      
+      return {
+        ...connection,
+        source: sourceNode?.id || connection.source,
+        target: targetNode?.id || connection.target
+      };
+    });
 
     // Update game data with instructor solution
     gameData.instructorSolution = instructorSolution;
