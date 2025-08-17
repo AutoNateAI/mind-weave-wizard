@@ -95,7 +95,7 @@ export default function Dashboard() {
                     onClick={() => console.log('🚀 Admin Panel clicked - navigating to /admin')}
                   >
                     <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
-                    <span className="hidden xs:inline">Admin</span> Panel
+                    Admin Panel
                   </Link>
                 </Button>
               )}
