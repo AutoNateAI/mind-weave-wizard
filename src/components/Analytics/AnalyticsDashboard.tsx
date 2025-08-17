@@ -7,15 +7,16 @@ import { Progress } from '@/components/ui/progress';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
-  LineChart, Line, Area, AreaChart
+  LineChart, Line, Area, AreaChart, PieChart, Pie, Cell
 } from 'recharts';
 import { 
   Brain, TrendingUp, Clock, Target, Award, Calendar,
-  ChevronRight, Lightbulb, Activity, Users
+  ChevronRight, Lightbulb, Activity, Users, X, Zap, CheckCircle, XCircle
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface GameSession {
   id: string;
@@ -457,7 +458,7 @@ export const AnalyticsDashboard: React.FC = () => {
               <div className="space-y-2">
                 {sessions.map((session) => (
                   <div key={session.id} 
-                       className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                       className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                        onClick={() => setSelectedSession(session)}>
                     <div>
                       <p className="font-medium">{session.lecture_games?.title}</p>
@@ -479,6 +480,9 @@ export const AnalyticsDashboard: React.FC = () => {
                     </div>
                   </div>
                 ))}
+                {sessions.length === 0 && (
+                  <p className="text-center text-muted-foreground py-8">No game sessions completed yet.</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -564,6 +568,171 @@ export const AnalyticsDashboard: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Game Session Detail Modal */}
+      <Dialog open={!!selectedSession} onOpenChange={() => setSelectedSession(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Activity className="w-5 h-5" />
+              {selectedSession?.lecture_games?.title} - Detailed Analytics
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedSession && (
+            <div className="space-y-6">
+              {/* Session Overview */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2">
+                      <Award className="w-4 h-4 text-primary" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Score</p>
+                        <p className="text-xl font-bold">{Math.round(selectedSession.completion_score || 0)}%</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-primary" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Duration</p>
+                        <p className="text-xl font-bold">
+                          {Math.floor(selectedSession.time_spent_seconds / 60)}:{(selectedSession.time_spent_seconds % 60).toString().padStart(2, '0')}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Correct</p>
+                        <p className="text-xl font-bold">{selectedSession.correct_connections}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2">
+                      <Lightbulb className="w-4 h-4 text-yellow-600" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Hints Used</p>
+                        <p className="text-xl font-bold">{selectedSession.hints_used}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Performance Breakdown */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Performance Breakdown</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={250}>
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Correct', value: selectedSession.correct_connections, fill: 'hsl(var(--chart-1))' },
+                            { name: 'Incorrect', value: selectedSession.incorrect_connections, fill: 'hsl(var(--chart-2))' }
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          dataKey="value"
+                          label={({ name, value }) => `${name}: ${value}`}
+                        />
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Session Insights */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Session Insights</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                        <span className="text-sm font-medium">Accuracy Rate</span>
+                        <Badge variant="default">
+                          {selectedSession.correct_connections + selectedSession.incorrect_connections > 0 
+                            ? Math.round((selectedSession.correct_connections / (selectedSession.correct_connections + selectedSession.incorrect_connections)) * 100)
+                            : 0}%
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                        <span className="text-sm font-medium">Efficiency</span>
+                        <Badge variant="secondary">
+                          {selectedSession.time_spent_seconds > 0 
+                            ? Math.round((selectedSession.correct_connections / (selectedSession.time_spent_seconds / 60)) * 10) / 10
+                            : 0} connections/min
+                        </Badge>
+                      </div>
+
+                      <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                        <span className="text-sm font-medium">Strategy Score</span>
+                        <Badge variant={selectedSession.hints_used <= 2 ? "default" : "outline"}>
+                          {selectedSession.hints_used <= 2 ? "Strategic" : "Learning Mode"}
+                        </Badge>
+                      </div>
+
+                      <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                        <span className="text-sm font-medium">Total Interactions</span>
+                        <span className="font-bold">{selectedSession.total_interactions}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Session Details */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Session Details</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Started:</p>
+                      <p className="font-medium">{new Date(selectedSession.started_at).toLocaleString()}</p>
+                    </div>
+                    {selectedSession.completed_at && (
+                      <div>
+                        <p className="text-muted-foreground">Completed:</p>
+                        <p className="font-medium">{new Date(selectedSession.completed_at).toLocaleString()}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-muted-foreground">Session:</p>
+                      <p className="font-medium">Session {selectedSession.lecture_games?.session_number} - Lecture {selectedSession.lecture_games?.lecture_number}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Game Type:</p>
+                      <p className="font-medium">{selectedSession.lecture_games?.title}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
