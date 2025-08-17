@@ -126,41 +126,68 @@ export const AnalyticsDashboard: React.FC = () => {
   const quizAccuracy = quizAnswers.length > 0 ?
     (quizAnswers.filter(q => q.is_correct).length / quizAnswers.length) * 100 : 0;
 
-  // Skill radar data
+  // Critical thinking metrics
+  const problemSolvingEfficiency = sessions.length > 0 ? 
+    sessions.reduce((sum, s) => sum + (s.correct_connections / (s.time_spent_seconds / 60)), 0) / sessions.length : 0;
+  
+  const adaptabilityScore = sessions.length > 0 ? 
+    100 - (sessions.reduce((sum, s) => sum + s.incorrect_connections, 0) / sessions.length * 10) : 0;
+  
+  const strategicThinkingScore = sessions.length > 0 ? 
+    100 - (sessions.reduce((sum, s) => sum + s.hints_used, 0) / sessions.length * 15) : 0;
+
+  // Enhanced skill radar data with meaningful calculations
   const skillData = [
     {
       skill: 'Pattern Recognition',
-      score: Math.min(100, avgAccuracy + 10)
+      score: Math.min(100, Math.max(0, avgAccuracy))
     },
     {
-      skill: 'Problem Solving',
-      score: Math.min(100, avgScore)
+      skill: 'Problem Solving Speed',
+      score: Math.min(100, Math.max(0, problemSolvingEfficiency * 10))
     },
     {
-      skill: 'Decision Speed',
-      score: Math.min(100, sessions.length > 0 ? 
-        100 - (sessions.reduce((sum, s) => sum + (s.time_spent_seconds / s.correct_connections || 0), 0) / sessions.length) : 0)
+      skill: 'Quiz Mastery',
+      score: Math.min(100, Math.max(0, quizAccuracy))
     },
     {
       skill: 'Strategic Thinking',
-      score: Math.min(100, sessions.length > 0 ? 
-        100 - (sessions.reduce((sum, s) => sum + s.hints_used, 0) / sessions.length * 10) : 0)
+      score: Math.min(100, Math.max(0, strategicThinkingScore))
     },
     {
       skill: 'Adaptability',
-      score: Math.min(100, 100 - (sessions.reduce((sum, s) => sum + s.incorrect_connections, 0) / sessions.length * 5))
+      score: Math.min(100, Math.max(0, adaptabilityScore))
+    },
+    {
+      skill: 'Reflection Depth',
+      score: Math.min(100, Math.max(0, (reflections.length / Math.max(totalSessions, 1)) * 50))
     }
   ];
 
-  // Progress over time data
-  const progressData = sessions.slice(-10).reverse().map((session, index) => ({
-    session: `Session ${index + 1}`,
-    score: session.completion_score || 0,
+  // Game performance over time (last 10 sessions)
+  const gameProgressData = sessions.slice(-10).reverse().map((session, index) => ({
+    session: `Game ${sessions.length - 9 + index}`,
+    completion_score: session.completion_score || 0,
     accuracy: session.correct_connections + session.incorrect_connections > 0 ? 
       (session.correct_connections / (session.correct_connections + session.incorrect_connections)) * 100 : 0,
-    efficiency: session.total_interactions > 0 ? 
-      (session.correct_connections / session.total_interactions) * 100 : 0
+    efficiency: session.time_spent_seconds > 0 ? 
+      (session.correct_connections / (session.time_spent_seconds / 60)) * 10 : 0
   }));
+
+  // Quiz performance over time
+  const quizProgressData = quizAnswers.slice(-10).reverse().map((answer, index) => ({
+    quiz: `Quiz ${quizAnswers.length - 9 + index}`,
+    accuracy: answer.is_correct ? 100 : 0,
+    session: answer.multiple_choice_questions?.session_number || 0
+  }));
+
+  // Critical thinking patterns data
+  const thinkingPatternsData = [
+    { pattern: 'Quick Decision Making', value: strategicThinkingScore },
+    { pattern: 'Deep Analysis', value: Math.min(100, (reflections.length / Math.max(totalSessions, 1)) * 25) },
+    { pattern: 'Error Recovery', value: adaptabilityScore },
+    { pattern: 'Knowledge Application', value: quizAccuracy }
+  ];
 
   if (loading) {
     return (
@@ -246,39 +273,84 @@ export const AnalyticsDashboard: React.FC = () => {
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Progress Over Time */}
+            {/* Game Performance Over Time */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="w-5 h-5" />
-                  Progress Over Time
+                  Game Performance Trends
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={progressData}>
+                  <AreaChart data={gameProgressData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="session" />
-                    <YAxis />
-                    <Tooltip />
-                    <Area type="monotone" dataKey="score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
+                    <YAxis domain={[0, 100]} />
+                    <Tooltip formatter={(value, name) => [`${Math.round(value as number)}%`, name]} />
+                    <Area type="monotone" dataKey="completion_score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} name="Completion Score" />
+                    <Area type="monotone" dataKey="accuracy" stroke="hsl(var(--secondary))" fill="hsl(var(--secondary))" fillOpacity={0.2} name="Accuracy" />
                   </AreaChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
 
-            {/* Recent Performance */}
+            {/* Critical Thinking Patterns */}
             <Card>
               <CardHeader>
-                <CardTitle>Recent Performance</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Brain className="w-5 h-5" />
+                  Critical Thinking Patterns
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={thinkingPatternsData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="pattern" angle={-45} textAnchor="end" height={80} />
+                    <YAxis domain={[0, 100]} />
+                    <Tooltip formatter={(value) => [`${Math.round(value as number)}%`, 'Proficiency']} />
+                    <Bar dataKey="value" fill="hsl(var(--primary))" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Quiz Performance Trends */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="w-5 h-5" />
+                  Quiz Performance Over Time
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={quizProgressData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="quiz" />
+                    <YAxis domain={[0, 100]} />
+                    <Tooltip formatter={(value) => [`${value}%`, 'Accuracy']} />
+                    <Line type="monotone" dataKey="accuracy" stroke="hsl(var(--chart-2))" strokeWidth={3} dot={{ fill: 'hsl(var(--chart-2))' }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Recent Performance Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Activity Summary</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {sessions.slice(0, 5).map((session, index) => (
+                  {sessions.slice(0, 3).map((session, index) => (
                     <div key={session.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
-                        <p className="font-medium">{session.lecture_games?.title}</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="font-medium text-sm">{session.lecture_games?.title}</p>
+                        <p className="text-xs text-muted-foreground">
                           Session {session.lecture_games?.session_number} - Lecture {session.lecture_games?.lecture_number}
                         </p>
                       </div>
@@ -286,12 +358,15 @@ export const AnalyticsDashboard: React.FC = () => {
                         <Badge variant={session.completion_score >= 80 ? "default" : session.completion_score >= 60 ? "secondary" : "outline"}>
                           {Math.round(session.completion_score || 0)}%
                         </Badge>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           {Math.floor(session.time_spent_seconds / 60)}:{(session.time_spent_seconds % 60).toString().padStart(2, '0')}
                         </p>
                       </div>
                     </div>
                   ))}
+                  {sessions.length === 0 && (
+                    <p className="text-center text-muted-foreground py-4">No game sessions completed yet</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -300,40 +375,53 @@ export const AnalyticsDashboard: React.FC = () => {
 
         <TabsContent value="skills" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Skills Radar */}
+            {/* Enhanced Skills Radar */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Brain className="w-5 h-5" />
-                  Critical Thinking Skills
+                  Critical Thinking Skills Profile
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={400}>
                   <RadarChart data={skillData}>
                     <PolarGrid />
-                    <PolarAngleAxis dataKey="skill" />
-                    <PolarRadiusAxis angle={90} domain={[0, 100]} />
-                    <Radar name="Skills" dataKey="score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
+                    <PolarAngleAxis dataKey="skill" tick={{ fontSize: 12 }} />
+                    <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 10 }} />
+                    <Radar name="Skills" dataKey="score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} strokeWidth={2} />
                   </RadarChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
 
-            {/* Skill Breakdown */}
+            {/* Detailed Skill Breakdown */}
             <Card>
               <CardHeader>
-                <CardTitle>Skill Breakdown</CardTitle>
+                <CardTitle>Skill Analysis</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {skillData.map((skill) => (
                     <div key={skill.skill} className="space-y-2">
-                      <div className="flex justify-between">
+                      <div className="flex justify-between items-center">
                         <span className="text-sm font-medium">{skill.skill}</span>
-                        <span className="text-sm text-muted-foreground">{Math.round(skill.score)}%</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">{Math.round(skill.score)}%</span>
+                          <Badge variant={skill.score >= 80 ? "default" : skill.score >= 60 ? "secondary" : "outline"}>
+                            {skill.score >= 80 ? "Strong" : skill.score >= 60 ? "Developing" : "Focus Area"}
+                          </Badge>
+                        </div>
                       </div>
                       <Progress value={skill.score} className="h-2" />
+                      <p className="text-xs text-muted-foreground">
+                        {skill.skill === 'Pattern Recognition' && 'Based on game accuracy and connection success rates'}
+                        {skill.skill === 'Problem Solving Speed' && 'Measures correct connections per minute'}
+                        {skill.skill === 'Quiz Mastery' && 'Overall quiz answer accuracy across all sessions'}
+                        {skill.skill === 'Strategic Thinking' && 'Lower hint usage indicates stronger strategic planning'}
+                        {skill.skill === 'Adaptability' && 'Recovery from incorrect attempts and learning'}
+                        {skill.skill === 'Reflection Depth' && 'Engagement with reflection exercises'}
+                      </p>
                     </div>
                   ))}
                 </div>
