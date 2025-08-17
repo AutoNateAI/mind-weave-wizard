@@ -30,6 +30,7 @@ interface GameSession {
   hints_used: number;
   completion_score: number;
   total_interactions: number;
+  decision_path?: any; // JSON type from database
   lecture_games: {
     title: string;
     session_number: number;
@@ -142,33 +143,96 @@ export const AnalyticsDashboard: React.FC = () => {
   const strategicThinkingScore = sessions.length > 0 ? 
     100 - (sessions.reduce((sum, s) => sum + s.hints_used, 0) / sessions.length * 15) : 0;
 
-  // Enhanced skill radar data with meaningful calculations
-  const skillData = [
+  // Enhanced Critical Thinking Analytics
+  const calculateCriticalThinkingMetrics = () => {
+    if (sessions.length === 0) return null;
+
+    // 1. Connection Accuracy & Pattern Recognition
+    const totalConnections = sessions.reduce((sum, s) => sum + s.correct_connections + s.incorrect_connections, 0);
+    const patternRecognitionScore = totalConnections > 0 ? 
+      (sessions.reduce((sum, s) => sum + s.correct_connections, 0) / totalConnections) * 100 : 0;
+
+    // 2. Decision Path & Problem-Solving Strategy (analyze decision_path for patterns)
+    const strategicReasoningScore = sessions.reduce((sum, s) => {
+      const path = s.decision_path ? JSON.parse(s.decision_path as any) : [];
+      const pathLength = Array.isArray(path) ? path.length : 0;
+      const efficiency = pathLength > 0 ? (s.correct_connections / pathLength) * 100 : 0;
+      return sum + efficiency;
+    }, 0) / sessions.length;
+
+    // 3. Hint Usage & Self-Directed Learning
+    const avgHintsUsed = sessions.reduce((sum, s) => sum + s.hints_used, 0) / sessions.length;
+    const metacognitionScore = Math.max(0, 100 - (avgHintsUsed * 20)); // Less hints = better self-assessment
+
+    // 4. Time Management & Cognitive Efficiency
+    const avgTimePerConnection = sessions.reduce((sum, s) => {
+      const timePerConnection = s.correct_connections > 0 ? s.time_spent_seconds / s.correct_connections : 0;
+      return sum + timePerConnection;
+    }, 0) / sessions.length;
+    const cognitiveEfficiencyScore = Math.max(0, 100 - (avgTimePerConnection / 60) * 10); // Faster = more efficient
+
+    // 5. Error Recovery & Adaptability  
+    const errorRecoveryScore = sessions.reduce((sum, s) => {
+      const incorrectRatio = s.incorrect_connections / Math.max(1, s.correct_connections + s.incorrect_connections);
+      const recoveryScore = Math.max(0, 100 - (incorrectRatio * 100));
+      return sum + recoveryScore;
+    }, 0) / sessions.length;
+
+    return {
+      patternRecognition: Math.min(100, patternRecognitionScore),
+      strategicReasoning: Math.min(100, strategicReasoningScore),
+      metacognition: Math.min(100, metacognitionScore),
+      cognitiveEfficiency: Math.min(100, cognitiveEfficiencyScore),
+      errorRecovery: Math.min(100, errorRecoveryScore)
+    };
+  };
+
+  const criticalThinkingMetrics = calculateCriticalThinkingMetrics();
+
+  // Enhanced skill radar data using critical thinking metrics
+  const skillData = criticalThinkingMetrics ? [
     {
       skill: 'Pattern Recognition',
-      score: Math.min(100, Math.max(0, avgAccuracy))
+      score: criticalThinkingMetrics.patternRecognition,
+      description: 'Ability to identify logical relationships'
     },
     {
-      skill: 'Problem Solving Speed',
-      score: Math.min(100, Math.max(0, problemSolvingEfficiency * 10))
+      skill: 'Strategic Reasoning',
+      score: criticalThinkingMetrics.strategicReasoning,
+      description: 'Systematic vs random problem approach'
     },
     {
-      skill: 'Quiz Mastery',
-      score: Math.min(100, Math.max(0, quizAccuracy))
+      skill: 'Metacognition',
+      score: criticalThinkingMetrics.metacognition,
+      description: 'Self-assessment and help-seeking behavior'
     },
     {
-      skill: 'Strategic Thinking',
-      score: Math.min(100, Math.max(0, strategicThinkingScore))
+      skill: 'Cognitive Efficiency',
+      score: criticalThinkingMetrics.cognitiveEfficiency,
+      description: 'Balance of speed and accuracy'
     },
     {
-      skill: 'Adaptability',
-      score: Math.min(100, Math.max(0, adaptabilityScore))
-    },
-    {
-      skill: 'Reflection Depth',
-      score: Math.min(100, Math.max(0, (reflections.length / Math.max(totalSessions, 1)) * 50))
+      skill: 'Error Recovery',
+      score: criticalThinkingMetrics.errorRecovery,
+      description: 'Adaptability and learning from mistakes'
     }
-  ];
+  ] : [];
+
+  // Learning Journey Timeline Data (last 10 sessions)
+  const learningJourneyData = sessions.slice(-10).reverse().map((session, index) => {
+    const path = session.decision_path ? JSON.parse(session.decision_path as any) : [];
+    const pathLength = Array.isArray(path) ? path.length : 0;
+    const efficiency = pathLength > 0 ? (session.correct_connections / pathLength) * 100 : 0;
+    
+    return {
+      session: `Game ${sessions.length - 9 + index}`,
+      patternRecognition: session.correct_connections / Math.max(1, session.correct_connections + session.incorrect_connections) * 100,
+      strategicReasoning: efficiency,
+      metacognition: Math.max(0, 100 - (session.hints_used * 20)),
+      cognitiveEfficiency: Math.max(0, 100 - (session.time_spent_seconds / Math.max(1, session.correct_connections) / 60) * 10),
+      errorRecovery: Math.max(0, 100 - (session.incorrect_connections / Math.max(1, session.correct_connections + session.incorrect_connections) * 100))
+    };
+  });
 
   // Game performance over time (last 10 sessions)
   const gameProgressData = sessions.slice(-10).reverse().map((session, index) => ({
@@ -221,13 +285,56 @@ export const AnalyticsDashboard: React.FC = () => {
     setSelectedLecture(value);
     setCurrentPage(1);
   };
-  // Critical thinking patterns data
-  const thinkingPatternsData = [
-    { pattern: 'Quick Decision Making', value: strategicThinkingScore },
-    { pattern: 'Deep Analysis', value: Math.min(100, (reflections.length / Math.max(totalSessions, 1)) * 25) },
-    { pattern: 'Error Recovery', value: adaptabilityScore },
-    { pattern: 'Knowledge Application', value: quizAccuracy }
-  ];
+  // Targeted Recommendations based on performance
+  const generateRecommendations = () => {
+    if (!criticalThinkingMetrics) return [];
+    
+    const recommendations = [];
+    
+    if (criticalThinkingMetrics.patternRecognition < 70) {
+      recommendations.push({
+        area: 'Pattern Recognition',
+        recommendation: 'Focus on foundational concept review and practice identifying logical relationships',
+        priority: 'High'
+      });
+    }
+    
+    if (criticalThinkingMetrics.strategicReasoning < 60) {
+      recommendations.push({
+        area: 'Strategic Reasoning',
+        recommendation: 'Work on systematic problem-solving approaches rather than random exploration',
+        priority: 'High'
+      });
+    }
+    
+    if (criticalThinkingMetrics.metacognition < 50) {
+      recommendations.push({
+        area: 'Self-Assessment',
+        recommendation: 'Practice recognizing when you need help and develop independent problem-solving confidence',
+        priority: 'Medium'
+      });
+    }
+    
+    if (criticalThinkingMetrics.cognitiveEfficiency < 60) {
+      recommendations.push({
+        area: 'Cognitive Efficiency',
+        recommendation: 'Balance speed with accuracy - take time to think through problems systematically',
+        priority: 'Medium'
+      });
+    }
+    
+    if (criticalThinkingMetrics.errorRecovery < 70) {
+      recommendations.push({
+        area: 'Error Recovery',
+        recommendation: 'Focus on learning from mistakes and adapting strategy when initial approaches fail',
+        priority: 'High'
+      });
+    }
+
+    return recommendations;
+  };
+
+  const recommendations = generateRecommendations();
 
   if (loading) {
     return (
@@ -305,7 +412,9 @@ export const AnalyticsDashboard: React.FC = () => {
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="skills">Skills Profile</TabsTrigger>
+          <TabsTrigger value="skills">Critical Thinking Profile</TabsTrigger>
+          <TabsTrigger value="journey">Learning Journey</TabsTrigger>
+          <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
           <TabsTrigger value="sessions">Games</TabsTrigger>
           <TabsTrigger value="reflections">Reflections</TabsTrigger>
           <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
@@ -335,157 +444,94 @@ export const AnalyticsDashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Critical Thinking Patterns */}
+            {/* Critical Thinking Overview */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Brain className="w-5 h-5" />
-                  Critical Thinking Patterns
+                  Critical Thinking Overview
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={thinkingPatternsData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="pattern" 
-                      angle={-45} 
-                      textAnchor="end" 
-                      height={80}
-                      interval={0}
-                      tick={{ fontSize: 11 }}
-                      tickFormatter={(value) => {
-                        // Split long labels into multiple lines for better readability
-                        if (value.length > 12) {
-                          const words = value.split(' ');
-                          if (words.length > 1) {
-                            const mid = Math.ceil(words.length / 2);
-                            return words.slice(0, mid).join(' ') + '\n' + words.slice(mid).join(' ');
-                          }
-                        }
-                        return value;
-                      }}
-                    />
-                    <YAxis domain={[0, 100]} />
-                    <Tooltip formatter={(value) => [`${Math.round(value as number)}%`, 'Proficiency']} />
-                    <Bar dataKey="value" fill="hsl(var(--primary))" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Quiz Performance Trends */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="w-5 h-5" />
-                  Quiz Performance Over Time
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
-                  <LineChart data={quizProgressData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="quiz" />
-                    <YAxis domain={[0, 100]} />
-                    <Tooltip formatter={(value) => [`${value}%`, 'Accuracy']} />
-                    <Line type="monotone" dataKey="accuracy" stroke="hsl(var(--chart-2))" strokeWidth={3} dot={{ fill: 'hsl(var(--chart-2))' }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            {/* Recent Performance Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {sessions.slice(0, 3).map((session, index) => (
-                    <div key={session.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <p className="font-medium text-sm">{session.lecture_games?.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Session {session.lecture_games?.session_number} - Lecture {session.lecture_games?.lecture_number}
-                        </p>
+                {criticalThinkingMetrics ? (
+                  <div className="space-y-4">
+                    {Object.entries(criticalThinkingMetrics).map(([key, value]) => (
+                      <div key={key} className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                          <span className="text-sm text-muted-foreground">{Math.round(value)}%</span>
+                        </div>
+                        <Progress value={value} className="h-2" />
                       </div>
-                      <div className="text-right">
-                        <Badge variant={session.completion_score >= 80 ? "default" : session.completion_score >= 60 ? "secondary" : "outline"}>
-                          {Math.round(session.completion_score || 0)}%
-                        </Badge>
-                        <p className="text-xs text-muted-foreground">
-                          {Math.floor(session.time_spent_seconds / 60)}:{(session.time_spent_seconds % 60).toString().padStart(2, '0')}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                  {sessions.length === 0 && (
-                    <p className="text-center text-muted-foreground py-4">No game sessions completed yet</p>
-                  )}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-4">No data available for analysis</p>
+                )}
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="skills" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Enhanced Skills Radar */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Brain className="w-5 h-5" />
-                  Critical Thinking Skills Profile
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={400}>
-                  <RadarChart data={skillData}>
-                    <PolarGrid />
-                    <PolarAngleAxis dataKey="skill" tick={{ fontSize: 12 }} />
-                    <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 10 }} />
-                    <Radar name="Skills" dataKey="score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} strokeWidth={2} />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
 
-            {/* Detailed Skill Breakdown */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Skill Analysis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {skillData.map((skill) => (
-                    <div key={skill.skill} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">{skill.skill}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">{Math.round(skill.score)}%</span>
-                          <Badge variant={skill.score >= 80 ? "default" : skill.score >= 60 ? "secondary" : "outline"}>
-                            {skill.score >= 80 ? "Strong" : skill.score >= 60 ? "Developing" : "Focus Area"}
-                          </Badge>
-                        </div>
+        <TabsContent value="journey" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Learning Journey Timeline
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={learningJourneyData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="session" />
+                  <YAxis domain={[0, 100]} />
+                  <Tooltip formatter={(value, name) => [`${Math.round(value as number)}%`, name]} />
+                  <Line type="monotone" dataKey="patternRecognition" stroke="#8884d8" name="Pattern Recognition" />
+                  <Line type="monotone" dataKey="strategicReasoning" stroke="#82ca9d" name="Strategic Reasoning" />
+                  <Line type="monotone" dataKey="metacognition" stroke="#ffc658" name="Metacognition" />
+                  <Line type="monotone" dataKey="cognitiveEfficiency" stroke="#ff7300" name="Cognitive Efficiency" />
+                  <Line type="monotone" dataKey="errorRecovery" stroke="#8dd1e1" name="Error Recovery" />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="recommendations" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lightbulb className="w-5 h-5" />
+                Targeted Recommendations
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {recommendations.length > 0 ? (
+                  recommendations.map((rec, index) => (
+                    <div key={index} className="p-4 border rounded-lg">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-semibold">{rec.area}</h4>
+                        <Badge variant={rec.priority === 'High' ? 'destructive' : 'secondary'}>
+                          {rec.priority} Priority
+                        </Badge>
                       </div>
-                      <Progress value={skill.score} className="h-2" />
-                      <p className="text-xs text-muted-foreground">
-                        {skill.skill === 'Pattern Recognition' && 'Based on game accuracy and connection success rates'}
-                        {skill.skill === 'Problem Solving Speed' && 'Measures correct connections per minute'}
-                        {skill.skill === 'Quiz Mastery' && 'Overall quiz answer accuracy across all sessions'}
-                        {skill.skill === 'Strategic Thinking' && 'Lower hint usage indicates stronger strategic planning'}
-                        {skill.skill === 'Adaptability' && 'Recovery from incorrect attempts and learning'}
-                        {skill.skill === 'Reflection Depth' && 'Engagement with reflection exercises'}
-                      </p>
+                      <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Excellent Performance!</h3>
+                    <p className="text-muted-foreground">You're demonstrating strong critical thinking skills across all areas. Keep up the great work!</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="sessions" className="space-y-4">
