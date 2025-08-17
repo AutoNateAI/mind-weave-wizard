@@ -1130,7 +1130,7 @@ export const AnalyticsDashboard: React.FC = () => {
           
           {selectedSession && (
             <div className="space-y-6">
-              {/* Session Overview */}
+              {/* Session Overview Cards */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card>
                   <CardContent className="p-4">
@@ -1183,6 +1183,35 @@ export const AnalyticsDashboard: React.FC = () => {
                 </Card>
               </div>
 
+              {/* Session Details */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Session Details</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Started:</p>
+                      <p className="font-medium">{new Date(selectedSession.started_at).toLocaleString()}</p>
+                    </div>
+                    {selectedSession.completed_at && (
+                      <div>
+                        <p className="text-muted-foreground">Completed:</p>
+                        <p className="font-medium">{new Date(selectedSession.completed_at).toLocaleString()}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-muted-foreground">Session:</p>
+                      <p className="font-medium">Session {selectedSession.lecture_games?.session_number} - Lecture {selectedSession.lecture_games?.lecture_number}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Game Type:</p>
+                      <p className="font-medium">{selectedSession.lecture_games?.title}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Performance Breakdown */}
                 <Card>
@@ -1203,59 +1232,9 @@ export const AnalyticsDashboard: React.FC = () => {
                           dataKey="value"
                           label={({ name, value }) => `${name}: ${value}`}
                         />
-                        <Tooltip />
+                        <RechartsTooltip />
                       </PieChart>
                     </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-
-                {/* Critical Thinking Profile */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Critical Thinking Profile</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {(() => {
-                      // Calculate metrics for selected session
-                      const sessionMetrics = {
-                        patternRecognition: Math.min(100, Math.max(0, selectedSession.correct_connections / Math.max(1, selectedSession.correct_connections + selectedSession.incorrect_connections) * 100)),
-                        strategicReasoning: (() => {
-                          const path = Array.isArray(selectedSession.decision_path) ? selectedSession.decision_path : 
-                                      (typeof selectedSession.decision_path === 'string' ? JSON.parse(selectedSession.decision_path) : []);
-                          const pathLength = Array.isArray(path) ? path.length : 0;
-                          const efficiency = pathLength > 0 ? (selectedSession.correct_connections / pathLength) * 100 : 0;
-                          return Math.min(100, Math.max(0, efficiency));
-                        })(),
-                        metacognition: Math.min(100, Math.max(0, 100 - (selectedSession.hints_used * 20))),
-                        cognitiveEfficiency: Math.min(100, Math.max(0, 100 - (selectedSession.time_spent_seconds / Math.max(1, selectedSession.correct_connections) / 60) * 10)),
-                        errorRecovery: Math.min(100, Math.max(0, 100 - (selectedSession.incorrect_connections / Math.max(1, selectedSession.correct_connections + selectedSession.incorrect_connections) * 100)))
-                      };
-
-                      return (
-                        <div className="grid grid-cols-5 gap-3 text-center text-sm">
-                          <div>
-                            <div className="text-primary font-bold text-lg">{Math.round(sessionMetrics.patternRecognition)}%</div>
-                            <div className="text-muted-foreground">Pattern Recognition</div>
-                          </div>
-                          <div>
-                            <div className="text-green-600 font-bold text-lg">{Math.round(sessionMetrics.strategicReasoning)}%</div>
-                            <div className="text-muted-foreground">Strategic Reasoning</div>
-                          </div>
-                          <div>
-                            <div className="text-accent font-bold text-lg">{Math.round(sessionMetrics.metacognition)}%</div>
-                            <div className="text-muted-foreground">Metacognition</div>
-                          </div>
-                          <div>
-                            <div className="text-orange-500 font-bold text-lg">{Math.round(sessionMetrics.cognitiveEfficiency)}%</div>
-                            <div className="text-muted-foreground">Cognitive Efficiency</div>
-                          </div>
-                          <div>
-                            <div className="text-blue-500 font-bold text-lg">{Math.round(sessionMetrics.errorRecovery)}%</div>
-                            <div className="text-muted-foreground">Error Recovery</div>
-                          </div>
-                        </div>
-                      );
-                    })()}
                   </CardContent>
                 </Card>
 
@@ -1300,32 +1279,141 @@ export const AnalyticsDashboard: React.FC = () => {
                 </Card>
               </div>
 
-              {/* Session Details */}
-              <Card>
+              {/* Critical Thinking Profile - Full Width */}
+              <Card className="w-full">
                 <CardHeader>
-                  <CardTitle>Session Details</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="w-5 h-5" />
+                    Critical Thinking Profile
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Started:</p>
-                      <p className="font-medium">{new Date(selectedSession.started_at).toLocaleString()}</p>
-                    </div>
-                    {selectedSession.completed_at && (
-                      <div>
-                        <p className="text-muted-foreground">Completed:</p>
-                        <p className="font-medium">{new Date(selectedSession.completed_at).toLocaleString()}</p>
+                  {(() => {
+                    // Calculate metrics for selected session
+                    const sessionMetrics = {
+                      patternRecognition: Math.min(100, Math.max(0, selectedSession.correct_connections / Math.max(1, selectedSession.correct_connections + selectedSession.incorrect_connections) * 100)),
+                      strategicReasoning: (() => {
+                        const path = Array.isArray(selectedSession.decision_path) ? selectedSession.decision_path : 
+                                    (typeof selectedSession.decision_path === 'string' ? JSON.parse(selectedSession.decision_path) : []);
+                        const pathLength = Array.isArray(path) ? path.length : 0;
+                        const efficiency = pathLength > 0 ? (selectedSession.correct_connections / pathLength) * 100 : 0;
+                        return Math.min(100, Math.max(0, efficiency));
+                      })(),
+                      metacognition: Math.min(100, Math.max(0, 100 - (selectedSession.hints_used * 20))),
+                      cognitiveEfficiency: Math.min(100, Math.max(0, 100 - (selectedSession.time_spent_seconds / Math.max(1, selectedSession.correct_connections) / 60) * 10)),
+                      errorRecovery: Math.min(100, Math.max(0, 100 - (selectedSession.incorrect_connections / Math.max(1, selectedSession.correct_connections + selectedSession.incorrect_connections) * 100)))
+                    };
+
+                    const metrics = [
+                      { 
+                        name: 'Pattern Recognition', 
+                        value: sessionMetrics.patternRecognition, 
+                        color: 'hsl(var(--primary))',
+                        description: 'Ability to identify logical relationships'
+                      },
+                      { 
+                        name: 'Strategic Reasoning', 
+                        value: sessionMetrics.strategicReasoning, 
+                        color: 'rgb(34, 197, 94)',
+                        description: 'Systematic vs random problem approach'
+                      },
+                      { 
+                        name: 'Metacognition', 
+                        value: sessionMetrics.metacognition, 
+                        color: 'hsl(var(--accent))',
+                        description: 'Self-assessment and help-seeking behavior'
+                      },
+                      { 
+                        name: 'Cognitive Efficiency', 
+                        value: sessionMetrics.cognitiveEfficiency, 
+                        color: 'rgb(249, 115, 22)',
+                        description: 'Balance of speed and accuracy'
+                      },
+                      { 
+                        name: 'Error Recovery', 
+                        value: sessionMetrics.errorRecovery, 
+                        color: 'rgb(59, 130, 246)',
+                        description: 'Adaptability and learning from mistakes'
+                      }
+                    ];
+
+                    return (
+                      <div className="space-y-6">
+                        {/* Visual Progress Bars */}
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                          {metrics.map((metric, index) => (
+                            <div key={metric.name} className="text-center space-y-3">
+                              <div className="relative">
+                                <div className="w-20 h-20 mx-auto relative">
+                                  <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 36 36">
+                                    <path
+                                      className="text-muted stroke-current"
+                                      fill="none"
+                                      strokeWidth="3"
+                                      d="M18 2.0845
+                                        a 15.9155 15.9155 0 0 1 0 31.831
+                                        a 15.9155 15.9155 0 0 1 0 -31.831"
+                                    />
+                                    <path
+                                      className="stroke-current"
+                                      fill="none"
+                                      strokeWidth="3"
+                                      strokeLinecap="round"
+                                      strokeDasharray={`${metric.value}, 100`}
+                                      style={{ color: metric.color }}
+                                      d="M18 2.0845
+                                        a 15.9155 15.9155 0 0 1 0 31.831
+                                        a 15.9155 15.9155 0 0 1 0 -31.831"
+                                    />
+                                  </svg>
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className="text-lg font-bold" style={{ color: metric.color }}>
+                                      {Math.round(metric.value)}%
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div>
+                                <div className="font-medium text-sm">{metric.name}</div>
+                                <div className="text-xs text-muted-foreground">{metric.description}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Summary Insights */}
+                        <div className="mt-8 p-6 bg-gradient-to-r from-muted/30 to-muted/50 rounded-lg">
+                          <h4 className="font-semibold mb-3 flex items-center gap-2">
+                            <Zap className="w-4 h-4" />
+                            Session Insights
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-primary"></div>
+                              <span>
+                                <strong>Top Skill:</strong> {metrics.reduce((a, b) => a.value > b.value ? a : b).name}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                              <span>
+                                <strong>Focus Area:</strong> {metrics.reduce((a, b) => a.value < b.value ? a : b).name}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                              <span>
+                                <strong>Overall Performance:</strong> {
+                                  metrics.reduce((sum, m) => sum + m.value, 0) / metrics.length > 80 ? 'Excellent' :
+                                  metrics.reduce((sum, m) => sum + m.value, 0) / metrics.length > 60 ? 'Good' : 'Developing'
+                                }
+                              </span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    )}
-                    <div>
-                      <p className="text-muted-foreground">Session:</p>
-                      <p className="font-medium">Session {selectedSession.lecture_games?.session_number} - Lecture {selectedSession.lecture_games?.lecture_number}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Game Type:</p>
-                      <p className="font-medium">{selectedSession.lecture_games?.title}</p>
-                    </div>
-                  </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             </div>
