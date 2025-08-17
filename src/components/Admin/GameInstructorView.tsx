@@ -44,14 +44,18 @@ export function GameInstructorView({ game, onClose }: GameInstructorViewProps) {
 
   // Helper function to get node label by ID
   const getNodeLabel = (nodeId: string) => {
-    console.log(`🐛 DEBUG - Looking for node with ID: "${nodeId}"`);
-    const node = nodes.find((n: any) => {
-      console.log(`🐛 DEBUG - Checking node:`, n);
-      return n.id === nodeId;
-    });
-    const result = node?.data?.label || nodeId;
-    console.log(`🐛 DEBUG - Found label: "${result}" for ID: "${nodeId}"`);
-    return result;
+    const node = nodes.find((n: any) => n.id === nodeId);
+    if (!node) {
+      console.warn(`🐛 DEBUG - Node not found for ID: "${nodeId}". Available nodes:`, nodes.map(n => ({ id: n.id, label: n.data?.label })));
+      // Try to find by partial match or return a more descriptive fallback
+      const partialMatch = nodes.find((n: any) => n.id.includes(nodeId) || nodeId.includes(n.id));
+      if (partialMatch) {
+        console.log(`🐛 DEBUG - Found partial match: ${partialMatch.id} -> ${partialMatch.data?.label}`);
+        return partialMatch.data?.label || partialMatch.id;
+      }
+      return `[Missing: ${nodeId}]`;
+    }
+    return node.data?.label || node.id;
   };
 
   const getSolutionSummary = () => {
