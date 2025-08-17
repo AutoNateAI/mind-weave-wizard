@@ -77,6 +77,33 @@ export const GameCompletionReport: React.FC<GameCompletionReportProps> = ({
   const errorImpact = attempts > 0 ? (incorrectConnections / attempts) * 40 : 0;
   const metacognition = Math.min(100, Math.max(0, 100 - hintImpact - errorImpact));
 
+  // Calculate dynamic strategy rating
+  const getStrategyRating = () => {
+    const accuracyRate = attempts > 0 ? (correctConnections / attempts) * 100 : 0;
+    const efficiencyRate = cognitiveEfficiency;
+    const metacognitionRate = metacognition;
+    
+    // Weighted strategy score combining multiple factors
+    const strategyScore = (accuracyRate * 0.4) + (efficiencyRate * 0.3) + (metacognitionRate * 0.3);
+    
+    if (strategyScore >= 80) return { rating: "Masterful", variant: "default" as const };
+    if (strategyScore >= 65) return { rating: "Strategic", variant: "default" as const };
+    if (strategyScore >= 50) return { rating: "Developing", variant: "secondary" as const };
+    if (strategyScore >= 35) return { rating: "Learning", variant: "outline" as const };
+    return { rating: "Exploring", variant: "outline" as const };
+  };
+
+  // Calculate dynamic overall performance rating
+  const getOverallPerformance = () => {
+    const avgScore = (patternRecognition + strategicReasoning + metacognition + cognitiveEfficiency + errorRecovery) / 5;
+    
+    if (avgScore >= 85) return "Exceptional";
+    if (avgScore >= 70) return "Proficient";
+    if (avgScore >= 55) return "Developing";
+    if (avgScore >= 40) return "Emerging";
+    return "Beginning";
+  };
+
   const sessionMetrics = {
     patternRecognition,
     strategicReasoning,
@@ -84,6 +111,9 @@ export const GameCompletionReport: React.FC<GameCompletionReportProps> = ({
     cognitiveEfficiency,
     errorRecovery,
   };
+
+  const strategyRating = getStrategyRating();
+  const overallPerformance = getOverallPerformance();
 
   const metrics = [
     { 
@@ -235,8 +265,8 @@ export const GameCompletionReport: React.FC<GameCompletionReportProps> = ({
 
                   <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
                     <span className="text-sm font-medium">Strategy Score</span>
-                    <Badge variant={hintsUsed <= 2 ? "default" : "outline"}>
-                      {hintsUsed <= 2 ? "Strategic" : "Learning Mode"}
+                    <Badge variant={strategyRating.variant}>
+                      {strategyRating.rating}
                     </Badge>
                   </div>
 
@@ -323,10 +353,7 @@ export const GameCompletionReport: React.FC<GameCompletionReportProps> = ({
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-green-500"></div>
                       <span>
-                        <strong>Overall Performance:</strong> {
-                          metrics.reduce((sum, m) => sum + m.value, 0) / metrics.length > 80 ? 'Excellent' :
-                          metrics.reduce((sum, m) => sum + m.value, 0) / metrics.length > 60 ? 'Good' : 'Developing'
-                        }
+                        <strong>Overall Performance:</strong> {overallPerformance}
                       </span>
                     </div>
                   </div>
