@@ -116,33 +116,34 @@ async function generateSingleGame(supabase: any, openAIApiKey: string, params: a
   const heuristicContext = template.heuristic_targets ? 
     `Focus on enhancing these cognitive heuristics: ${template.heuristic_targets.join(', ')}` : '';
 
-  // Generate game content with AI
-  const promptTemplate = await getPromptTemplate(supabase, 'game_generation_prompt', {
-    lecture_content: lectureContent,
-    template_name: template.name,
-    template_description: template.description,
-    heuristic_context: heuristicContext,
-    content_slots: JSON.stringify(template.content_slots)
-  });
+  // TWO-PASS APPROACH: First generate content, then generate solution based on actual node IDs
+  
+  // PASS 1: Generate game content with AI using the exact node IDs from template
+  const actualNodeIds = template.template_data.nodes.map((node: any) => node.id);
+  
+  const contentPrompt = `
+**CRITICAL: Generate content for the exact node IDs provided. Do not create new node names.**
 
-  const prompt = promptTemplate || `
-Based on this lecture content and template, create an engaging game scenario that enhances critical thinking:
+Based on this lecture content and template, create engaging game scenario content:
 
 Lecture Content: ${lectureContent}
 Template: ${template.name} - ${template.description}
 ${heuristicContext}
+
+Available Node IDs (use EXACTLY these): ${actualNodeIds.join(', ')}
 Content Slots: ${JSON.stringify(template.content_slots)}
 
-Generate realistic, thought-provoking content for each slot. Make it:
+Generate realistic, thought-provoking content for each slot. Use the EXACT slot names provided.
+Make it:
 1. Relevant to the lecture material
 2. Challenging but solvable with the target heuristics
 3. Realistic scenario-based that requires the specific thinking skills
 4. Engaging for students learning critical thinking
 
-Return ONLY a JSON object with keys matching the slot names and values being the generated content.
+**Return ONLY a JSON object with keys matching the EXACT slot names and values being the generated content.**
 `;
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const contentResponse = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${openAIApiKey}`,
@@ -153,16 +154,16 @@ Return ONLY a JSON object with keys matching the slot names and values being the
       messages: [
         { 
           role: 'system', 
-          content: 'You are an expert educational game designer specializing in critical thinking heuristic development. Generate engaging, realistic scenarios that specifically target cognitive skills enhancement.' 
+          content: 'You are an expert educational game designer. Generate content using ONLY the exact slot names provided. Return valid JSON with no additional text or formatting.' 
         },
-        { role: 'user', content: prompt }
+        { role: 'user', content: contentPrompt }
       ],
       temperature: 0.7,
     }),
   });
 
-  const aiData = await response.json();
-  let generatedContentText = aiData.choices[0].message.content;
+  const contentData = await contentResponse.json();
+  let generatedContentText = contentData.choices[0].message.content;
   
   // Remove markdown code block formatting if present
   generatedContentText = generatedContentText.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
@@ -218,24 +219,38 @@ Return ONLY a JSON object with keys matching the slot names and values being the
     };
   });
 
-  // Generate instructor solution and rubric
+  // PASS 2: Generate instructor solution using ONLY the actual node IDs from the populated game
+  const finalNodeIds = gameData.nodes.map((node: any) => node.id);
+  const nodeLabelsMap = gameData.nodes.reduce((acc: any, node: any) => {
+    acc[node.id] = node.data.label;
+    return acc;
+  }, {});
+
   const solutionPrompt = `
-Based on this ${template.name} game scenario, create:
-1. Complete instructor solution with all optimal connections/relationships
-2. Comprehensive grading rubric with performance criteria
-3. Game instructions and hints for students
+**CRITICAL: Use ONLY the exact node IDs provided below. Do not create new node names or IDs.**
+
+Based on this ${template.name} game scenario, create instructor solution using ONLY these exact node IDs:
+
+**AVAILABLE NODE IDS:** ${finalNodeIds.join(', ')}
+
+**NODE LABELS FOR REFERENCE:**
+${JSON.stringify(nodeLabelsMap, null, 2)}
 
 Game Type: ${template.name}
 Target Heuristics: ${template.heuristic_targets?.join(', ') || 'General critical thinking'}
-Scenario Content: ${JSON.stringify(generatedContent)}
-Template Structure: ${JSON.stringify(template.template_data)}
 
-**CRITICAL: Return ONLY valid JSON with no additional text or formatting.**
+Create:
+1. Complete instructor solution with optimal connections using ONLY the node IDs listed above
+2. Comprehensive grading rubric with performance criteria
+3. Wrong connections (common student mistakes) using ONLY the node IDs listed above
+4. Game instructions and hints for students
+
+**CRITICAL: Return ONLY valid JSON with no additional text or formatting. Use EXACT node IDs from the list above.**
 
 Return JSON format:
 {
   "instructor_solution": [
-    {"source": "node_id", "target": "node_id", "relationship": "relationship_type", "points": 10}
+    {"source": "exact_node_id_from_list", "target": "exact_node_id_from_list", "relationship": "relationship_type", "points": 10}
   ],
   "grading_rubric": {
     "excellent": {"min_score": 120, "criteria": "Complete understanding demonstrated"},
@@ -245,7 +260,7 @@ Return JSON format:
     "unsatisfactory": {"min_score": 0, "criteria": "Little to no understanding"}
   },
   "wrong_connections": [
-    {"source": "node_id", "target": "node_id", "why_wrong": "explanation", "penalty": -5}
+    {"source": "exact_node_id_from_list", "target": "exact_node_id_from_list", "why_wrong": "explanation", "penalty": -5}
   ],
   "instructions": "Clear game instructions for students",
   "hints": ["Hint 1", "Hint 2", "Hint 3"]
@@ -261,10 +276,10 @@ Return JSON format:
     body: JSON.stringify({
       model: 'gpt-4.1-2025-04-14',
       messages: [
-        { role: 'system', content: 'You are an expert educational assessment designer. Generate comprehensive instructor solutions and grading rubrics for critical thinking games. Return ONLY valid JSON with no additional text or formatting.' },
+        { role: 'system', content: 'You are an expert educational assessment designer. Generate instructor solutions using ONLY the exact node IDs provided. Return ONLY valid JSON with no additional text or formatting.' },
         { role: 'user', content: solutionPrompt }
       ],
-      temperature: 0.3,
+      temperature: 0.2, // Lower temperature for more consistent ID usage
     }),
   });
 
@@ -276,31 +291,28 @@ Return JSON format:
   
   const gameSolution = JSON.parse(solutionText);
 
-  // Map instructor solution IDs to actual node IDs using labels and generated content
-  const mapConn = (connection: any) => {
-    const sourceNode = gameData.nodes.find((node: any) => 
-      node.id === connection.source ||
-      (generatedContent[connection.source] && String(node.data?.label || '').toLowerCase().includes(String(generatedContent[connection.source]).toLowerCase())) ||
-      String(node.data?.label || '').toLowerCase().includes(String(connection.source).toLowerCase()) ||
-      node.id.includes(connection.source) ||
-      String(connection.source).includes(node.id)
-    );
-    const targetNode = gameData.nodes.find((node: any) => 
-      node.id === connection.target ||
-      (generatedContent[connection.target] && String(node.data?.label || '').toLowerCase().includes(String(generatedContent[connection.target]).toLowerCase())) ||
-      String(node.data?.label || '').toLowerCase().includes(String(connection.target).toLowerCase()) ||
-      node.id.includes(connection.target) ||
-      String(connection.target).includes(node.id)
-    );
-    return {
-      ...connection,
-      source: sourceNode?.id || connection.source,
-      target: targetNode?.id || connection.target
-    };
+  // VALIDATION: Ensure all solution node IDs exist in the actual game
+  const validateConnection = (connection: any) => {
+    const sourceExists = gameData.nodes.some((node: any) => node.id === connection.source);
+    const targetExists = gameData.nodes.some((node: any) => node.id === connection.target);
+    
+    if (!sourceExists || !targetExists) {
+      console.warn(`Invalid connection: ${connection.source} -> ${connection.target}`);
+      return null;
+    }
+    return connection;
   };
 
-  gameData.instructorSolution = (gameSolution.instructor_solution || []).map(mapConn);
-  gameData.wrongConnections = (gameSolution.wrong_connections || []).map(mapConn);
+  const validInstructorSolution = (gameSolution.instructor_solution || [])
+    .map(validateConnection)
+    .filter(Boolean);
+    
+  const validWrongConnections = (gameSolution.wrong_connections || [])
+    .map(validateConnection)
+    .filter(Boolean);
+
+  gameData.instructorSolution = validInstructorSolution;
+  gameData.wrongConnections = validWrongConnections;
 
   return new Response(JSON.stringify({
     gameData,
@@ -783,69 +795,106 @@ Return JSON format:
 
     console.log('Final processed game data:', gameData);
 
-    // Add instructor solution and grading rubric from orchestrated content
-    let instructorSolution = contentForTemplate.instructor_solution || [];
-    
-    // CRITICAL FIX: Map instructor solution placeholder IDs to actual node IDs
-    instructorSolution = instructorSolution.map((connection: any) => {
-      const sourceNode = gameData.nodes.find((node: any) => 
-        node.data.label.toLowerCase().includes(connection.source.toLowerCase()) ||
-        node.id === connection.source ||
-        node.id.includes(connection.source) ||
-        connection.source.includes(node.id)
-      );
-      const targetNode = gameData.nodes.find((node: any) => 
-        node.data.label.toLowerCase().includes(connection.target.toLowerCase()) ||
-        node.id === connection.target ||
-        node.id.includes(connection.target) ||
-        connection.target.includes(node.id)
-      );
-      
-      console.log(`Mapping connection: ${connection.source} -> ${connection.target}`);
-      console.log(`Found source node: ${sourceNode?.id} (${sourceNode?.data?.label})`);
-      console.log(`Found target node: ${targetNode?.id} (${targetNode?.data?.label})`);
-      
-      return {
-        ...connection,
-        source: sourceNode?.id || connection.source,
-        target: targetNode?.id || connection.target
-      };
+    // TWO-PASS APPROACH FOR SUITE: Generate instructor solution using actual node IDs
+    const finalNodeIds = gameData.nodes.map((node: any) => node.id);
+    const nodeLabelsMap = gameData.nodes.reduce((acc: any, node: any) => {
+      acc[node.id] = node.data.label;
+      return acc;
+    }, {});
+
+    const solutionPrompt = `
+**CRITICAL: Use ONLY the exact node IDs provided below. Do not create new node names or IDs.**
+
+Based on this ${template.name} game scenario, create instructor solution using ONLY these exact node IDs:
+
+**AVAILABLE NODE IDS:** ${finalNodeIds.join(', ')}
+
+**NODE LABELS FOR REFERENCE:**
+${JSON.stringify(nodeLabelsMap, null, 2)}
+
+Game Type: ${template.name}
+Template Content: ${JSON.stringify(contentForTemplate)}
+
+Create:
+1. Complete instructor solution with optimal connections using ONLY the node IDs listed above
+2. Comprehensive grading rubric with performance criteria  
+3. Wrong connections (common student mistakes) using ONLY the node IDs listed above
+
+**CRITICAL: Return ONLY valid JSON with no additional text or formatting. Use EXACT node IDs from the list above.**
+
+Return JSON format:
+{
+  "instructor_solution": [
+    {"source": "exact_node_id_from_list", "target": "exact_node_id_from_list", "relationship": "relationship_type", "points": 10}
+  ],
+  "grading_rubric": {
+    "excellent": {"min_score": 120, "criteria": "Complete understanding demonstrated"},
+    "good": {"min_score": 90, "criteria": "Strong performance with minor gaps"},
+    "satisfactory": {"min_score": 60, "criteria": "Basic understanding shown"},
+    "needs_improvement": {"min_score": 30, "criteria": "Limited understanding"},
+    "unsatisfactory": {"min_score": 0, "criteria": "Little to no understanding"}
+  },
+  "wrong_connections": [
+    {"source": "exact_node_id_from_list", "target": "exact_node_id_from_list", "why_wrong": "explanation", "penalty": -5}
+  ]
+}
+`;
+
+    const solutionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4.1-2025-04-14',
+        messages: [
+          { role: 'system', content: 'You are an expert educational assessment designer. Generate instructor solutions using ONLY the exact node IDs provided. Return ONLY valid JSON with no additional text or formatting.' },
+          { role: 'user', content: solutionPrompt }
+        ],
+        temperature: 0.2,
+      }),
     });
+
+    const solutionData = await solutionResponse.json();
+    let solutionText = solutionData.choices[0].message.content;
     
-    const gradingRubric = contentForTemplate.grading_rubric || {
+    // Remove markdown code block formatting if present
+    solutionText = solutionText.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
+    
+    const gameSolution = JSON.parse(solutionText);
+
+    // VALIDATION: Ensure all solution node IDs exist in the actual game
+    const validateConnection = (connection: any) => {
+      const sourceExists = gameData.nodes.some((node: any) => node.id === connection.source);
+      const targetExists = gameData.nodes.some((node: any) => node.id === connection.target);
+      
+      if (!sourceExists || !targetExists) {
+        console.warn(`Invalid connection in ${template.name}: ${connection.source} -> ${connection.target}`);
+        return null;
+      }
+      return connection;
+    };
+
+    const validInstructorSolution = (gameSolution.instructor_solution || [])
+      .map(validateConnection)
+      .filter(Boolean);
+      
+    const validWrongConnections = (gameSolution.wrong_connections || [])
+      .map(validateConnection)
+      .filter(Boolean);
+
+    // Update game data with validated instructor solution
+    gameData.instructorSolution = validInstructorSolution;
+    gameData.wrongConnections = validWrongConnections;
+    
+    const gradingRubric = gameSolution.grading_rubric || {
       excellent: { min_score: 100, criteria: "Excellent understanding demonstrated" },
       good: { min_score: 75, criteria: "Good understanding shown" },
       satisfactory: { min_score: 50, criteria: "Basic understanding evident" },
       needs_improvement: { min_score: 25, criteria: "Limited understanding" },
       unsatisfactory: { min_score: 0, criteria: "Poor understanding" }
     };
-    
-    // Also fix wrong connections
-    let wrongConnections = contentForTemplate.wrong_connections || [];
-    wrongConnections = wrongConnections.map((connection: any) => {
-      const sourceNode = gameData.nodes.find((node: any) => 
-        node.data.label.toLowerCase().includes(connection.source.toLowerCase()) ||
-        node.id === connection.source ||
-        node.id.includes(connection.source) ||
-        connection.source.includes(node.id)
-      );
-      const targetNode = gameData.nodes.find((node: any) => 
-        node.data.label.toLowerCase().includes(connection.target.toLowerCase()) ||
-        node.id === connection.target ||
-        node.id.includes(connection.target) ||
-        connection.target.includes(node.id)
-      );
-      
-      return {
-        ...connection,
-        source: sourceNode?.id || connection.source,
-        target: targetNode?.id || connection.target
-      };
-    });
-
-    // Update game data with instructor solution
-    gameData.instructorSolution = instructorSolution;
-    gameData.wrongConnections = wrongConnections;
 
     return {
       templateId: template.id,
