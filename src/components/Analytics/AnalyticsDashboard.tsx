@@ -753,10 +753,10 @@ export const AnalyticsDashboard: React.FC = () => {
                         <div className="font-medium text-primary">Pattern Recognition</div>
                         <div className="text-muted-foreground">Correct connections ÷ total connections</div>
                       </div>
-                      <div className="p-2 border rounded">
-                        <div className="font-medium text-secondary">Strategic Reasoning</div>
-                        <div className="text-muted-foreground">Decision path efficiency analysis</div>
-                      </div>
+                       <div className="p-2 border rounded">
+                         <div className="font-medium text-green-600">Strategic Reasoning</div>
+                         <div className="text-muted-foreground">Decision path efficiency analysis</div>
+                       </div>
                       <div className="p-2 border rounded">
                         <div className="font-medium text-accent">Metacognition</div>
                         <div className="text-muted-foreground">Optimal hint usage patterns</div>
@@ -917,7 +917,7 @@ export const AnalyticsDashboard: React.FC = () => {
                               <div className="text-muted-foreground">Pattern Recognition</div>
                             </div>
                             <div className="text-center">
-                              <div className="text-secondary font-medium">{Math.round(sessionMetrics.strategicReasoning)}%</div>
+                              <div className="text-green-600 font-medium">{Math.round(sessionMetrics.strategicReasoning)}%</div>
                               <div className="text-muted-foreground">Strategic Reasoning</div>
                             </div>
                             <div className="text-center">
@@ -1206,6 +1206,56 @@ export const AnalyticsDashboard: React.FC = () => {
                         <Tooltip />
                       </PieChart>
                     </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Critical Thinking Profile */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Critical Thinking Profile</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {(() => {
+                      // Calculate metrics for selected session
+                      const sessionMetrics = {
+                        patternRecognition: Math.min(100, Math.max(0, selectedSession.correct_connections / Math.max(1, selectedSession.correct_connections + selectedSession.incorrect_connections) * 100)),
+                        strategicReasoning: (() => {
+                          const path = Array.isArray(selectedSession.decision_path) ? selectedSession.decision_path : 
+                                      (typeof selectedSession.decision_path === 'string' ? JSON.parse(selectedSession.decision_path) : []);
+                          const pathLength = Array.isArray(path) ? path.length : 0;
+                          const efficiency = pathLength > 0 ? (selectedSession.correct_connections / pathLength) * 100 : 0;
+                          return Math.min(100, Math.max(0, efficiency));
+                        })(),
+                        metacognition: Math.min(100, Math.max(0, 100 - (selectedSession.hints_used * 20))),
+                        cognitiveEfficiency: Math.min(100, Math.max(0, 100 - (selectedSession.time_spent_seconds / Math.max(1, selectedSession.correct_connections) / 60) * 10)),
+                        errorRecovery: Math.min(100, Math.max(0, 100 - (selectedSession.incorrect_connections / Math.max(1, selectedSession.correct_connections + selectedSession.incorrect_connections) * 100)))
+                      };
+
+                      return (
+                        <div className="grid grid-cols-5 gap-3 text-center text-sm">
+                          <div>
+                            <div className="text-primary font-bold text-lg">{Math.round(sessionMetrics.patternRecognition)}%</div>
+                            <div className="text-muted-foreground">Pattern Recognition</div>
+                          </div>
+                          <div>
+                            <div className="text-green-600 font-bold text-lg">{Math.round(sessionMetrics.strategicReasoning)}%</div>
+                            <div className="text-muted-foreground">Strategic Reasoning</div>
+                          </div>
+                          <div>
+                            <div className="text-accent font-bold text-lg">{Math.round(sessionMetrics.metacognition)}%</div>
+                            <div className="text-muted-foreground">Metacognition</div>
+                          </div>
+                          <div>
+                            <div className="text-orange-500 font-bold text-lg">{Math.round(sessionMetrics.cognitiveEfficiency)}%</div>
+                            <div className="text-muted-foreground">Cognitive Efficiency</div>
+                          </div>
+                          <div>
+                            <div className="text-blue-500 font-bold text-lg">{Math.round(sessionMetrics.errorRecovery)}%</div>
+                            <div className="text-muted-foreground">Error Recovery</div>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
 
