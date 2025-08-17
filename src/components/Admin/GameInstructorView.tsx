@@ -31,8 +31,15 @@ export function GameInstructorView({ game, onClose }: GameInstructorViewProps) {
   // Extract instructor solution from game data
   const instructorSolution = game.game_data?.instructorSolution || [];
   const wrongConnections = game.game_data?.wrongConnections || [];
-  const totalNodes = game.game_data?.nodes?.length || 0;
+  const nodes = game.game_data?.nodes || [];
+  const totalNodes = nodes.length;
   const totalConnections = instructorSolution.length;
+
+  // Helper function to get node label by ID
+  const getNodeLabel = (nodeId: string) => {
+    const node = nodes.find((n: any) => n.id === nodeId);
+    return node?.data?.label || nodeId;
+  };
 
   const getSolutionSummary = () => {
     const concepts = game.game_data?.nodes?.map((node: any) => node.data.label).join(', ') || '';
@@ -46,7 +53,7 @@ export function GameInstructorView({ game, onClose }: GameInstructorViewProps) {
   const summary = getSolutionSummary();
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-screen flex flex-col">
       {/* Header */}
       <div className="p-4 border-b bg-background/80 backdrop-blur-sm shrink-0">
         <div className="flex items-center justify-between mb-2">
@@ -93,7 +100,7 @@ export function GameInstructorView({ game, onClose }: GameInstructorViewProps) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 min-h-0 flex">
+      <div className="flex-1 min-h-0 flex h-full">
         {/* Left Side - Instructor Solution */}
         {showSolution && (
           <div className="w-1/2 border-r flex flex-col">
@@ -107,9 +114,10 @@ export function GameInstructorView({ game, onClose }: GameInstructorViewProps) {
               </p>
             </div>
             
-            <div className="flex-1 min-h-0 p-4">
+            <div className="flex-1 min-h-0 p-4 overflow-hidden">
               {/* Solution Summary */}
-              <Card className="p-4 mb-4">
+              <div className="h-full overflow-y-auto scrollbar-hide">
+                <Card className="p-4 mb-4">
                 <h4 className="font-medium mb-3 flex items-center gap-2">
                   <Target className="w-4 h-4" />
                   Solution Overview
@@ -121,9 +129,9 @@ export function GameInstructorView({ game, onClose }: GameInstructorViewProps) {
                     <div className="space-y-1">
                       {instructorSolution.map((connection: any, index: number) => (
                         <div key={index} className="text-xs bg-green-50 dark:bg-green-950/30 p-2 rounded border-l-2 border-green-500">
-                          <span className="font-medium">{connection.source}</span>
+                          <span className="font-medium">{getNodeLabel(connection.source)}</span>
                           <span className="mx-2 text-muted-foreground">→</span>
-                          <span className="font-medium">{connection.target}</span>
+                          <span className="font-medium">{getNodeLabel(connection.target)}</span>
                           {connection.reasoning && (
                             <p className="text-muted-foreground mt-1">{connection.reasoning}</p>
                           )}
@@ -138,9 +146,9 @@ export function GameInstructorView({ game, onClose }: GameInstructorViewProps) {
                       <div className="space-y-1">
                         {wrongConnections.slice(0, 3).map((connection: any, index: number) => (
                           <div key={index} className="text-xs bg-red-50 dark:bg-red-950/30 p-2 rounded border-l-2 border-red-500">
-                            <span className="font-medium">{connection.source}</span>
+                            <span className="font-medium">{getNodeLabel(connection.source)}</span>
                             <span className="mx-2 text-muted-foreground">→</span>
-                            <span className="font-medium">{connection.target}</span>
+                            <span className="font-medium">{getNodeLabel(connection.target)}</span>
                             {connection.why_wrong && (
                               <p className="text-muted-foreground mt-1">{connection.why_wrong}</p>
                             )}
@@ -162,22 +170,23 @@ export function GameInstructorView({ game, onClose }: GameInstructorViewProps) {
                 </div>
               </Card>
 
-              {/* Hints Available */}
-              {Array.isArray(game.hints) && game.hints.length > 0 && (
-                <Card className="p-4">
-                  <h4 className="font-medium mb-3 flex items-center gap-2">
-                    <Eye className="w-4 h-4" />
-                    Available Hints ({game.hints.length})
-                  </h4>
-                  <div className="space-y-2">
-                    {game.hints.map((hint: string, index: number) => (
-                      <div key={index} className="text-xs bg-blue-50 dark:bg-blue-950/30 p-2 rounded">
-                        <span className="font-medium">Hint {index + 1}:</span> {hint}
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              )}
+                {/* Hints Available */}
+                {Array.isArray(game.hints) && game.hints.length > 0 && (
+                  <Card className="p-4">
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <Eye className="w-4 h-4" />
+                      Available Hints ({game.hints.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {game.hints.map((hint: string, index: number) => (
+                        <div key={index} className="text-xs bg-blue-50 dark:bg-blue-950/30 p-2 rounded">
+                          <span className="font-medium">Hint {index + 1}:</span> {hint}
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+              </div>
             </div>
           </div>
         )}
