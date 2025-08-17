@@ -45,8 +45,8 @@ export const AnalyticsDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedSession, setSelectedSession] = useState<GameSession | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedModule, setSelectedModule] = useState<string>('');
-  const [selectedLecture, setSelectedLecture] = useState<string>('');
+  const [selectedModule, setSelectedModule] = useState<string>('all');
+  const [selectedLecture, setSelectedLecture] = useState<string>('all');
   const sessionsPerPage = 10;
 
   useEffect(() => {
@@ -189,10 +189,10 @@ export const AnalyticsDashboard: React.FC = () => {
 
   // Filter sessions based on selected module and lecture
   const filteredSessions = sessions.filter(session => {
-    if (selectedModule && session.lecture_games?.session_number.toString() !== selectedModule) {
+    if (selectedModule && selectedModule !== 'all' && session.lecture_games?.session_number.toString() !== selectedModule) {
       return false;
     }
-    if (selectedLecture && session.lecture_games?.lecture_number.toString() !== selectedLecture) {
+    if (selectedLecture && selectedLecture !== 'all' && session.lecture_games?.lecture_number.toString() !== selectedLecture) {
       return false;
     }
     return true;
@@ -205,7 +205,7 @@ export const AnalyticsDashboard: React.FC = () => {
 
   const uniqueLectures = Array.from(new Set(
     sessions
-      .filter(s => !selectedModule || s.lecture_games?.session_number.toString() === selectedModule)
+      .filter(s => !selectedModule || selectedModule === 'all' || s.lecture_games?.session_number.toString() === selectedModule)
       .map(s => s.lecture_games?.lecture_number)
       .filter(Boolean)
   )).sort((a, b) => a - b);
@@ -213,7 +213,7 @@ export const AnalyticsDashboard: React.FC = () => {
   // Reset current page when filters change
   const handleModuleChange = (value: string) => {
     setSelectedModule(value);
-    setSelectedLecture(''); // Reset lecture when module changes
+    setSelectedLecture('all'); // Reset lecture when module changes
     setCurrentPage(1);
   };
 
@@ -503,7 +503,7 @@ export const AnalyticsDashboard: React.FC = () => {
                         <SelectValue placeholder="Filter by Module" />
                       </SelectTrigger>
                       <SelectContent className="bg-background border z-50">
-                        <SelectItem value="">All Modules</SelectItem>
+                        <SelectItem value="all">All Modules</SelectItem>
                         {uniqueModules.map(moduleNum => (
                           <SelectItem key={moduleNum} value={moduleNum.toString()}>
                             <div>
@@ -522,7 +522,7 @@ export const AnalyticsDashboard: React.FC = () => {
                         <SelectValue placeholder="Filter by Lecture" />
                       </SelectTrigger>
                       <SelectContent className="bg-background border z-50">
-                        <SelectItem value="">All Lectures</SelectItem>
+                        <SelectItem value="all">All Lectures</SelectItem>
                         {uniqueLectures.map(lectureNum => (
                           <SelectItem key={lectureNum} value={lectureNum.toString()}>
                             <div>
@@ -535,13 +535,13 @@ export const AnalyticsDashboard: React.FC = () => {
                     </Select>
                   </div>
 
-                  {(selectedModule || selectedLecture) && (
+                  {(selectedModule !== 'all' || selectedLecture !== 'all') && (
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={() => {
-                        setSelectedModule('');
-                        setSelectedLecture('');
+                        setSelectedModule('all');
+                        setSelectedLecture('all');
                         setCurrentPage(1);
                       }}
                     >
@@ -605,7 +605,7 @@ export const AnalyticsDashboard: React.FC = () => {
                   ))}
                   {filteredSessions.length === 0 && (
                     <p className="text-center text-muted-foreground py-8">
-                      {selectedModule || selectedLecture ? 'No sessions found matching the selected filters.' : 'No game sessions completed yet.'}
+                      {selectedModule !== 'all' || selectedLecture !== 'all' ? 'No sessions found matching the selected filters.' : 'No game sessions completed yet.'}
                     </p>
                   )}
                 </div>
