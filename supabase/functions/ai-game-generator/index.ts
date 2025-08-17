@@ -172,11 +172,18 @@ Return ONLY a JSON object with keys matching the slot names and values being the
   // Replace placeholders in template data
   let gameData = JSON.parse(JSON.stringify(template.template_data));
   
+  // Helper to safely build regex from keys
+  const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  
   // Replace placeholders in nodes and add interactive properties
   gameData.nodes = gameData.nodes.map((node: any, index: number) => {
     let label = node.data.label;
     Object.entries(generatedContent).forEach(([key, value]) => {
-      label = label.replace(`{{${key}}}`, value as string);
+      const reCurly = new RegExp(`\\{\\{\\s*${escapeRegex(key)}\\s*\\}\\}`, 'g');
+      label = label.replace(reCurly, String(value));
+      const reBare = new RegExp(`\\b${escapeRegex(key)}\\b`, 'g');
+      label = label.replace(reBare, String(value));
+      if (label.trim() === key) label = String(value);
     });
     
     // Determine node type based on position and content
@@ -269,9 +276,31 @@ Return JSON format:
   
   const gameSolution = JSON.parse(solutionText);
 
-  // Update game data with instructor solution
-  gameData.instructorSolution = gameSolution.instructor_solution || [];
-  gameData.wrongConnections = gameSolution.wrong_connections || [];
+  // Map instructor solution IDs to actual node IDs using labels and generated content
+  const mapConn = (connection: any) => {
+    const sourceNode = gameData.nodes.find((node: any) => 
+      node.id === connection.source ||
+      (generatedContent[connection.source] && String(node.data?.label || '').toLowerCase().includes(String(generatedContent[connection.source]).toLowerCase())) ||
+      String(node.data?.label || '').toLowerCase().includes(String(connection.source).toLowerCase()) ||
+      node.id.includes(connection.source) ||
+      String(connection.source).includes(node.id)
+    );
+    const targetNode = gameData.nodes.find((node: any) => 
+      node.id === connection.target ||
+      (generatedContent[connection.target] && String(node.data?.label || '').toLowerCase().includes(String(generatedContent[connection.target]).toLowerCase())) ||
+      String(node.data?.label || '').toLowerCase().includes(String(connection.target).toLowerCase()) ||
+      node.id.includes(connection.target) ||
+      String(connection.target).includes(node.id)
+    );
+    return {
+      ...connection,
+      source: sourceNode?.id || connection.source,
+      target: targetNode?.id || connection.target
+    };
+  };
+
+  gameData.instructorSolution = (gameSolution.instructor_solution || []).map(mapConn);
+  gameData.wrongConnections = (gameSolution.wrong_connections || []).map(mapConn);
 
   return new Response(JSON.stringify({
     gameData,
@@ -376,19 +405,19 @@ Create interconnected system analysis with:
     "optimal_outcome": "Best possible outcome considering all factors",
     "suboptimal_outcome": "Outcome when key connections are missed",
     "instructor_solution": [
-      {"source": "scenario", "target": "context1", "relationship": "requires understanding", "points": 5},
-      {"source": "scenario", "target": "stakes", "relationship": "establishes", "points": 5},
-      {"source": "context1", "target": "resource1", "relationship": "constrains", "points": 8},
-      {"source": "context2", "target": "resource2", "relationship": "constrains", "points": 8},
-      {"source": "stakes", "target": "decision1", "relationship": "influences", "points": 10},
-      {"source": "resource1", "target": "decision1", "relationship": "limits", "points": 10},
-      {"source": "resource2", "target": "decision2", "relationship": "limits", "points": 10},
-      {"source": "decision1", "target": "consequence1a", "relationship": "leads to", "points": 15},
-      {"source": "decision2", "target": "consequence2a", "relationship": "leads to", "points": 15},
-      {"source": "consequence1a", "target": "stakeholder1", "relationship": "impacts", "points": 12},
-      {"source": "consequence2a", "target": "stakeholder2", "relationship": "impacts", "points": 12},
-      {"source": "stakeholder1", "target": "outcome_optimal", "relationship": "enables", "points": 20},
-      {"source": "stakeholder2", "target": "outcome_optimal", "relationship": "enables", "points": 20}
+      {"source": "scenario_description", "target": "context_factor_1", "relationship": "requires understanding", "points": 5},
+      {"source": "scenario_description", "target": "stakes_description", "relationship": "establishes", "points": 5},
+      {"source": "context_factor_1", "target": "resource_constraint_1", "relationship": "constrains", "points": 8},
+      {"source": "context_factor_2", "target": "resource_constraint_2", "relationship": "constrains", "points": 8},
+      {"source": "stakes_description", "target": "primary_decision_1", "relationship": "influences", "points": 10},
+      {"source": "resource_constraint_1", "target": "primary_decision_1", "relationship": "limits", "points": 10},
+      {"source": "resource_constraint_2", "target": "primary_decision_2", "relationship": "limits", "points": 10},
+      {"source": "primary_decision_1", "target": "consequence_1a", "relationship": "leads to", "points": 15},
+      {"source": "primary_decision_2", "target": "consequence_2a", "relationship": "leads to", "points": 15},
+      {"source": "consequence_1a", "target": "stakeholder_impact_1", "relationship": "impacts", "points": 12},
+      {"source": "consequence_2a", "target": "stakeholder_impact_2", "relationship": "impacts", "points": 12},
+      {"source": "stakeholder_impact_1", "target": "optimal_outcome", "relationship": "enables", "points": 20},
+      {"source": "stakeholder_impact_2", "target": "optimal_outcome", "relationship": "enables", "points": 20}
     ],
     "connection_rules": [
       "Scenario must connect to context and stakes before decisions",
@@ -398,9 +427,9 @@ Create interconnected system analysis with:
       "Multiple stakeholder impacts required for optimal outcome"
     ],
     "wrong_connections": [
-      {"source": "scenario", "target": "decision1", "why_wrong": "Decisions cannot be made without understanding context and resources", "penalty": -10},
-      {"source": "decision1", "target": "outcome_optimal", "why_wrong": "Decisions must go through consequences and stakeholder impacts first", "penalty": -15},
-      {"source": "resource1", "target": "stakeholder1", "why_wrong": "Resources don't directly impact stakeholders without decisions", "penalty": -8}
+      {"source": "scenario_description", "target": "primary_decision_1", "why_wrong": "Decisions cannot be made without understanding context and resources", "penalty": -10},
+      {"source": "primary_decision_1", "target": "optimal_outcome", "why_wrong": "Decisions must go through consequences and stakeholder impacts first", "penalty": -15},
+      {"source": "resource_constraint_1", "target": "stakeholder_impact_1", "why_wrong": "Resources don't directly impact stakeholders without decisions", "penalty": -8}
     ],
     "grading_rubric": {
       "excellent": {"min_score": 130, "criteria": "All critical connections made, optimal path followed, demonstrates strategic thinking"},

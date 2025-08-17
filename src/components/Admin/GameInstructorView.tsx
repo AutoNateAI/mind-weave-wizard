@@ -157,7 +157,7 @@ export function GameInstructorView({ game, onClose }: GameInstructorViewProps) {
               </p>
             </div>
             
-            <div className="flex-1 min-h-0 p-4 overflow-hidden">
+            <div className="flex-1 min-h-0 p-4 overflow-auto">
               {/* Solution Summary */}
               <div className="h-full overflow-y-auto scrollbar-hide">
                 <Card className="p-4 mb-4">
@@ -260,7 +260,7 @@ export function GameInstructorView({ game, onClose }: GameInstructorViewProps) {
             </p>
           </div>
           
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-auto">
             <GameFlowCanvas
               gameId={game.id}
               gameData={getConnectedGameData()}
