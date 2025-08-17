@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { GameBuilder } from "./GameBuilder";
 import { GameSuiteBuilder } from "./GameSuiteBuilder";
-import { GameFlowCanvas } from "@/components/GraphEditor/GameFlowCanvas";
+import { GameInstructorView } from "./GameInstructorView";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Play, Settings, BarChart3, Zap } from "lucide-react";
@@ -313,7 +313,7 @@ export function GameBuilderView({ selectedCourseId }: GameBuilderViewProps) {
                             onClick={() => setPreviewGame(game)}
                           >
                             <Play className="w-3 h-3" />
-                            Preview
+                            Instructor View
                           </Button>
                           <Button 
                             size="sm" 
@@ -354,22 +354,14 @@ export function GameBuilderView({ selectedCourseId }: GameBuilderViewProps) {
         />
       )}
 
-      {/* Game Preview Modal */}
+      {/* Game Instructor View Modal */}
       <Dialog open={!!previewGame} onOpenChange={() => setPreviewGame(null)}>
         <DialogContent className="max-w-7xl h-[95vh] w-[95vw] p-0 gap-0 flex flex-col">
-          <DialogHeader className="px-4 py-2 border-b shrink-0 min-h-0">
-            <DialogTitle className="text-lg">Game Preview: {previewGame?.title}</DialogTitle>
-          </DialogHeader>
           <div className="flex-1 min-h-0 flex flex-col">
             {previewGame && (
-              <GameFlowCanvas
-                gameId={previewGame.id}
-                gameData={previewGame.game_data}
-                mechanics={previewGame.mechanics || {}}
-                hints={previewGame.hints}
-                onComplete={(score) => {
-                  toast.success(`Preview completed with ${score}% score!`);
-                }}
+              <GameInstructorView
+                game={previewGame}
+                onClose={() => setPreviewGame(null)}
               />
             )}
           </div>
