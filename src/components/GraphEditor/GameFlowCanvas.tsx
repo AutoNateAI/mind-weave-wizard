@@ -610,11 +610,11 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
       {/* Game Canvas */}
       <div className="flex-1 min-h-0 overflow-hidden react-flow-container relative">
         <ReactFlow
-          nodes={nodes.map(node => ({
+          nodes={nodes.filter(node => node && node.data).map(node => ({
             ...node,
             data: {
               ...node.data,
-              'data-node-type': node.data.nodeType
+              'data-node-type': node.data?.nodeType || 'information'
             }
           }))}
           edges={edges}
