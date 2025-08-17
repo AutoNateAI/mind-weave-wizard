@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FlashcardViewer } from "@/components/Flashcards/FlashcardViewer";
 import { DatabaseReflectionEditor } from "@/components/Reflections/DatabaseReflectionEditor";
@@ -25,10 +25,13 @@ export function LessonStructure({
   onComplete
 }: LessonStructureProps) {
   // Get current sub-tab from URL or default to slides
-  const urlParams = new URLSearchParams(window.location.search);
-  const currentSubTab = urlParams.get('tab') || 'slides';
+  const [currentSubTab, setCurrentSubTab] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('tab') || 'slides';
+  });
 
   const handleSubTabChange = (value: string) => {
+    setCurrentSubTab(value);
     const url = new URL(window.location.href);
     url.searchParams.set('tab', value);
     window.history.replaceState({}, '', url.toString());

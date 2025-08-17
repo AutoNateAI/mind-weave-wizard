@@ -25,10 +25,13 @@ export default function SessionPage() {
   const [loading, setLoading] = useState(true);
 
   // Get current tab from URL or default to lecture1
-  const urlParams = new URLSearchParams(window.location.search);
-  const currentLecture = urlParams.get('lecture') || 'lecture1';
+  const [currentLecture, setCurrentLecture] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('lecture') || 'lecture1';
+  });
 
   const handleTabChange = (value: string) => {
+    setCurrentLecture(value);
     const url = new URL(window.location.href);
     url.searchParams.set('lecture', value);
     window.history.replaceState({}, '', url.toString());
