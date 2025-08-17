@@ -24,6 +24,16 @@ export default function SessionPage() {
   const [reflectionQuestions, setReflectionQuestions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Get current tab from URL or default to lecture1
+  const urlParams = new URLSearchParams(window.location.search);
+  const currentLecture = urlParams.get('lecture') || 'lecture1';
+
+  const handleTabChange = (value: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('lecture', value);
+    window.history.replaceState({}, '', url.toString());
+  };
+
   useEffect(() => {
     const fetchSessionData = async () => {
       try {
@@ -146,7 +156,7 @@ export default function SessionPage() {
       </header>
 
       {/* New 3-Lecture Structure */}
-      <Tabs defaultValue="lecture1" className="w-full">
+      <Tabs value={currentLecture} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-3 gap-1">
           <TabsTrigger value="lecture1" className="text-xs sm:text-sm px-2 py-2 min-w-0">
             <span className="truncate block w-full">{lectures.find(l => l.lecture_number === 1)?.title || "Lecture 1"}</span>

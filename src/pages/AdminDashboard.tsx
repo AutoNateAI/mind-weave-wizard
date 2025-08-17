@@ -41,7 +41,10 @@ export default function AdminDashboard() {
   const { isStudentView } = useAdminViewSwitch();
   const [courses, setCourses] = useState<any[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('tab') || 'overview';
+  });
 
   // Direct admin check - don't rely on the hook
   const isAdmin = user?.email === 'admin@gmail.com';
@@ -110,8 +113,18 @@ export default function AdminDashboard() {
   const handleCoursePlanned = (courseData: any) => {
     setSelectedCourse(courseData.course.id);
     setActiveTab('structure');
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', 'structure');
+    window.history.replaceState({}, '', url.toString());
     loadCourses();
     toast.success('Course structure created! Now you can generate content.');
+  };
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', value);
+    window.history.replaceState({}, '', url.toString());
   };
 
   return (
@@ -138,7 +151,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
             <div className="w-full overflow-x-auto scrollbar-hide">
               <TabsList className="inline-flex w-max min-w-full lg:grid lg:grid-cols-11 h-auto p-1">
                 <TabsTrigger value="overview" className="gap-2 whitespace-nowrap">
@@ -237,7 +250,7 @@ export default function AdminDashboard() {
               <Card className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold">All Courses</h3>
-                  <Button onClick={() => setActiveTab('planning')} className="gap-2">
+                  <Button onClick={() => handleTabChange('planning')} className="gap-2">
                     <Plus className="w-4 h-4" />
                     Create Course
                   </Button>
@@ -254,7 +267,7 @@ export default function AdminDashboard() {
                       <Card key={course.id} className="p-4 hover:bg-accent/50 cursor-pointer transition-colors"
                             onClick={() => {
                               setSelectedCourse(course.id);
-                              setActiveTab('structure');
+                              handleTabChange('structure');
                             }}>
                         <div className="flex items-center justify-between">
                           <div>
@@ -275,7 +288,7 @@ export default function AdminDashboard() {
                                 className="h-7 px-2 text-xs"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setActiveTab('chat-history');
+                                  handleTabChange('chat-history');
                                 }}
                               >
                                 <MessageSquare className="w-3 h-3 mr-1" />

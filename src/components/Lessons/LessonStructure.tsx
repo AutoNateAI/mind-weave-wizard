@@ -24,6 +24,15 @@ export function LessonStructure({
   reflectionPrompt,
   onComplete
 }: LessonStructureProps) {
+  // Get current sub-tab from URL or default to slides
+  const urlParams = new URLSearchParams(window.location.search);
+  const currentSubTab = urlParams.get('tab') || 'slides';
+
+  const handleSubTabChange = (value: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', value);
+    window.history.replaceState({}, '', url.toString());
+  };
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
@@ -31,7 +40,7 @@ export function LessonStructure({
         <p className="text-muted-foreground">Explore concepts, play, and reflect</p>
       </div>
 
-      <Tabs defaultValue="slides" className="w-full">
+      <Tabs value={currentSubTab} onValueChange={handleSubTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="slides" className="text-xs sm:text-sm">🎯 <span className="hidden sm:inline">Slides</span></TabsTrigger>
           <TabsTrigger value="concepts" className="text-xs sm:text-sm">📚 <span className="hidden sm:inline">Concepts</span></TabsTrigger>

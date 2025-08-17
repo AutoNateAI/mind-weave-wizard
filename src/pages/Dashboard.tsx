@@ -21,7 +21,10 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [sessionData, setSessionData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('view') === 'analytics' || false;
+  });
   
   console.log('🎯 Dashboard render:', { 
     isAdmin, 
@@ -39,8 +42,11 @@ export default function Dashboard() {
   useEffect(() => {
     if (location.state?.showAnalytics) {
       setShowAnalytics(true);
+      const url = new URL(window.location.href);
+      url.searchParams.set('view', 'analytics');
+      window.history.replaceState({}, '', url.toString());
       // Clear the state to prevent persistent analytics view
-      navigate(location.pathname, { replace: true, state: {} });
+      navigate(location.pathname + url.search, { replace: true, state: {} });
     }
   }, [location, navigate]);
 
@@ -111,7 +117,17 @@ export default function Dashboard() {
               )}
               <Button 
                 variant="outline" 
-                onClick={() => setShowAnalytics(!showAnalytics)}
+                onClick={() => {
+                  const newState = !showAnalytics;
+                  setShowAnalytics(newState);
+                  const url = new URL(window.location.href);
+                  if (newState) {
+                    url.searchParams.set('view', 'analytics');
+                  } else {
+                    url.searchParams.delete('view');
+                  }
+                  window.history.replaceState({}, '', url.toString());
+                }}
                 size="sm"
                 className="gap-1 sm:gap-2 text-xs sm:text-sm whitespace-nowrap"
               >
