@@ -43,6 +43,8 @@ export const AnalyticsDashboard: React.FC = () => {
   const [quizAnswers, setQuizAnswers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSession, setSelectedSession] = useState<GameSession | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const sessionsPerPage = 10;
 
   useEffect(() => {
     if (user) {
@@ -455,33 +457,80 @@ export const AnalyticsDashboard: React.FC = () => {
               <CardTitle>Game Sessions</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {sessions.map((session) => (
-                  <div key={session.id} 
-                       className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                       onClick={() => setSelectedSession(session)}>
-                    <div>
-                      <p className="font-medium">{session.lecture_games?.title}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(session.started_at).toLocaleDateString()} • 
-                        Session {session.lecture_games?.session_number} - Lecture {session.lecture_games?.lecture_number}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <Badge variant={session.completion_score >= 80 ? "default" : "secondary"}>
-                          {Math.round(session.completion_score || 0)}%
-                        </Badge>
-                        <p className="text-xs text-muted-foreground">
-                          {session.correct_connections}C / {session.incorrect_connections}I / {session.hints_used}H
+              <div className="space-y-4">
+                {/* Pagination Info */}
+                <div className="flex justify-between items-center">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {Math.min((currentPage - 1) * sessionsPerPage + 1, sessions.length)} to {Math.min(currentPage * sessionsPerPage, sessions.length)} of {sessions.length} sessions
+                  </p>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => prev + 1)}
+                      disabled={currentPage * sessionsPerPage >= sessions.length}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Sessions List */}
+                <div className="space-y-2">
+                  {sessions
+                    .slice((currentPage - 1) * sessionsPerPage, currentPage * sessionsPerPage)
+                    .map((session) => (
+                    <div key={session.id} 
+                         className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                         onClick={() => setSelectedSession(session)}>
+                      <div>
+                        <p className="font-medium">{session.lecture_games?.title}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(session.started_at).toLocaleDateString()} • 
+                          Session {session.lecture_games?.session_number} - Lecture {session.lecture_games?.lecture_number}
                         </p>
                       </div>
-                      <ChevronRight className="w-4 h-4" />
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <Badge variant={session.completion_score >= 80 ? "default" : "secondary"}>
+                            {Math.round(session.completion_score || 0)}%
+                          </Badge>
+                          <p className="text-xs text-muted-foreground">
+                            {session.correct_connections}C / {session.incorrect_connections}I / {session.hints_used}H
+                          </p>
+                        </div>
+                        <ChevronRight className="w-4 h-4" />
+                      </div>
                     </div>
+                  ))}
+                  {sessions.length === 0 && (
+                    <p className="text-center text-muted-foreground py-8">No game sessions completed yet.</p>
+                  )}
+                </div>
+
+                {/* Page Numbers */}
+                {sessions.length > sessionsPerPage && (
+                  <div className="flex justify-center gap-2 mt-4">
+                    {Array.from({ length: Math.ceil(sessions.length / sessionsPerPage) }, (_, i) => i + 1).map(page => (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(page)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {page}
+                      </Button>
+                    ))}
                   </div>
-                ))}
-                {sessions.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">No game sessions completed yet.</p>
                 )}
               </div>
             </CardContent>
@@ -645,8 +694,8 @@ export const AnalyticsDashboard: React.FC = () => {
                       <PieChart>
                         <Pie
                           data={[
-                            { name: 'Correct', value: selectedSession.correct_connections, fill: 'hsl(var(--chart-1))' },
-                            { name: 'Incorrect', value: selectedSession.incorrect_connections, fill: 'hsl(var(--chart-2))' }
+                            { name: 'Correct', value: selectedSession.correct_connections, fill: '#22c55e' },
+                            { name: 'Incorrect', value: selectedSession.incorrect_connections, fill: '#ef4444' }
                           ]}
                           cx="50%"
                           cy="50%"
