@@ -11,12 +11,13 @@ import {
 } from 'recharts';
 import { 
   Brain, TrendingUp, Clock, Target, Award, Calendar,
-  ChevronRight, Lightbulb, Activity, Users, X, Zap, CheckCircle, XCircle
+  ChevronRight, Lightbulb, Activity, Users, X, Zap, CheckCircle, XCircle, ChevronDown
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface GameSession {
   id: string;
@@ -44,6 +45,8 @@ export const AnalyticsDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedSession, setSelectedSession] = useState<GameSession | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedModule, setSelectedModule] = useState<string>('');
+  const [selectedLecture, setSelectedLecture] = useState<string>('');
   const sessionsPerPage = 10;
 
   useEffect(() => {
@@ -184,6 +187,40 @@ export const AnalyticsDashboard: React.FC = () => {
     session: answer.multiple_choice_questions?.session_number || 0
   }));
 
+  // Filter sessions based on selected module and lecture
+  const filteredSessions = sessions.filter(session => {
+    if (selectedModule && session.lecture_games?.session_number.toString() !== selectedModule) {
+      return false;
+    }
+    if (selectedLecture && session.lecture_games?.lecture_number.toString() !== selectedLecture) {
+      return false;
+    }
+    return true;
+  });
+
+  // Get unique modules and lectures for filter dropdowns
+  const uniqueModules = Array.from(new Set(
+    sessions.map(s => s.lecture_games?.session_number).filter(Boolean)
+  )).sort((a, b) => a - b);
+
+  const uniqueLectures = Array.from(new Set(
+    sessions
+      .filter(s => !selectedModule || s.lecture_games?.session_number.toString() === selectedModule)
+      .map(s => s.lecture_games?.lecture_number)
+      .filter(Boolean)
+  )).sort((a, b) => a - b);
+
+  // Reset current page when filters change
+  const handleModuleChange = (value: string) => {
+    setSelectedModule(value);
+    setSelectedLecture(''); // Reset lecture when module changes
+    setCurrentPage(1);
+  };
+
+  const handleLectureChange = (value: string) => {
+    setSelectedLecture(value);
+    setCurrentPage(1);
+  };
   // Critical thinking patterns data
   const thinkingPatternsData = [
     { pattern: 'Quick Decision Making', value: strategicThinkingScore },
@@ -458,10 +495,65 @@ export const AnalyticsDashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
+                {/* Filter Controls */}
+                <div className="flex gap-4 items-center">
+                  <div className="w-48">
+                    <Select value={selectedModule} onValueChange={handleModuleChange}>
+                      <SelectTrigger className="bg-background border">
+                        <SelectValue placeholder="Filter by Module" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border z-50">
+                        <SelectItem value="">All Modules</SelectItem>
+                        {uniqueModules.map(moduleNum => (
+                          <SelectItem key={moduleNum} value={moduleNum.toString()}>
+                            <div>
+                              <div className="font-medium">Session {moduleNum}</div>
+                              <div className="text-xs text-muted-foreground">Module {moduleNum}</div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="w-48">
+                    <Select value={selectedLecture} onValueChange={handleLectureChange}>
+                      <SelectTrigger className="bg-background border">
+                        <SelectValue placeholder="Filter by Lecture" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border z-50">
+                        <SelectItem value="">All Lectures</SelectItem>
+                        {uniqueLectures.map(lectureNum => (
+                          <SelectItem key={lectureNum} value={lectureNum.toString()}>
+                            <div>
+                              <div className="font-medium">Lecture {lectureNum}</div>
+                              <div className="text-xs text-muted-foreground">Lecture {lectureNum}</div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {(selectedModule || selectedLecture) && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setSelectedModule('');
+                        setSelectedLecture('');
+                        setCurrentPage(1);
+                      }}
+                    >
+                      Clear Filters
+                    </Button>
+                  )}
+                </div>
+
                 {/* Pagination Info */}
                 <div className="flex justify-between items-center">
                   <p className="text-sm text-muted-foreground">
-                    Showing {Math.min((currentPage - 1) * sessionsPerPage + 1, sessions.length)} to {Math.min(currentPage * sessionsPerPage, sessions.length)} of {sessions.length} sessions
+                    Showing {Math.min((currentPage - 1) * sessionsPerPage + 1, filteredSessions.length)} to {Math.min(currentPage * sessionsPerPage, filteredSessions.length)} of {filteredSessions.length} sessions
                   </p>
                   <div className="flex gap-2">
                     <Button 
@@ -476,7 +568,7 @@ export const AnalyticsDashboard: React.FC = () => {
                       variant="outline" 
                       size="sm"
                       onClick={() => setCurrentPage(prev => prev + 1)}
-                      disabled={currentPage * sessionsPerPage >= sessions.length}
+                      disabled={currentPage * sessionsPerPage >= filteredSessions.length}
                     >
                       Next
                     </Button>
@@ -485,7 +577,7 @@ export const AnalyticsDashboard: React.FC = () => {
 
                 {/* Sessions List */}
                 <div className="space-y-2">
-                  {sessions
+                  {filteredSessions
                     .slice((currentPage - 1) * sessionsPerPage, currentPage * sessionsPerPage)
                     .map((session) => (
                     <div key={session.id} 
@@ -511,13 +603,15 @@ export const AnalyticsDashboard: React.FC = () => {
                       </div>
                     </div>
                   ))}
-                  {sessions.length === 0 && (
-                    <p className="text-center text-muted-foreground py-8">No game sessions completed yet.</p>
+                  {filteredSessions.length === 0 && (
+                    <p className="text-center text-muted-foreground py-8">
+                      {selectedModule || selectedLecture ? 'No sessions found matching the selected filters.' : 'No game sessions completed yet.'}
+                    </p>
                   )}
                 </div>
 
                 {/* Smart Pagination */}
-                {sessions.length > sessionsPerPage && (
+                {filteredSessions.length > sessionsPerPage && (
                   <div className="flex justify-center items-center gap-2 mt-4">
                     <Button
                       variant="outline"
@@ -529,7 +623,7 @@ export const AnalyticsDashboard: React.FC = () => {
                     </Button>
                     
                     {(() => {
-                      const totalPages = Math.ceil(sessions.length / sessionsPerPage);
+                      const totalPages = Math.ceil(filteredSessions.length / sessionsPerPage);
                       const pages = [];
                       
                       // Always show first page
@@ -599,7 +693,7 @@ export const AnalyticsDashboard: React.FC = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => setCurrentPage(prev => prev + 1)}
-                      disabled={currentPage * sessionsPerPage >= sessions.length}
+                      disabled={currentPage * sessionsPerPage >= filteredSessions.length}
                     >
                       Next
                     </Button>
