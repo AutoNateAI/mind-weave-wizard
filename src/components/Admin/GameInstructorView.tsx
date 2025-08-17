@@ -27,6 +27,7 @@ interface GameInstructorViewProps {
 
 export function GameInstructorView({ game, onClose }: GameInstructorViewProps) {
   const [showSolution, setShowSolution] = useState(true);
+  const [showConnected, setShowConnected] = useState(false);
 
   // Extract instructor solution from game data
   const instructorSolution = game.game_data?.instructorSolution || [];
@@ -52,8 +53,26 @@ export function GameInstructorView({ game, onClose }: GameInstructorViewProps) {
 
   const summary = getSolutionSummary();
 
+  // Create modified game data for connected view
+  const getConnectedGameData = () => {
+    if (!showConnected) return game.game_data;
+    
+    const connectedEdges = instructorSolution.map((conn: any, index: number) => ({
+      id: `instructor-${index}`,
+      source: conn.source,
+      target: conn.target,
+      type: 'default',
+      style: { stroke: '#22c55e', strokeWidth: 2 }
+    }));
+
+    return {
+      ...game.game_data,
+      edges: [...(game.game_data?.edges || []), ...connectedEdges]
+    };
+  };
+
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col overflow-hidden">
       {/* Header */}
       <div className="p-4 border-b bg-background/80 backdrop-blur-sm shrink-0">
         <div className="flex items-center justify-between mb-2">
@@ -194,19 +213,33 @@ export function GameInstructorView({ game, onClose }: GameInstructorViewProps) {
         {/* Right Side - Student View */}
         <div className={`${showSolution ? 'w-1/2' : 'w-full'} flex flex-col h-full`}>
           <div className="p-3 border-b bg-muted/30 shrink-0">
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="w-4 h-4 text-blue-600" />
-              <h3 className="font-medium">Student Experience</h3>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-blue-600" />
+                <h3 className="font-medium">Student Experience</h3>
+              </div>
+              <Button
+                size="sm"
+                variant={showConnected ? "default" : "outline"}
+                onClick={() => setShowConnected(!showConnected)}
+                className="gap-2"
+              >
+                <CheckCircle className="w-4 h-4" />
+                {showConnected ? "Hide Solution" : "Show Solution"}
+              </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              This is exactly what students see when playing the game
+              {showConnected 
+                ? "Showing the completed graph with all correct connections"
+                : "This is exactly what students see when playing the game"
+              }
             </p>
           </div>
           
           <div className="flex-1 min-h-0">
             <GameFlowCanvas
               gameId={game.id}
-              gameData={game.game_data}
+              gameData={getConnectedGameData()}
               mechanics={game.mechanics || {}}
               hints={game.hints}
               onComplete={(score) => {
