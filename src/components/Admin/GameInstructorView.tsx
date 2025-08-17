@@ -75,7 +75,7 @@ export function GameInstructorView({ game, onClose }: GameInstructorViewProps) {
         </div>
         
         {/* Solution Toggle */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <Button
             size="sm"
             variant={showSolution ? "default" : "outline"}
@@ -86,7 +86,7 @@ export function GameInstructorView({ game, onClose }: GameInstructorViewProps) {
             {showSolution ? "Hide Solution" : "Show Solution"}
           </Button>
           
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
             <div className="flex items-center gap-1">
               <Target className="w-4 h-4" />
               <span>{summary.totalNodes} concepts</span>
@@ -100,11 +100,11 @@ export function GameInstructorView({ game, onClose }: GameInstructorViewProps) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 min-h-0 flex h-full">
+      <div className="flex-1 flex min-h-0">
         {/* Left Side - Instructor Solution */}
         {showSolution && (
-          <div className="w-1/2 border-r flex flex-col">
-            <div className="p-3 border-b bg-muted/30">
+          <div className="w-1/2 border-r flex flex-col h-full">
+            <div className="p-3 border-b bg-muted/30 shrink-0">
               <div className="flex items-center gap-2 mb-2">
                 <GraduationCap className="w-4 h-4 text-primary" />
                 <h3 className="font-medium">Instructor Solution</h3>
@@ -192,8 +192,8 @@ export function GameInstructorView({ game, onClose }: GameInstructorViewProps) {
         )}
 
         {/* Right Side - Student View */}
-        <div className={`${showSolution ? 'w-1/2' : 'w-full'} flex flex-col`}>
-          <div className="p-3 border-b bg-muted/30">
+        <div className={`${showSolution ? 'w-1/2' : 'w-full'} flex flex-col h-full`}>
+          <div className="p-3 border-b bg-muted/30 shrink-0">
             <div className="flex items-center gap-2 mb-2">
               <Users className="w-4 h-4 text-blue-600" />
               <h3 className="font-medium">Student Experience</h3>

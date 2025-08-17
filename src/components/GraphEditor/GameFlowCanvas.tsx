@@ -442,37 +442,37 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
       )}
 
       {/* Game Controls */}
-      <div className="flex items-center justify-between py-3 px-4 bg-background/80 backdrop-blur-sm border-b shrink-0">
-        <div className="flex items-center gap-4 text-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 px-4 bg-background/80 backdrop-blur-sm border-b shrink-0 gap-3 sm:gap-0">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm">
           <Button 
             size="sm" 
             variant="ghost" 
             onClick={() => setShowInstructions(true)}
-            className="gap-1 text-xs"
+            className="gap-1 text-xs shrink-0"
           >
             📖 Instructions
           </Button>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             <Target className="w-4 h-4" />
-            <span>Connections: {gameState.connections.length}</span>
+            <span className="whitespace-nowrap">Connections: {gameState.connections.length}</span>
           </div>
-          <div className="flex items-center gap-1 text-green-600">
+          <div className="flex items-center gap-1 text-green-600 shrink-0">
             <CheckCircle className="w-4 h-4" />
-            <span>Correct: {gameState.correctConnections.length}/{instructorSolution.length}</span>
+            <span className="whitespace-nowrap">Correct: {gameState.correctConnections.length}/{instructorSolution.length}</span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             <Trophy className="w-4 h-4" />
-            <span>Score: {gameState.score}</span>
+            <span className="whitespace-nowrap">Score: {gameState.score}</span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             <Lightbulb className="w-4 h-4" />
-            <span>Hints: {gameState.hintsUsed}/{Array.isArray(hints) ? hints.length : 0}</span>
+            <span className="whitespace-nowrap">Hints: {gameState.hintsUsed}/{Array.isArray(hints) ? hints.length : 0}</span>
           </div>
           <Button 
             size="sm" 
             variant="ghost" 
             onClick={() => setShowConnectionHistory(!showConnectionHistory)}
-            className="gap-1 text-xs"
+            className="gap-1 text-xs shrink-0"
           >
             📋 History ({gameState.connectionHistory.length})
           </Button>
