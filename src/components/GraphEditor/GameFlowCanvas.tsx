@@ -221,34 +221,77 @@ export function GameFlowCanvas({ gameId, gameData, mechanics, hints, onComplete 
         hintsUsed: prev.hintsUsed + 1
       }));
       
-      // Highlight correct connections when hint is used
-      setEdges(edges => edges.map(edge => {
-        const isCorrectConnection = instructorSolution.some((solution: any) => 
-          solution.source === edge.source && solution.target === edge.target
-        );
-        const isWrongConnection = wrongConnections.some((wrong: any) => 
-          wrong.source === edge.source && wrong.target === edge.target
-        );
-        
-        if (isCorrectConnection) {
-          return { ...edge, style: { ...edge.style, stroke: '#22c55e', strokeWidth: 3 } };
-        } else if (isWrongConnection) {
-          return { ...edge, style: { ...edge.style, stroke: '#ef4444', strokeWidth: 3 } };
-        }
-        return edge;
+      // Get all correct connections from instructor solution
+      const allCorrectConnections = instructorSolution || [];
+      
+      // Get connections user has already made
+      const existingConnections = edges.filter(edge => 
+        edge.source && edge.target && edge.id?.includes('-')
+      ).map(edge => ({
+        source: edge.source,
+        target: edge.target
       }));
       
-      trackInteraction('hint_used', {
-        hintIndex: gameState.hintsUsed,
-        hintText: hintsArray[gameState.hintsUsed],
-        timestamp: Date.now()
-      });
+      // Filter out connections that already exist
+      const availableHintConnections = allCorrectConnections.filter((correct: any) => 
+        !existingConnections.some(existing => 
+          existing.source === correct.source && existing.target === correct.target
+        )
+      );
+      
+      if (availableHintConnections.length > 0) {
+        // Randomly select up to 2 connections to hint
+        const numHints = Math.min(2, availableHintConnections.length);
+        const shuffled = [...availableHintConnections].sort(() => Math.random() - 0.5);
+        const selectedHints = shuffled.slice(0, numHints);
+        
+        // Create temporary hint edges
+        const hintEdges = selectedHints.map((hint: any) => ({
+          id: `hint-${hint.source}-${hint.target}`,
+          source: hint.source,
+          target: hint.target,
+          type: 'smoothstep' as const,
+          style: { 
+            stroke: '#fbbf24', 
+            strokeWidth: 4, 
+            strokeDasharray: '8,4',
+            animation: 'pulse 1.5s infinite'
+          },
+          animated: true,
+          className: 'hint-edge'
+        }));
+        
+        // Add hint edges temporarily
+        setEdges(edges => [...edges, ...hintEdges]);
+        
+        // Random duration between 10-15 seconds
+        const hintDuration = Math.floor(Math.random() * 6000) + 10000; // 10000-15000ms
+        
+        // Remove hint edges after duration
+        setTimeout(() => {
+          setEdges(edges => edges.filter(edge => !edge.id?.startsWith('hint-')));
+        }, hintDuration);
+        
+        trackInteraction('hint_used', {
+          hintIndex: gameState.hintsUsed,
+          hintText: hintsArray[gameState.hintsUsed],
+          connectionsShown: selectedHints,
+          duration: hintDuration,
+          timestamp: Date.now()
+        });
 
-      toast.info(hintsArray[gameState.hintsUsed], {
-        icon: <Lightbulb className="w-4 h-4" />,
-        duration: 8000,
-        description: "Connections are now color-coded: Green = Correct, Red = Incorrect"
-      });
+        toast.info(hintsArray[gameState.hintsUsed], {
+          icon: <Lightbulb className="w-4 h-4" />,
+          duration: Math.floor(hintDuration / 1000) * 1000,
+          description: `Showing ${numHints} helpful connection${numHints > 1 ? 's' : ''} for ${Math.floor(hintDuration / 1000)} seconds`
+        });
+      } else {
+        // No more connections to hint at
+        toast.info("Great progress! You've already made most of the correct connections.", {
+          icon: <Lightbulb className="w-4 h-4" />,
+          duration: 4000
+        });
+      }
     }
   };
 
