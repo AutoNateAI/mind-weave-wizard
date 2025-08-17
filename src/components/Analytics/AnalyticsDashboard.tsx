@@ -38,18 +38,21 @@ interface GameSession {
 export const AnalyticsDashboard: React.FC = () => {
   const { user } = useAuth();
   const [sessions, setSessions] = useState<GameSession[]>([]);
+  const [reflections, setReflections] = useState<any[]>([]);
+  const [quizAnswers, setQuizAnswers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSession, setSelectedSession] = useState<GameSession | null>(null);
 
   useEffect(() => {
     if (user) {
-      fetchGameSessions();
+      fetchAllAnalyticsData();
     }
   }, [user]);
 
-  const fetchGameSessions = async () => {
+  const fetchAllAnalyticsData = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch game analytics data
+      const { data: gameData, error: gameError } = await supabase
         .from('game_analytics')
         .select(`
           *,
@@ -62,10 +65,46 @@ export const AnalyticsDashboard: React.FC = () => {
         .eq('user_id', user?.id)
         .order('started_at', { ascending: false });
 
-      if (error) throw error;
-      setSessions(data || []);
+      if (gameError) throw gameError;
+
+      // Fetch user reflections
+      const { data: reflectionData, error: reflectionError } = await supabase
+        .from('user_reflections')
+        .select(`
+          *,
+          reflection_questions (
+            question_text,
+            session_number,
+            lecture_number
+          )
+        `)
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (reflectionError) throw reflectionError;
+
+      // Fetch quiz answers
+      const { data: quizData, error: quizError } = await supabase
+        .from('user_quiz_answers')
+        .select(`
+          *,
+          multiple_choice_questions (
+            question_text,
+            session_number,
+            lecture_number,
+            correct_option
+          )
+        `)
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (quizError) throw quizError;
+
+      setSessions(gameData || []);
+      setReflections(reflectionData || []);
+      setQuizAnswers(quizData || []);
     } catch (error) {
-      console.error('Error fetching sessions:', error);
+      console.error('Error fetching analytics data:', error);
       toast.error('Failed to load analytics data');
     } finally {
       setLoading(false);
@@ -74,6 +113,8 @@ export const AnalyticsDashboard: React.FC = () => {
 
   // Aggregate statistics
   const totalSessions = sessions.length;
+  const totalReflections = reflections.length;
+  const totalQuizzes = quizAnswers.length;
   const avgScore = sessions.length > 0 ? 
     sessions.reduce((sum, s) => sum + (s.completion_score || 0), 0) / sessions.length : 0;
   const totalTime = sessions.reduce((sum, s) => sum + s.time_spent_seconds, 0);
@@ -82,6 +123,8 @@ export const AnalyticsDashboard: React.FC = () => {
       const total = s.correct_connections + s.incorrect_connections;
       return sum + (total > 0 ? (s.correct_connections / total) * 100 : 0);
     }, 0) / sessions.length : 0;
+  const quizAccuracy = quizAnswers.length > 0 ?
+    (quizAnswers.filter(q => q.is_correct).length / quizAnswers.length) * 100 : 0;
 
   // Skill radar data
   const skillData = [
@@ -130,13 +173,13 @@ export const AnalyticsDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-2">
               <Activity className="w-5 h-5 text-primary" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Sessions</p>
+                <p className="text-sm font-medium text-muted-foreground">Game Sessions</p>
                 <p className="text-2xl font-bold">{totalSessions}</p>
               </div>
             </div>
@@ -146,10 +189,22 @@ export const AnalyticsDashboard: React.FC = () => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-2">
-              <Award className="w-5 h-5 text-primary" />
+              <Lightbulb className="w-5 h-5 text-primary" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Avg Score</p>
-                <p className="text-2xl font-bold">{Math.round(avgScore)}%</p>
+                <p className="text-sm font-medium text-muted-foreground">Reflections</p>
+                <p className="text-2xl font-bold">{totalReflections}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <Brain className="w-5 h-5 text-primary" />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Quiz Answers</p>
+                <p className="text-2xl font-bold">{totalQuizzes}</p>
               </div>
             </div>
           </CardContent>
@@ -160,8 +215,8 @@ export const AnalyticsDashboard: React.FC = () => {
             <div className="flex items-center space-x-2">
               <Target className="w-5 h-5 text-primary" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Avg Accuracy</p>
-                <p className="text-2xl font-bold">{Math.round(avgAccuracy)}%</p>
+                <p className="text-sm font-medium text-muted-foreground">Quiz Accuracy</p>
+                <p className="text-2xl font-bold">{Math.round(quizAccuracy)}%</p>
               </div>
             </div>
           </CardContent>
@@ -184,7 +239,9 @@ export const AnalyticsDashboard: React.FC = () => {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="skills">Skills Profile</TabsTrigger>
-          <TabsTrigger value="sessions">Session History</TabsTrigger>
+          <TabsTrigger value="sessions">Games</TabsTrigger>
+          <TabsTrigger value="reflections">Reflections</TabsTrigger>
+          <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -288,7 +345,7 @@ export const AnalyticsDashboard: React.FC = () => {
         <TabsContent value="sessions" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>All Sessions</CardTitle>
+              <CardTitle>Game Sessions</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -316,6 +373,86 @@ export const AnalyticsDashboard: React.FC = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="reflections" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>User Reflections</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {reflections.map((reflection) => (
+                  <div key={reflection.id} className="p-4 border rounded-lg">
+                    <div className="flex justify-between items-start mb-2">
+                      <p className="text-sm text-muted-foreground">
+                        Session {reflection.session_number} - Lecture {reflection.lecture_number}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(reflection.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    {reflection.reflection_questions && (
+                      <p className="font-medium text-sm mb-2">{reflection.reflection_questions.question_text}</p>
+                    )}
+                    <p className="text-sm">{reflection.reflection_content}</p>
+                  </div>
+                ))}
+                {reflections.length === 0 && (
+                  <p className="text-center text-muted-foreground py-8">No reflections completed yet.</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="quizzes" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Quiz Performance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {quizAnswers.map((answer) => (
+                  <div key={answer.id} className="p-4 border rounded-lg">
+                    <div className="flex justify-between items-start mb-2">
+                      <p className="text-sm text-muted-foreground">
+                        Session {answer.multiple_choice_questions?.session_number} - Lecture {answer.multiple_choice_questions?.lecture_number}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={answer.is_correct ? "default" : "destructive"}>
+                          {answer.is_correct ? "Correct" : "Incorrect"}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(answer.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    {answer.multiple_choice_questions && (
+                      <div>
+                        <p className="font-medium text-sm mb-2">{answer.multiple_choice_questions.question_text}</p>
+                        <p className="text-sm">
+                          <span className="text-muted-foreground">Your answer: </span>
+                          <span className={answer.is_correct ? "text-green-600" : "text-red-600"}>
+                            {answer.selected_option}
+                          </span>
+                          {!answer.is_correct && (
+                            <>
+                              <span className="text-muted-foreground"> | Correct: </span>
+                              <span className="text-green-600">{answer.multiple_choice_questions.correct_option}</span>
+                            </>
+                          )}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {quizAnswers.length === 0 && (
+                  <p className="text-center text-muted-foreground py-8">No quiz answers recorded yet.</p>
+                )}
               </div>
             </CardContent>
           </Card>
