@@ -145,7 +145,7 @@ async function generateSingleGame(supabase: any, openAIApiKey: string, params: a
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4.1-2025-04-14',
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: 'Return ONLY valid JSON. Do not include markdown, code fences, or commentary.' },
         { role: 'user', content: pass1Prompt }
@@ -154,7 +154,12 @@ async function generateSingleGame(supabase: any, openAIApiKey: string, params: a
     }),
   });
 
-  const pass1Data = await pass1Response.json();
+  const pass1DataRaw = await pass1Response.json();
+  if (!pass1Response.ok) {
+    console.error('Pass 1 OpenAI error:', pass1DataRaw);
+    throw new Error(pass1DataRaw.error?.message || 'OpenAI error in Pass 1');
+  }
+  const pass1Data = pass1DataRaw;
   let pass1Text = pass1Data.choices?.[0]?.message?.content || '';
   pass1Text = pass1Text.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
 
@@ -186,7 +191,7 @@ async function generateSingleGame(supabase: any, openAIApiKey: string, params: a
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4.1-2025-04-14',
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: 'Return ONLY valid JSON. Use ONLY provided node IDs. No markdown or extra text.' },
         { role: 'user', content: pass2Prompt }
@@ -195,7 +200,12 @@ async function generateSingleGame(supabase: any, openAIApiKey: string, params: a
     }),
   });
 
-  const pass2Data = await pass2Response.json();
+  const pass2DataRaw = await pass2Response.json();
+  if (!pass2Response.ok) {
+    console.error('Pass 2 OpenAI error:', pass2DataRaw);
+    throw new Error(pass2DataRaw.error?.message || 'OpenAI error in Pass 2');
+  }
+  const pass2Data = pass2DataRaw;
   let pass2Text = pass2Data.choices?.[0]?.message?.content || '';
   pass2Text = pass2Text.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
 
@@ -779,7 +789,7 @@ Return JSON format:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: 'You are an expert educational assessment designer. Generate instructor solutions using ONLY the exact node IDs provided. Return ONLY valid JSON with no additional text or formatting.' },
           { role: 'user', content: solutionPrompt }
@@ -788,7 +798,12 @@ Return JSON format:
       }),
     });
 
-    const solutionData = await solutionResponse.json();
+    const solutionDataRaw = await solutionResponse.json();
+    if (!solutionResponse.ok) {
+      console.error('Suite solution OpenAI error:', solutionDataRaw);
+      throw new Error(solutionDataRaw.error?.message || 'OpenAI error in suite solution');
+    }
+    const solutionData = solutionDataRaw;
     let solutionText = solutionData.choices[0].message.content;
     
     // Remove markdown code block formatting if present
@@ -835,9 +850,9 @@ Return JSON format:
       generatedContent: contentForTemplate,
       instructions: suiteInstructions.individual_instructions?.[templateKey] || `Play this ${template.name} game to enhance your thinking skills.`,
       hints: suiteInstructions.individual_hints?.[templateKey] || template.mechanics?.hints || [],
-      instructorSolution,
+      instructorSolution: validInstructorSolution,
       gradingRubric,
-      wrongConnections,
+      wrongConnections: validWrongConnections,
       heuristicTargets: template.heuristic_targets,
       validationRules: template.validation_rules,
       winConditions: template.win_conditions
