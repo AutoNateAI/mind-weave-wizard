@@ -36,10 +36,22 @@ export function GameInstructorView({ game, onClose }: GameInstructorViewProps) {
   const totalNodes = nodes.length;
   const totalConnections = instructorSolution.length;
 
+  // Debug logging to see what's in the data
+  console.log("🐛 DEBUG - Game data:", game.game_data);
+  console.log("🐛 DEBUG - Instructor solution:", instructorSolution);
+  console.log("🐛 DEBUG - Nodes:", nodes);
+  console.log("🐛 DEBUG - Sample connection:", instructorSolution[0]);
+
   // Helper function to get node label by ID
   const getNodeLabel = (nodeId: string) => {
-    const node = nodes.find((n: any) => n.id === nodeId);
-    return node?.data?.label || nodeId;
+    console.log(`🐛 DEBUG - Looking for node with ID: "${nodeId}"`);
+    const node = nodes.find((n: any) => {
+      console.log(`🐛 DEBUG - Checking node:`, n);
+      return n.id === nodeId;
+    });
+    const result = node?.data?.label || nodeId;
+    console.log(`🐛 DEBUG - Found label: "${result}" for ID: "${nodeId}"`);
+    return result;
   };
 
   const getSolutionSummary = () => {
@@ -55,24 +67,32 @@ export function GameInstructorView({ game, onClose }: GameInstructorViewProps) {
 
   // Create modified game data for connected view
   const getConnectedGameData = () => {
+    console.log("🐛 DEBUG - getConnectedGameData called, showConnected:", showConnected);
     if (!showConnected) return game.game_data;
     
-    const connectedEdges = instructorSolution.map((conn: any, index: number) => ({
-      id: `instructor-${index}`,
-      source: conn.source,
-      target: conn.target,
-      type: 'default',
-      style: { stroke: '#22c55e', strokeWidth: 2 }
-    }));
+    console.log("🐛 DEBUG - Creating connected edges from instructor solution:", instructorSolution);
+    const connectedEdges = instructorSolution.map((conn: any, index: number) => {
+      const edge = {
+        id: `instructor-${index}`,
+        source: conn.source,
+        target: conn.target,
+        type: 'default',
+        style: { stroke: '#22c55e', strokeWidth: 2 }
+      };
+      console.log("🐛 DEBUG - Created edge:", edge);
+      return edge;
+    });
 
-    return {
+    const result = {
       ...game.game_data,
       edges: [...(game.game_data?.edges || []), ...connectedEdges]
     };
+    console.log("🐛 DEBUG - Final game data with connected edges:", result);
+    return result;
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="h-[110vh] flex flex-col overflow-hidden">
       {/* Header */}
       <div className="p-4 border-b bg-background/80 backdrop-blur-sm shrink-0">
         <div className="flex items-center justify-between mb-2">
