@@ -305,9 +305,27 @@ export const AnalyticsDashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={thinkingPatternsData}>
+                  <BarChart data={thinkingPatternsData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="pattern" angle={-45} textAnchor="end" height={80} />
+                    <XAxis 
+                      dataKey="pattern" 
+                      angle={-45} 
+                      textAnchor="end" 
+                      height={80}
+                      interval={0}
+                      tick={{ fontSize: 11 }}
+                      tickFormatter={(value) => {
+                        // Split long labels into multiple lines for better readability
+                        if (value.length > 12) {
+                          const words = value.split(' ');
+                          if (words.length > 1) {
+                            const mid = Math.ceil(words.length / 2);
+                            return words.slice(0, mid).join(' ') + '\n' + words.slice(mid).join(' ');
+                          }
+                        }
+                        return value;
+                      }}
+                    />
                     <YAxis domain={[0, 100]} />
                     <Tooltip formatter={(value) => [`${Math.round(value as number)}%`, 'Proficiency']} />
                     <Bar dataKey="value" fill="hsl(var(--primary))" />
