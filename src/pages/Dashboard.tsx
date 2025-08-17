@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/UI/GlassCard";
 import { useProgress } from "@/lib/progress";
@@ -17,6 +17,7 @@ export default function Dashboard() {
   const { isUnlocked, isCompleted, sessions, checkAdminStatus } = useProgress();
   const { isAdmin, isStudentView, isAdminView, toggleView } = useAdminViewSwitch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [sessionData, setSessionData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,6 +34,15 @@ export default function Dashboard() {
   useEffect(() => {
     checkAdminStatus();
   }, [checkAdminStatus]);
+
+  // Check if we should show analytics based on navigation state
+  useEffect(() => {
+    if (location.state?.showAnalytics) {
+      setShowAnalytics(true);
+      // Clear the state to prevent persistent analytics view
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
 
   // Fetch session data from database
   useEffect(() => {

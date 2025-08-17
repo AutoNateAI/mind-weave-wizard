@@ -118,11 +118,13 @@ export default function SessionPage() {
           </Link>
         </Button>
         <div className="flex items-center gap-2">
-          <Button variant="outline" asChild className="hover-scale">
-            <Link to="/dashboard" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Analytics
-            </Link>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate("/dashboard", { state: { showAnalytics: true } })}
+            className="hover-scale flex items-center gap-2"
+          >
+            <BarChart3 className="w-4 h-4" />
+            Analytics
           </Button>
           <Button variant="outline" asChild className="hover-scale">
             <Link to="/profile" className="flex items-center gap-2">
