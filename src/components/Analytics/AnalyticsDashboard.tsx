@@ -154,7 +154,8 @@ export const AnalyticsDashboard: React.FC = () => {
 
     // 2. Decision Path & Problem-Solving Strategy (analyze decision_path for patterns)
     const strategicReasoningScore = sessions.reduce((sum, s) => {
-      const path = s.decision_path ? JSON.parse(s.decision_path as any) : [];
+      const path = Array.isArray(s.decision_path) ? s.decision_path : 
+                   (typeof s.decision_path === 'string' ? JSON.parse(s.decision_path) : []);
       const pathLength = Array.isArray(path) ? path.length : 0;
       const efficiency = pathLength > 0 ? (s.correct_connections / pathLength) * 100 : 0;
       return sum + efficiency;
@@ -220,7 +221,8 @@ export const AnalyticsDashboard: React.FC = () => {
 
   // Learning Journey Timeline Data (last 10 sessions)
   const learningJourneyData = sessions.slice(-10).reverse().map((session, index) => {
-    const path = session.decision_path ? JSON.parse(session.decision_path as any) : [];
+    const path = Array.isArray(session.decision_path) ? session.decision_path : 
+                 (typeof session.decision_path === 'string' ? JSON.parse(session.decision_path) : []);
     const pathLength = Array.isArray(path) ? path.length : 0;
     const efficiency = pathLength > 0 ? (session.correct_connections / pathLength) * 100 : 0;
     
