@@ -5,19 +5,20 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   LineChart, Line, Area, AreaChart, PieChart, Pie, Cell
 } from 'recharts';
 import { 
   Brain, TrendingUp, Clock, Target, Award, Calendar,
-  ChevronRight, Lightbulb, Activity, Users, X, Zap, CheckCircle, XCircle, ChevronDown
+  ChevronRight, Lightbulb, Activity, Users, X, Zap, CheckCircle, XCircle, ChevronDown, Info
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface GameSession {
   id: string;
@@ -416,7 +417,6 @@ export const AnalyticsDashboard: React.FC = () => {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="skills">Critical Thinking Profile</TabsTrigger>
           <TabsTrigger value="journey">Learning Journey</TabsTrigger>
-          <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
           <TabsTrigger value="sessions">Games</TabsTrigger>
           <TabsTrigger value="reflections">Reflections</TabsTrigger>
           <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
@@ -438,7 +438,7 @@ export const AnalyticsDashboard: React.FC = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="session" />
                     <YAxis domain={[0, 100]} />
-                    <Tooltip formatter={(value, name) => [`${Math.round(value as number)}%`, name]} />
+                    <RechartsTooltip formatter={(value, name) => [`${Math.round(value as number)}%`, name]} />
                     <Area type="monotone" dataKey="completion_score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} name="Completion Score" />
                     <Area type="monotone" dataKey="accuracy" stroke="hsl(var(--secondary))" fill="hsl(var(--secondary))" fillOpacity={0.2} name="Accuracy" />
                   </AreaChart>
@@ -475,66 +475,308 @@ export const AnalyticsDashboard: React.FC = () => {
           </div>
         </TabsContent>
 
+        <TabsContent value="skills" className="space-y-4">
+          <TooltipProvider>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Radar Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="w-5 h-5" />
+                    Critical Thinking Skills Radar
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Visual representation of your cognitive strengths across 5 dimensions of critical thinking</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {skillData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <RadarChart data={skillData}>
+                        <PolarGrid />
+                        <PolarAngleAxis dataKey="skill" tick={{ fontSize: 12 }} />
+                        <PolarRadiusAxis domain={[0, 100]} tick={false} />
+                        <Radar name="Score" dataKey="score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
+                        <RechartsTooltip formatter={(value) => [`${Math.round(value as number)}%`, 'Score']} />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-8">Complete some games to see your skills profile</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Skills Breakdown */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    Detailed Breakdown
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Each skill is calculated from your game performance using specific behavioral indicators</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {skillData.map((skill) => (
+                      <div key={skill.skill} className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">{skill.skill}</span>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="w-3 h-3 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="max-w-xs">{skill.description}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <span className="text-sm text-muted-foreground">{Math.round(skill.score)}%</span>
+                        </div>
+                        <Progress value={skill.score} className="h-2" />
+                      </div>
+                    ))}
+                    {skillData.length === 0 && (
+                      <p className="text-center text-muted-foreground py-8">No skills data available yet</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TooltipProvider>
+        </TabsContent>
 
         <TabsContent value="journey" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                Learning Journey Timeline
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={learningJourneyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="session" />
-                  <YAxis domain={[0, 100]} />
-                  <Tooltip formatter={(value, name) => [`${Math.round(value as number)}%`, name]} />
-                  <Line type="monotone" dataKey="patternRecognition" stroke="#8884d8" name="Pattern Recognition" />
-                  <Line type="monotone" dataKey="strategicReasoning" stroke="#82ca9d" name="Strategic Reasoning" />
-                  <Line type="monotone" dataKey="metacognition" stroke="#ffc658" name="Metacognition" />
-                  <Line type="monotone" dataKey="cognitiveEfficiency" stroke="#ff7300" name="Cognitive Efficiency" />
-                  <Line type="monotone" dataKey="errorRecovery" stroke="#8dd1e1" name="Error Recovery" />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+          <TooltipProvider>
+            <div className="space-y-6">
+              {/* Primary Timeline Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    Learning Journey Timeline
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Track how your critical thinking skills evolve over your last 10 game sessions</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <LineChart data={learningJourneyData} margin={{ left: 20, right: 20, top: 5, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="session" 
+                        tick={{ fontSize: 12 }}
+                        interval="preserveStartEnd"
+                      />
+                      <YAxis 
+                        domain={[0, 100]} 
+                        tick={{ fontSize: 12 }}
+                        width={60}
+                        label={{ value: 'Score (%)', angle: -90, position: 'insideLeft' }}
+                      />
+                      <RechartsTooltip formatter={(value, name) => [`${Math.round(value as number)}%`, name]} />
+                      <Line type="monotone" dataKey="patternRecognition" stroke="#8884d8" name="Pattern Recognition" strokeWidth={2} />
+                      <Line type="monotone" dataKey="strategicReasoning" stroke="#82ca9d" name="Strategic Reasoning" strokeWidth={2} />
+                      <Line type="monotone" dataKey="metacognition" stroke="#ffc658" name="Metacognition" strokeWidth={2} />
+                      <Line type="monotone" dataKey="cognitiveEfficiency" stroke="#ff7300" name="Cognitive Efficiency" strokeWidth={2} />
+                      <Line type="monotone" dataKey="errorRecovery" stroke="#8dd1e1" name="Error Recovery" strokeWidth={2} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Additional Analytics Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Performance Heatmap */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Activity className="w-5 h-5" />
+                      Performance Intensity
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Shows the distribution of your performance scores across recent sessions</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={250}>
+                      <BarChart data={gameProgressData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="session" tick={{ fontSize: 10 }} />
+                        <YAxis tick={{ fontSize: 12 }} width={40} />
+                        <RechartsTooltip formatter={(value, name) => [`${Math.round(value as number)}%`, name]} />
+                        <Bar dataKey="completion_score" fill="hsl(var(--primary))" name="Completion Score" />
+                        <Bar dataKey="accuracy" fill="hsl(var(--secondary))" name="Accuracy" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Session Summary Stats */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Target className="w-5 h-5" />
+                      Journey Insights
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Key insights from your learning journey progression</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {criticalThinkingMetrics && (
+                        <>
+                          <div className="p-3 bg-muted/50 rounded-lg">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium">Strongest Skill</span>
+                              <Badge variant="default">
+                                {Object.entries(criticalThinkingMetrics)
+                                  .reduce((a, b) => criticalThinkingMetrics[a[0]] > criticalThinkingMetrics[b[0]] ? a : b)[0]
+                                  .replace(/([A-Z])/g, ' $1').trim()}
+                              </Badge>
+                            </div>
+                          </div>
+                          
+                          <div className="p-3 bg-muted/50 rounded-lg">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium">Improvement Area</span>
+                              <Badge variant="outline">
+                                {Object.entries(criticalThinkingMetrics)
+                                  .reduce((a, b) => criticalThinkingMetrics[a[0]] < criticalThinkingMetrics[b[0]] ? a : b)[0]
+                                  .replace(/([A-Z])/g, ' $1').trim()}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          <div className="p-3 bg-muted/50 rounded-lg">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium">Avg. Session Duration</span>
+                              <span className="font-medium">
+                                {sessions.length > 0 ? 
+                                  `${Math.round(sessions.reduce((sum, s) => sum + s.time_spent_seconds, 0) / sessions.length / 60)}min` : 
+                                  'N/A'
+                                }
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="p-3 bg-muted/50 rounded-lg">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium">Learning Consistency</span>
+                              <Badge variant={sessions.length >= 5 ? "default" : "secondary"}>
+                                {sessions.length >= 10 ? "Excellent" : sessions.length >= 5 ? "Good" : "Building"}
+                              </Badge>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Time Investment Analysis */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="w-5 h-5" />
+                      Time Investment
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Analysis of how you invest time in learning activities</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={250}>
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Games', value: totalTime, fill: 'hsl(var(--primary))' },
+                            { name: 'Reflections', value: totalReflections * 300, fill: 'hsl(var(--secondary))' }, // Estimate 5min per reflection
+                            { name: 'Quizzes', value: totalQuizzes * 120, fill: 'hsl(var(--accent))' } // Estimate 2min per quiz
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        />
+                        <RechartsTooltip formatter={(value) => [`${Math.round(value as number / 60)}min`, 'Time']} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Metric Explanations */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Brain className="w-5 h-5" />
+                      How Metrics Are Calculated
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3 text-sm">
+                      <div className="p-2 border rounded">
+                        <div className="font-medium text-primary">Pattern Recognition</div>
+                        <div className="text-muted-foreground">Correct connections ÷ total connections</div>
+                      </div>
+                      <div className="p-2 border rounded">
+                        <div className="font-medium text-secondary">Strategic Reasoning</div>
+                        <div className="text-muted-foreground">Decision path efficiency analysis</div>
+                      </div>
+                      <div className="p-2 border rounded">
+                        <div className="font-medium text-accent">Metacognition</div>
+                        <div className="text-muted-foreground">Optimal hint usage patterns</div>
+                      </div>
+                      <div className="p-2 border rounded">
+                        <div className="font-medium text-orange-500">Cognitive Efficiency</div>
+                        <div className="text-muted-foreground">Time per correct connection</div>
+                      </div>
+                      <div className="p-2 border rounded">
+                        <div className="font-medium text-blue-500">Error Recovery</div>
+                        <div className="text-muted-foreground">Adaptability after mistakes</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TooltipProvider>
         </TabsContent>
 
-        <TabsContent value="recommendations" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lightbulb className="w-5 h-5" />
-                Targeted Recommendations
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recommendations.length > 0 ? (
-                  recommendations.map((rec, index) => (
-                    <div key={index} className="p-4 border rounded-lg">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold">{rec.area}</h4>
-                        <Badge variant={rec.priority === 'High' ? 'destructive' : 'secondary'}>
-                          {rec.priority} Priority
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8">
-                    <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Excellent Performance!</h3>
-                    <p className="text-muted-foreground">You're demonstrating strong critical thinking skills across all areas. Keep up the great work!</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="sessions" className="space-y-4">
           <Card>
