@@ -232,7 +232,10 @@ export function SessionGameView() {
           title: `${game.templateName}: Session ${selectedSession.session_number}, Lecture ${lecture.lecture_number}`,
           description: `Enhanced ${game.templateName.toLowerCase()} game targeting ${game.heuristicTargets.join(', ')}`,
           instructions: game.instructions,
-          game_data: game.gameData,
+          game_data: {
+            ...game.gameData,
+            scenarioDescription: game.scenarioDescription || ''
+          },
           hints: game.hints,
           game_template_id: game.templateId,
           order_index: index,

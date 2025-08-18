@@ -157,6 +157,21 @@ export function LectureGameViewer({ sessionNumber, lectureNumber }: LectureGameV
                 </div>
               </Card>
 
+              {/* Scenario Card */}
+              {currentGame.game_data?.scenarioDescription && (
+                <Card className="p-6 space-y-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
+                  <h3 className="font-semibold flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                    <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                      <div className="w-2 h-2 rounded-full bg-white"></div>
+                    </div>
+                    Real-World Scenario
+                  </h3>
+                  <div className="prose prose-sm dark:prose-invert">
+                    <p className="text-blue-800 dark:text-blue-200">{currentGame.game_data.scenarioDescription}</p>
+                  </div>
+                </Card>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="p-4">
                   <div className="flex items-center gap-2 mb-2">

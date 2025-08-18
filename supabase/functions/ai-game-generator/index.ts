@@ -302,62 +302,70 @@ async function generateGameSuite(supabase: any, openAIApiKey: string, params: an
   const orchestratedPrompt = `
 **CRITICAL: Your response must be ONLY a valid JSON object with no additional text, explanations, or markdown formatting.**
 
+You are an expert game designer creating learning experiences for software engineers in their first 0-7 years of professional experience. Generate a coordinated suite of three CONNECTION-BASED puzzle games that help junior developers practice critical thinking through REAL-WORLD SOFTWARE ENGINEERING scenarios.
+
+**TARGET AUDIENCE:** Junior software engineers (0-7 years experience) working in tech companies, startups, or product teams.
+
+**CONTEXT:** Create scenarios that junior developers actually face - debugging production issues, planning feature releases, managing technical debt, code reviews, team collaboration, sprint planning, incident response, architecture decisions, etc.
+
 Generate a coordinated suite of three CONNECTION-BASED puzzle games for this lecture content:
 
 ${lectureContent}${contextSection}
 
 **CRITICAL DECISION PATH REQUIREMENTS:**
-Create complex hierarchical decision scenarios with:
+Create complex software engineering decision scenarios with:
 - At least 18-20 interconnected nodes
-- Layers: Scenario → Context/Stakes → Resources → Decisions → Consequences → Stakeholder Impacts → Final Outcomes  
-- Multiple resource constraints (time, budget, personnel, reputation)
-- Competing objectives that create real trade-offs
+- Layers: Engineering Scenario → Technical Context/Stakes → Resources → Engineering Decisions → Code/System Consequences → Team/User Impacts → Project Outcomes  
+- Multiple resource constraints (sprint time, technical debt, team capacity, user impact, system performance)
+- Competing objectives that create real trade-offs (speed vs quality, features vs stability, etc.)
 - At least 12 required connections for optimal solution
-- Progressive complexity where early decisions affect later options
+- Progressive complexity where early technical decisions affect later implementation options
 
 **PROBLEM ANALYSIS WEB REQUIREMENTS:**
-Create systematic problem breakdown with:
-- Central problem with 4+ observable symptoms
-- 4+ root causes that explain the symptoms
-- 3+ impacts/consequences of the problem
-- 4+ solution strategies targeting root causes
+Create systematic software problem breakdown with:
+- Central technical problem with 4+ observable symptoms (bugs, performance issues, user complaints, system failures)
+- 4+ root causes that explain the symptoms (code issues, architecture problems, process gaps, team dynamics)
+- 3+ impacts/consequences of the problem (user experience, business metrics, team morale)
+- 4+ solution strategies targeting root causes (code fixes, architecture changes, process improvements, team training)
 - 2+ expected outcomes from implementing solutions
-- Clear causal relationships between all elements
+- Clear causal relationships between all technical elements
 
 **SYSTEM MAPPING REQUIREMENTS:**
-Create interconnected system analysis with:
-- Central system core with 3+ inputs, 4+ processes, 3+ outputs
-- 2+ feedback loops connecting outputs back to processes
-- 3+ constraints affecting the system
-- 2+ stakeholder groups
-- 2+ system outcomes
+Create interconnected software system analysis with:
+- Central system core with 3+ inputs (user requests, data feeds, external APIs), 4+ processes (authentication, business logic, data processing, notifications), 3+ outputs (user responses, database updates, external integrations)
+- 2+ feedback loops connecting outputs back to processes (monitoring, user feedback, performance metrics)
+- 3+ constraints affecting the system (infrastructure limits, compliance requirements, performance SLAs)
+- 2+ stakeholder groups (users, product team, operations team, business stakeholders)
+- 2+ system outcomes (user satisfaction, business value, system reliability)
 - Clear flow and influence relationships
+
+**CRITICAL: Include scenario_description field for each game that provides a clear, context-rich overview of the real-world software engineering situation.**
 
 **Response Format (JSON ONLY):**
 {
   "critical_decision_path": {
-    "title": "Complex strategic scenario title",
-    "description": "Multi-layered decision scenario with resource constraints",
-    "scenario_description": "Detailed scenario requiring strategic thinking",
-    "context_factor_1": "First contextual factor that influences decisions",
-    "context_factor_2": "Second contextual factor that influences decisions", 
-    "stakes_description": "What's at stake in this scenario",
-    "resource_constraint_1": "Time limitation (specific constraint)",
-    "resource_constraint_2": "Budget limitation (specific constraint)", 
-    "resource_constraint_3": "Personnel limitation (specific constraint)",
-    "resource_constraint_4": "Reputation/trust limitation (specific constraint)",
-    "primary_decision_1": "First major decision point with trade-offs",
-    "primary_decision_2": "Second major decision point with trade-offs",
-    "consequence_1a": "Consequence of first decision path A",
-    "consequence_1b": "Consequence of first decision path B", 
-    "consequence_2a": "Consequence of second decision path A",
-    "consequence_2b": "Consequence of second decision path B",
-    "stakeholder_impact_1": "Impact on first stakeholder group",
-    "stakeholder_impact_2": "Impact on second stakeholder group",
-    "stakeholder_impact_3": "Impact on third stakeholder group", 
-    "stakeholder_impact_4": "Impact on fourth stakeholder group",
-    "optimal_outcome": "Best possible outcome considering all factors",
-    "suboptimal_outcome": "Outcome when key connections are missed",
+    "title": "Complex software engineering decision scenario title",
+    "description": "Multi-layered technical decision scenario with resource constraints",
+    "scenario_description": "Detailed real-world software engineering scenario description that sets the context - describe the company, product, technical challenge, and why this decision matters for a junior developer learning experience",
+    "context_factor_1": "First technical/business contextual factor",
+    "context_factor_2": "Second technical/business contextual factor",
+    "stakes_description": "What is at stake technically and business-wise",
+    "resource_constraint_1": "Sprint time limitation (specific constraint)",
+    "resource_constraint_2": "Technical debt/infrastructure limitation", 
+    "resource_constraint_3": "Team capacity/expertise limitation",
+    "resource_constraint_4": "User impact/system performance limitation",
+    "primary_decision_1": "First major technical decision point with trade-offs",
+    "primary_decision_2": "Second major technical decision point with trade-offs",
+    "consequence_1a": "Technical consequence of first decision path A",
+    "consequence_1b": "Technical consequence of first decision path B", 
+    "consequence_2a": "Technical consequence of second decision path A",
+    "consequence_2b": "Technical consequence of second decision path B",
+    "stakeholder_impact_1": "Impact on users/customer experience",
+    "stakeholder_impact_2": "Impact on development team",
+    "stakeholder_impact_3": "Impact on product/business team", 
+    "stakeholder_impact_4": "Impact on operations/infrastructure team",
+    "optimal_outcome": "Best technical and business outcome",
+    "suboptimal_outcome": "Outcome when key technical connections are missed",
     "instructor_solution": [
       {"source": "scenario_description", "target": "context_factor_1", "relationship": "requires understanding", "points": 5},
       {"source": "scenario_description", "target": "stakes_description", "relationship": "establishes", "points": 5},
@@ -394,26 +402,27 @@ Create interconnected system analysis with:
     }
   },
   "problem_analysis_web": {
-    "title": "Problem Analysis Web title",
-    "description": "Systematic breakdown of complex problem",
-    "central_problem": "Core problem statement requiring analysis",
-    "symptom_1": "First observable symptom of the problem",
-    "symptom_2": "Second observable symptom",
-    "symptom_3": "Third observable symptom", 
-    "symptom_4": "Fourth observable symptom",
-    "root_cause_1": "First underlying root cause",
-    "root_cause_2": "Second underlying root cause",
-    "root_cause_3": "Third underlying root cause",
-    "root_cause_4": "Fourth underlying root cause",
-    "impact_1": "First consequence/impact",
-    "impact_2": "Second consequence/impact",
-    "impact_3": "Third consequence/impact",
-    "solution_1": "First solution strategy",
-    "solution_2": "Second solution strategy", 
-    "solution_3": "Third solution strategy",
-    "solution_4": "Fourth solution strategy",
-    "expected_outcome_1": "First expected positive outcome",
-    "expected_outcome_2": "Second expected positive outcome",
+    "title": "Software Engineering Problem Analysis",
+    "description": "Systematic breakdown of complex technical problem",
+    "scenario_description": "Detailed real-world software engineering problem scenario - describe the system, the problem manifestation, and why understanding this problem breakdown is critical for junior developers",
+    "central_problem": "Core technical problem statement requiring analysis",
+    "symptom_1": "First observable technical symptom",
+    "symptom_2": "Second observable technical symptom",
+    "symptom_3": "Third observable technical symptom", 
+    "symptom_4": "Fourth observable technical symptom",
+    "root_cause_1": "First underlying technical root cause",
+    "root_cause_2": "Second underlying technical root cause",
+    "root_cause_3": "Third underlying technical root cause",
+    "root_cause_4": "Fourth underlying technical root cause",
+    "impact_1": "First technical/business consequence",
+    "impact_2": "Second technical/business consequence",
+    "impact_3": "Third technical/business consequence",
+    "solution_1": "First technical solution strategy",
+    "solution_2": "Second technical solution strategy", 
+    "solution_3": "Third technical solution strategy",
+    "solution_4": "Fourth technical solution strategy",
+    "expected_outcome_1": "First expected positive technical outcome",
+    "expected_outcome_2": "Second expected positive business outcome",
     "instructor_solution": [
       {"source": "problem_1", "target": "symptom_1", "relationship": "manifests as", "points": 5},
       {"source": "problem_1", "target": "symptom_2", "relationship": "manifests as", "points": 5},
@@ -455,27 +464,28 @@ Create interconnected system analysis with:
     }
   },
   "system_mapping": {
-    "title": "System Mapping title",
-    "description": "Analysis of system components and interactions",
-    "system_core": "Central system being analyzed",
-    "input_1": "First system input",
+    "title": "Software System Analysis",
+    "description": "Analysis of software system components and interactions",
+    "scenario_description": "Detailed real-world software system scenario - describe the product, the system architecture challenge, and why system thinking is important for junior developers in this context",
+    "system_core": "Central software system being analyzed",
+    "input_1": "First system input (APIs, user requests, data)",
     "input_2": "Second system input", 
     "input_3": "Third system input",
-    "process_1": "First system process",
+    "process_1": "First system process (authentication, validation, etc.)",
     "process_2": "Second system process",
     "process_3": "Third system process",
     "process_4": "Fourth system process",
-    "output_1": "First system output",
+    "output_1": "First system output (responses, data, notifications)",
     "output_2": "Second system output",
     "output_3": "Third system output",
-    "feedback_1": "First feedback mechanism",
+    "feedback_1": "First feedback mechanism (monitoring, metrics)",
     "feedback_2": "Second feedback mechanism",
-    "constraint_1": "First system constraint",
+    "constraint_1": "First system constraint (performance, compliance)",
     "constraint_2": "Second system constraint",
     "constraint_3": "Third system constraint",
-    "stakeholder_1": "First stakeholder group",
+    "stakeholder_1": "First stakeholder group (users, developers)",
     "stakeholder_2": "Second stakeholder group",
-    "system_outcome_1": "First system outcome",
+    "system_outcome_1": "First system outcome (user satisfaction, performance)",
     "system_outcome_2": "Second system outcome",
     "instructor_solution": [
       {"source": "input_1", "target": "process_1", "relationship": "feeds into", "points": 6},
@@ -523,6 +533,8 @@ Create interconnected system analysis with:
     }
   }
 }
+
+Focus on real scenarios junior developers encounter: production incidents, feature planning, code reviews, technical debt decisions, system design, debugging complex issues, sprint planning, team collaboration challenges, etc.
 `;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -848,6 +860,7 @@ Return JSON format:
       templateName: template.name,
       gameData,
       generatedContent: contentForTemplate,
+      scenarioDescription: contentForTemplate.scenario_description || '',
       instructions: suiteInstructions.individual_instructions?.[templateKey] || `Play this ${template.name} game to enhance your thinking skills.`,
       hints: suiteInstructions.individual_hints?.[templateKey] || template.mechanics?.hints || [],
       instructorSolution: validInstructorSolution,
