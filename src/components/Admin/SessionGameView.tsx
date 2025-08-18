@@ -29,6 +29,7 @@ interface Lecture {
   lecture_number: number;
   title: string;
   session_id: string;
+  content?: string;
 }
 
 interface GameTemplate {
@@ -126,7 +127,7 @@ export function SessionGameView() {
     try {
       const { data, error } = await supabase
         .from('lectures_dynamic')
-        .select('id, lecture_number, title, session_id')
+        .select('id, lecture_number, title, session_id, content')
         .eq('session_id', sessionId)
         .order('lecture_number');
 
@@ -214,13 +215,16 @@ export function SessionGameView() {
               body: {
                 sessionNumber: selectedSession.session_number,
                 lectureNumber: lecture.lecture_number,
-                lectureTitle: lecture.title,
-                sessionTheme: selectedSession.theme,
-                templateId: template.id
+                lectureContent: lecture.content || '',
+                templateId: template.id,
+                gameType: template.category
               }
             });
 
             if (gameError) throw gameError;
+
+            const computedTitle = `${template.name}: Session ${selectedSession.session_number}, Lecture ${lecture.lecture_number}`;
+            const computedDescription = `Interactive ${template.category} game enhancing ${(gameData?.heuristicTargets || []).join(', ') || 'critical thinking'}`;
 
             // Save game to database
             const { data: savedGame, error: saveError } = await supabase
@@ -229,8 +233,8 @@ export function SessionGameView() {
                 session_number: selectedSession.session_number,
                 lecture_number: lecture.lecture_number,
                 game_template_id: template.id,
-                title: gameData.title,
-                description: gameData.description,
+                title: computedTitle,
+                description: computedDescription,
                 instructions: gameData.instructions,
                 game_data: gameData.gameData,
                 hints: gameData.hints || [],
@@ -251,7 +255,7 @@ export function SessionGameView() {
               updated[lectureIndex].games[templateIndex] = {
                 ...updated[lectureIndex].games[templateIndex],
                 status: 'completed',
-                gameData: gameData,
+                gameData: { ...gameData, title: computedTitle, description: computedDescription },
                 gameId: savedGame.id
               };
               return updated;
