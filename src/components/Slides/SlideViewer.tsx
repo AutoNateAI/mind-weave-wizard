@@ -95,23 +95,44 @@ export function SlideViewer({ sessionNumber, lectureNumber }: SlideViewerProps) 
   };
 
   const formatTextContent = (lines: string[]) => {
-    return lines.map((line, index) => {
+    const elements: JSX.Element[] = [];
+    let bulletItems: string[] = [];
+    
+    const flushBulletItems = () => {
+      if (bulletItems.length > 0) {
+        elements.push(
+          <ul key={`bullets-${elements.length}`} className="space-y-4 mb-6">
+            {bulletItems.map((item, idx) => (
+              <li key={idx} className="flex items-start gap-3 text-foreground leading-relaxed">
+                <span className="text-primary font-bold text-lg mt-0.5 flex-shrink-0">•</span>
+                <span className="text-base">{item}</span>
+              </li>
+            ))}
+          </ul>
+        );
+        bulletItems = [];
+      }
+    };
+
+    lines.forEach((line, index) => {
       if (line.trim().startsWith('•') || line.trim().startsWith('-')) {
-        return (
-          <li key={index} className="ml-4 text-foreground/90">
-            {line.replace(/^[•-]\s*/, '')}
-          </li>
-        );
+        bulletItems.push(line.replace(/^[•-]\s*/, ''));
+      } else {
+        flushBulletItems();
+        if (line.trim()) {
+          elements.push(
+            <p key={index} className="text-foreground leading-relaxed mb-4 text-base">
+              {line}
+            </p>
+          );
+        } else {
+          elements.push(<div key={index} className="h-4" />);
+        }
       }
-      if (line.trim()) {
-        return (
-          <p key={index} className="text-foreground/90 leading-relaxed">
-            {line}
-          </p>
-        );
-      }
-      return <br key={index} />;
     });
+    
+    flushBulletItems(); // Don't forget remaining bullets
+    return elements;
   };
 
   const getSlideIcon = (slideType: string | null) => {
