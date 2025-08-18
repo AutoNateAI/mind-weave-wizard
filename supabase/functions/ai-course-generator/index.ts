@@ -89,27 +89,44 @@ serve(async (req) => {
 
 // Enhanced Context Function
 async function enhanceContext(payload: any) {
-  const { contextualInfo, courseId } = payload;
-  
+  const { contextualInfo, courseId, level, courseTitle, sessionTitle, lectureTitle } = payload;
+
   if (!contextualInfo) {
     throw new Error('Contextual information is required for enhancement');
   }
 
-  const enhancementPrompt = `
-You are an AI course content strategist. Your task is to take basic contextual information and enhance it with deeper insights for course content generation.
+  // Use prompt library if available
+  const promptFromLibrary = await getPromptTemplate('context_enhancement_prompt', {
+    user_context: contextualInfo,
+    level: level || 'course',
+    course_title: courseTitle || '',
+    session_title: sessionTitle || '',
+    lecture_title: lectureTitle || ''
+  });
 
-Original Context: "${contextualInfo}"
+  const enhancementPrompt = promptFromLibrary || `
+You are an AI course content strategist. Take the user's base context and deepen it with specific, actionable guidance.
 
-Please enhance this context by:
-1. Expanding on target audience characteristics and learning preferences
-2. Suggesting specific pedagogical approaches that would work well
-3. Identifying key learning objectives and outcomes
-4. Recommending tone, style, and engagement strategies
-5. Noting any industry-specific examples or case studies that would be relevant
-6. Suggesting how to make the content more actionable and practical
+SCOPE:
+- Level: ${level || 'course'}
+- Course Title: ${courseTitle || ''}
+- Session Title: ${sessionTitle || ''}
+- Lecture Title: ${lectureTitle || ''}
 
-Return an enhanced, detailed context that an AI content generator can use to create highly targeted and effective educational content. Be specific and actionable.
-`;
+Original Context:
+"""
+${contextualInfo}
+"""
+
+Enhance by:
+1) Profiling the target audience (background, motivations, prior knowledge, misconceptions)
+2) Suggesting pedagogy and delivery style aligned to the audience
+3) Listing concrete learning objectives and outcomes
+4) Recommending tone/voice and engagement strategies
+5) Proposing domain-relevant examples/case studies and visuals
+6) Providing constraints/inclusions to guide consistent content generation
+
+Return a single, well-structured paragraph block suitable as a context seed for downstream generation.`;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -118,9 +135,9 @@ Return an enhanced, detailed context that an AI content generator can use to cre
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4.1-2025-04-14',
+      model: 'gpt-4o',
       messages: [
-        { role: 'system', content: 'You are an expert educational content strategist who creates detailed, actionable context for course development.' },
+        { role: 'system', content: 'You are an expert educational content strategist that crafts precise, actionable context seeds.' },
         { role: 'user', content: enhancementPrompt }
       ],
       max_tokens: 800,

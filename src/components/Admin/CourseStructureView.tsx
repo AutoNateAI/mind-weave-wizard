@@ -762,6 +762,10 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
           }}
           title={contextModalData?.title || 'Generate Content'}
           courseId={courseId}
+          contextType={contextModalData?.type}
+          courseTitle={courseData?.title}
+          sessionTitle={contextModalData?.type === 'single' ? contextModalData.data?.session?.title : contextModalData?.type === 'session' ? contextModalData.data?.title : undefined}
+          lectureTitle={contextModalData?.type === 'single' ? contextModalData.data?.lecture?.title : undefined}
         />
 
         {/* Content Protection Modal */}

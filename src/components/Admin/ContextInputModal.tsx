@@ -13,6 +13,11 @@ interface ContextInputModalProps {
   onConfirm: (contextualInfo: string) => void;
   title: string;
   courseId?: string;
+  // Scope and titles to properly enhance context
+  contextType?: 'single' | 'session' | 'all';
+  courseTitle?: string;
+  sessionTitle?: string;
+  lectureTitle?: string;
 }
 
 export function ContextInputModal({ 
@@ -20,7 +25,11 @@ export function ContextInputModal({
   onClose, 
   onConfirm, 
   title,
-  courseId 
+  courseId,
+  contextType,
+  courseTitle,
+  sessionTitle,
+  lectureTitle
 }: ContextInputModalProps) {
   const [contextualInfo, setContextualInfo] = useState("");
   const [isEnhancing, setIsEnhancing] = useState(false);
@@ -34,12 +43,17 @@ export function ContextInputModal({
 
     setIsEnhancing(true);
     try {
+      const level = contextType === 'all' ? 'course' : contextType === 'session' ? 'session' : contextType === 'single' ? 'lecture' : undefined;
       const response = await supabase.functions.invoke('ai-course-generator', {
         body: {
           action: 'enhance_context',
           payload: {
             contextualInfo,
-            courseId
+            courseId,
+            level,
+            courseTitle,
+            sessionTitle,
+            lectureTitle
           }
         }
       });
