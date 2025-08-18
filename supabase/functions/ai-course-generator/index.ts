@@ -437,7 +437,7 @@ SPEAKER NOTES:
 - Provide 3-5 sentences with rationale, transitions, and a quick debrief question.
 
 SLIDE TYPES:
-- Choose from: "intro", "content", "example", "summary", "concept", "application".
+- Choose from: "intro", "content", "example", "summary".
 
 Return ONLY this JSON structure:
 {
@@ -527,12 +527,16 @@ Return ONLY this JSON structure:
     
     console.log(`🔍 Slide ${index + 1} validation:`, { slideNumber, title, content_length: content.length });
     
+    const allowedTypes = ['intro', 'content', 'example', 'summary'];
+    const rawType = (slide.slide_type || 'content').toLowerCase();
+    const normalizedType = allowedTypes.includes(rawType) ? rawType : 'content';
+    
     return {
       lecture_id: lectureId,
       slide_number: slideNumber,
       title: title,
       content: content, // Guaranteed not null with fallback
-      slide_type: slide.slide_type || 'content',
+      slide_type: normalizedType,
       svg_animation: slide.svg_animation || null,
       speaker_notes: slide.speaker_notes || null
     };
@@ -672,14 +676,44 @@ Return JSON format:
   // Prepare bulk inserts with validation
   console.log('💾 Preparing database inserts...');
   
-  const mcqInserts = (assessments.multiple_choice || []).map((mcq, index) => {
+  // Sanitize, bound counts, and de-duplicate to keep output stable and high quality
+  const normalizeText = (s: string) => (s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const uniqBy = <T,>(arr: T[], keyFn: (t: T) => string) => {
+    const seen = new Set<string>();
+    const out: T[] = [];
+    for (const item of arr || []) {
+      const k = keyFn(item);
+      if (!seen.has(k)) { seen.add(k); out.push(item); }
+    }
+    return out;
+  };
+
+  const rawMcqs = Array.isArray(assessments.multiple_choice) ? assessments.multiple_choice : [];
+  const mcqsBounded = rawMcqs.slice(0, 5); // cap at 5
+  const mcqsFinal = mcqsBounded
+    .map((q: any) => ({
+      ...q,
+      correct_option: String(q.correct_option || 'A').toUpperCase()
+    }))
+    .filter((q: any) => ['A','B','C','D'].includes(q.correct_option))
+    .slice(0, Math.max(3, Math.min(5, mcqsBounded.length))); // ensure 3-5
+
+  const rawRefs = Array.isArray(assessments.reflection_questions) ? assessments.reflection_questions : [];
+  const refsBounded = rawRefs.slice(0, 3); // cap at 3
+  const refsFinal = refsBounded.map((r: any, idx: number) => ({ ...r, question_number: idx + 1 }));
+
+  const rawFcs = Array.isArray(assessments.flashcards) ? assessments.flashcards : [];
+  const fcsUnique = uniqBy(rawFcs, (fc: any) => `${normalizeText(fc.title)}|${normalizeText(fc.content)}`);
+  const fcsFinal = fcsUnique.slice(0, 8); // cap at 8
+  
+  const mcqInserts = mcqsFinal.map((mcq, index) => {
     // Validate and provide fallbacks for required fields
     const questionText = mcq.question_text || `Multiple choice question ${index + 1} for ${lectureTitle}`;
     const optionA = mcq.option_a || 'Option A';
     const optionB = mcq.option_b || 'Option B';
     const optionC = mcq.option_c || 'Option C';
     const optionD = mcq.option_d || 'Option D';
-    const correctOption = mcq.correct_option || 'a';
+    const correctOption = (mcq.correct_option || 'A').toUpperCase();
     
     console.log(`🔍 MCQ ${index + 1} validation:`, { questionText, optionA, optionB, optionC, optionD, correctOption });
     
@@ -694,8 +728,8 @@ Return JSON format:
       correct_option: correctOption
     };
   });
-
-  const reflectionInserts = (assessments.reflection_questions || []).map((rq, index) => {
+  
+  const reflectionInserts = refsFinal.map((rq, index) => {
     const questionText = rq.question_text || `Reflection question ${index + 1} for ${lectureTitle}`;
     const questionNumber = rq.question_number || (index + 1);
     
@@ -709,7 +743,7 @@ Return JSON format:
     };
   });
 
-  const flashcardInserts = (assessments.flashcards || []).map((fc, index) => {
+  const flashcardInserts = fcsFinal.map((fc, index) => {
     const title = fc.title || `Flashcard ${index + 1}`;
     const content = fc.content || `Content for flashcard about ${lectureTitle}`;
     
@@ -738,7 +772,11 @@ Return JSON format:
     console.log('📝 About to insert MCQ records:', mcqInserts.length);
     console.log('🔍 Sample MCQ insert:', JSON.stringify(mcqInserts[0], null, 2));
     insertPromises.push(
-      supabase.from('multiple_choice_questions').insert(mcqInserts).select()
+      supabase.from('multiple_choice_questions')
+        .delete()
+        .eq('session_number', sessionNumber)
+        .eq('lecture_number', lectureNumber)
+        .then(() => supabase.from('multiple_choice_questions').insert(mcqInserts).select())
         .then(result => {
           console.log('✅ MCQ insert result:', result.error ? 'ERROR' : 'SUCCESS', result.error || `${result.data?.length} records`);
           if (result.error) {
@@ -785,7 +823,11 @@ Return JSON format:
     console.log('📝 About to insert Flashcard records:', flashcardInserts.length);
     console.log('🔍 Sample Flashcard insert:', JSON.stringify(flashcardInserts[0], null, 2));
     insertPromises.push(
-      supabase.from('flashcards').insert(flashcardInserts).select()
+      supabase.from('flashcards')
+        .delete()
+        .eq('session_number', sessionNumber)
+        .eq('lecture_number', lectureNumber)
+        .then(() => supabase.from('flashcards').insert(flashcardInserts).select())
         .then(result => {
           console.log('✅ Flashcard insert result:', result.error ? 'ERROR' : 'SUCCESS', result.error || `${result.data?.length} records`);
           if (result.error) {
