@@ -365,7 +365,7 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
         .filter(line => line.length > 0)
         .join('. ');
 
-      contextPrompt = `Educational slide visualization: ${slideTitle}. ${textContent}. Focus on creating engaging animated cartoon-style educational content with visual metaphors, charts, or conceptual diagrams that enhance understanding.`;
+      contextPrompt = `Educational slide visualization: ${slideTitle}. ${textContent}. Focus on creating engaging animated cartoon-style educational content with visual metaphors, charts, or conceptual diagrams that enhance understanding. Do not add the specific text content into the image. Make the image more meme like so that it pushed the point and hits the students subconscious deeply. The should be based on the lecture content.`;
     }
 
     // Add to generating set and close modal immediately
