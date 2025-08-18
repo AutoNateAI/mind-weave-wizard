@@ -422,31 +422,33 @@ Please ensure all content is tailored to this specific context and audience.` : 
 STYLE INSTRUCTIONS:
 ${styleInstructions}` : '';
 
-  const prompt = promptTemplate || `Create engaging, blog-like slide content for a lecture titled "${lectureTitle}" with the session theme "${sessionTheme}".
+  const prompt = promptTemplate || `Create 6-8 instructional slides for a lecture titled "${lectureTitle}" with the session theme "${sessionTheme}".${contextualPrompt}${stylePrompt}
 
-This is part of the AutoNateAI: Thinking Wizard Course - a journey through graph theory and mental models.${contextualPrompt}${stylePrompt}
+Each slide must return JSON with fields: slide_number, title, content, slide_type, svg_animation, speaker_notes.
 
-Generate 6-10 slides with rich, substantial content that reads like engaging blog posts. Each slide should contain enough content that students can read and reflect on it later, almost like reading a chapter from a book.
+CONTENT RULES (CRITICAL):
+- For content, write 4-6 NEWLINE-SEPARATED bullets, each starting with "• ".
+- Each bullet must TEACH in imperative voice: guide an action, insight, or decision.
+- Avoid vague meta bullets like "Introduction to…", "Overview of…", "Set expectations…".
+- Include at least one of each on the slide deck overall: "Ask:" Socratic question, "Try:" micro-activity, and "Example:" concrete illustration. Distribute them across slides naturally.
+- Bullets should be 12-22 words, specific, and outcome-oriented. No filler.
 
-For each slide:
-- Title: Clear, engaging slide title that captures the essence
-- Content: Rich, blog-like content (300-500 words) formatted as flowing paragraphs, NOT bullet points. Write in a conversational yet informative tone with compelling narratives, real-world examples, and thought-provoking insights.
-- Slide Type: MUST be one of: "intro", "content", "example", "summary", "concept", "application"
-- SVG Animation: Describe a simple SVG animation concept that would enhance this slide
-- Speaker Notes: Additional talking points and context for the instructor
+SPEAKER NOTES:
+- Provide 3-5 sentences with rationale, transitions, and a quick debrief question.
 
-IMPORTANT: For the "content" field, write substantial paragraphs that flow naturally. Make it read like an engaging blog post or book chapter that students will want to read and re-read. Include stories, examples, and insights that make complex concepts accessible and memorable.
+SLIDE TYPES:
+- Choose from: "intro", "content", "example", "summary", "concept", "application".
 
-Return the response in this exact JSON format:
+Return ONLY this JSON structure:
 {
   "slides": [
     {
       "slide_number": 1,
       "title": "Slide Title",
-      "content": "Rich, engaging paragraph content that reads like a well-written blog post. Include compelling narratives, real-world examples, and thought-provoking insights that make the concept come alive for students...",
+      "content": "• Do this specific teaching action...\n• Ask: Socratic prompt...\n• Try: Micro-activity...",
       "slide_type": "content",
-      "svg_animation": "Description of animation concept",
-      "speaker_notes": "Detailed instructor notes"
+      "svg_animation": "Simple motion idea that supports the teaching point",
+      "speaker_notes": "Instructor guidance with transitions and debrief"
     }
   ]
 }`;
