@@ -427,7 +427,7 @@ ${styleInstructions}` : '';
 Each slide must return JSON with fields: slide_number, title, content, slide_type, svg_animation, speaker_notes.
 
 CONTENT RULES (CRITICAL):
-- For content, write 2-4 NEWLINE-SEPARATED bullets, each starting with "• ".
+- For content, write 5-7 NEWLINE-SEPARATED bullets, each starting with "• ".
 - Each bullet must be 2-4 full sentences that TEACH a specific sub-concept (not fragments).
 - Address the learner directly in second person ("you"), present tense.
 - Never instruct the teacher or describe teaching actions. Avoid verbs like "Frame", "Map out", "Compare", "Introduce".
