@@ -15,6 +15,7 @@ import {
   Loader2
 } from "lucide-react";
 import { toast } from "sonner";
+import { SlidePreview } from "./SlidePreview";
 
 interface Slide {
   id: string;
@@ -35,11 +36,20 @@ interface Session {
   theme: string;
 }
 
+interface Course {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string | null;
+}
+
 interface SessionSlideViewProps {
   selectedCourseId?: string;
 }
 
 export function SessionSlideView({ selectedCourseId }: SessionSlideViewProps) {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [allSlides, setAllSlides] = useState<Slide[]>([]);
@@ -56,8 +66,24 @@ export function SessionSlideView({ selectedCourseId }: SessionSlideViewProps) {
   const [customPrompt, setCustomPrompt] = useState('');
 
   useEffect(() => {
-    loadSessions();
+    loadCourses();
   }, []);
+
+  useEffect(() => {
+    if (selectedCourseId) {
+      const course = courses.find(c => c.id === selectedCourseId);
+      if (course) {
+        setSelectedCourse(course);
+        loadSessionsForCourse(selectedCourseId);
+      }
+    }
+  }, [selectedCourseId, courses]);
+
+  useEffect(() => {
+    if (selectedCourse && !selectedCourseId) {
+      loadSessionsForCourse(selectedCourse.id);
+    }
+  }, [selectedCourse, selectedCourseId]);
 
   useEffect(() => {
     if (selectedSession) {
@@ -65,10 +91,26 @@ export function SessionSlideView({ selectedCourseId }: SessionSlideViewProps) {
     }
   }, [selectedSession]);
 
-  const loadSessions = async () => {
+  const loadCourses = async () => {
+    const { data, error } = await supabase
+      .from('courses')
+      .select('id, title, description, status')
+      .order('title');
+
+    if (error) {
+      toast.error('Failed to load courses');
+      return;
+    }
+
+    setCourses(data || []);
+    setLoading(false);
+  };
+
+  const loadSessionsForCourse = async (courseId: string) => {
     const { data, error } = await supabase
       .from('sessions_dynamic')
       .select('session_number, title, theme')
+      .eq('course_id', courseId)
       .order('session_number');
 
     if (error) {
@@ -77,7 +119,6 @@ export function SessionSlideView({ selectedCourseId }: SessionSlideViewProps) {
     }
 
     setSessions(data || []);
-    setLoading(false);
   };
 
   const loadAllSlidesForSession = async () => {
@@ -283,36 +324,66 @@ export function SessionSlideView({ selectedCourseId }: SessionSlideViewProps) {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Session Selection */}
-      <Card className="p-6">
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium mb-2 block">Session</label>
-            <Select value={selectedSession?.session_number.toString()} onValueChange={(value) => {
-              const session = sessions.find(s => s.session_number === parseInt(value));
-              setSelectedSession(session || null);
-            }}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select session to view all slides" />
-              </SelectTrigger>
-              <SelectContent>
-                {sessions.map((session) => (
-                  <SelectItem key={session.session_number} value={session.session_number.toString()}>
-                    Session {session.session_number}: {session.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {selectedSession && (
-              <p className="text-sm text-muted-foreground mt-1">
-                {selectedSession.theme}
-              </p>
+    return (
+      <div className="space-y-6">
+        {/* Course and Session Selection */}
+        <Card className="p-6">
+          <div className="space-y-4">
+            {!selectedCourseId && (
+              <div>
+                <label className="text-sm font-medium mb-2 block">Course</label>
+                <Select value={selectedCourse?.id} onValueChange={(value) => {
+                  const course = courses.find(c => c.id === value);
+                  setSelectedCourse(course || null);
+                  setSelectedSession(null);
+                  setAllSlides([]);
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a course first" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {courses.map((course) => (
+                      <SelectItem key={course.id} value={course.id}>
+                        {course.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedCourse?.description && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {selectedCourse.description}
+                  </p>
+                )}
+              </div>
+            )}
+            
+            {(selectedCourse || selectedCourseId) && (
+              <div>
+                <label className="text-sm font-medium mb-2 block">Session</label>
+                <Select value={selectedSession?.session_number.toString()} onValueChange={(value) => {
+                  const session = sessions.find(s => s.session_number === parseInt(value));
+                  setSelectedSession(session || null);
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select session to view all slides" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sessions.map((session) => (
+                      <SelectItem key={session.session_number} value={session.session_number.toString()}>
+                        Session {session.session_number}: {session.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedSession && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {selectedSession.theme}
+                  </p>
+                )}
+              </div>
             )}
           </div>
-        </div>
-      </Card>
+        </Card>
 
       {selectedSession && allSlides.length > 0 && (
         <>
@@ -490,17 +561,15 @@ export function SessionSlideView({ selectedCourseId }: SessionSlideViewProps) {
 
           {/* Slide Preview Dialog */}
           <Dialog open={!!previewingSlide} onOpenChange={() => setPreviewingSlide(null)}>
-            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogContent className="max-w-6xl max-h-[90vh]">
               <DialogHeader>
                 <DialogTitle>
-                  Lecture {previewingSlide?.lecture_number}, Slide {previewingSlide?.slide_number}: {previewingSlide?.title}
+                  Preview: Lecture {previewingSlide?.lecture_number}, Slide {previewingSlide?.slide_number}: {previewingSlide?.title}
                 </DialogTitle>
               </DialogHeader>
               {previewingSlide && (
-                <div className="prose max-w-none dark:prose-invert">
-                  <div dangerouslySetInnerHTML={{ 
-                    __html: previewingSlide.content.replace(/\n/g, '<br />') 
-                  }} />
+                <div className="overflow-y-auto max-h-[70vh]">
+                  <SlidePreview slide={previewingSlide} />
                 </div>
               )}
             </DialogContent>
