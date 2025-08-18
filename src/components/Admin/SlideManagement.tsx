@@ -73,6 +73,7 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
   const [imageQuality, setImageQuality] = useState('high');
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isGeneratingAllImages, setIsGeneratingAllImages] = useState(false);
 
   useEffect(() => {
     loadSessions();
@@ -418,6 +419,91 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
     }
   };
 
+  const generateAllImages = async () => {
+    if (!slides || slides.length === 0) {
+      toast.error('No slides found to generate images for');
+      return;
+    }
+
+    setIsGeneratingAllImages(true);
+    toast.success(`Starting image generation for ${slides.length} slides...`);
+
+    // Process slides in parallel with a maximum concurrency of 3
+    const batchSize = 3;
+    const batches = [];
+    for (let i = 0; i < slides.length; i += batchSize) {
+      batches.push(slides.slice(i, i + batchSize));
+    }
+
+    let completedCount = 0;
+    const totalSlides = slides.length;
+
+    try {
+      for (const batch of batches) {
+        const promises = batch.map(async (slide) => {
+          try {
+            // Extract text content and create enhanced prompt
+            const textContent = slide.content
+              .replace(/!\[.*?\]\(.*?\)/g, '') // Remove existing image markdown
+              .replace(/[•\-\*]/g, '') // Remove bullet points
+              .split('\n')
+              .map(line => line.trim())
+              .filter(line => line.length > 0)
+              .join('. ');
+
+            const enhancedPrompt = `Educational slide visualization: ${slide.title}. ${textContent}. Focus on creating engaging animated cartoon-style educational content with visual metaphors, charts, or conceptual diagrams that enhance understanding.`;
+
+            console.log(`Generating image for slide ${slide.slide_number}: ${slide.title}`);
+
+            const response = await supabase.functions.invoke('generate-image', {
+              body: {
+                prompt: enhancedPrompt,
+                size: '1536x1024',
+                quality: 'high'
+              }
+            });
+
+            if (response?.data?.imageUrl) {
+              // Extract existing content without image markdown
+              const existingContent = slide.content
+                .replace(/!\[Generated Image\]\([^)]+\)\n\n?/g, '') // Remove existing generated image
+                .trim();
+
+              // Add new image at the top
+              const updatedContent = `![Generated Image](${response.data.imageUrl})\n\n${existingContent}`;
+              
+              await supabase
+                .from('lecture_slides')
+                .update({ content: updatedContent })
+                .eq('id', slide.id);
+
+              completedCount++;
+              toast.success(`Image generated for slide ${slide.slide_number}: ${slide.title} (${completedCount}/${totalSlides})`);
+            } else {
+              console.error(`Failed to generate image for slide ${slide.slide_number}`);
+              toast.error(`Failed to generate image for slide ${slide.slide_number}: ${slide.title}`);
+            }
+          } catch (error) {
+            console.error(`Error generating image for slide ${slide.slide_number}:`, error);
+            toast.error(`Error generating image for slide ${slide.slide_number}: ${slide.title}`);
+          }
+        });
+
+        // Wait for current batch to complete before starting next batch
+        await Promise.all(promises);
+      }
+
+      // Reload slides to show all generated images
+      await loadSlides();
+      toast.success(`Completed! Generated images for ${completedCount} out of ${totalSlides} slides.`);
+    } catch (error) {
+      console.error('Error in batch image generation:', error);
+      toast.error('Error during batch image generation');
+    } finally {
+      setIsGeneratingAllImages(false);
+    }
+  };
+
   const regenerateImageForEditingSlide = async () => {
     if (!editingSlide) {
       toast.error('No slide selected for image regeneration');
@@ -431,10 +517,10 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
     toast.success('Image generation started...');
 
     try {
-      // Auto-generate prompt from slide content if none provided
+      // Auto-generate enhanced prompt from slide content if none provided
       let finalPrompt = currentPrompt;
       if (!finalPrompt && editingSlide.content) {
-        // Extract text content and create a prompt
+        // Extract text content and create enhanced prompt
         const textContent = editingSlide.content
           .replace(/!\[.*?\]\(.*?\)/g, '') // Remove existing image markdown
           .replace(/[•\-\*]/g, '') // Remove bullet points
@@ -443,10 +529,10 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
           .filter(line => line.length > 0)
           .join('. ');
         
-        finalPrompt = `Create a visual diagram or illustration for: ${editingSlide.title}. Content: ${textContent}`;
+        finalPrompt = `Educational slide visualization: ${editingSlide.title}. ${textContent}. Create engaging animated cartoon-style educational content with visual metaphors, charts, or conceptual diagrams.`;
       }
 
-      console.log('Regenerating image with prompt:', finalPrompt);
+      console.log('Regenerating image with enhanced prompt:', finalPrompt);
 
       const response = await supabase.functions.invoke('generate-image', {
         body: {
@@ -575,6 +661,14 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
               <Button onClick={createNewSlide} className="gap-2">
                 <Plus className="w-4 h-4" />
                 Add Slide
+              </Button>
+              <Button 
+                onClick={generateAllImages}
+                disabled={isGeneratingAllImages || slides.length === 0}
+                className="gap-2 bg-blue-600 hover:bg-blue-700"
+              >
+                <Image className="w-4 h-4" />
+                {isGeneratingAllImages ? 'Generating...' : 'Generate All Images'}
               </Button>
             </div>
           </div>

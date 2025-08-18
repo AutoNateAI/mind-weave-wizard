@@ -29,6 +29,26 @@ serve(async (req) => {
 
     console.log('Generating image with OpenAI:', { prompt, size, quality });
 
+    // Enhanced prompt for educational slide imagery
+    const enhancedPrompt = `Create an engaging, animated cartoon-style educational illustration for: ${prompt}
+
+Style requirements:
+- Animated cartoon aesthetic with vibrant colors and clean lines
+- Educational and professional yet approachable visual style
+- Include relevant visual metaphors, diagrams, or conceptual representations
+- Use dynamic compositions with flowing elements and clear visual hierarchy
+- Incorporate charts, graphs, or data visualizations when relevant to the content
+- Add animated character elements or scenario illustrations where appropriate
+- Include inspirational quotes or text overlays in stylized typography when relevant
+- Maintain high visual contrast and readability
+- Create depth with layered elements and subtle shadows
+- Use a cohesive color palette that's both professional and engaging
+
+Technical specifications:
+- Ultra high resolution with crisp, clean details
+- Optimized for presentation display
+- Focus on clarity and educational impact`;
+
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -37,7 +57,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'gpt-image-1',
-        prompt: prompt,
+        prompt: enhancedPrompt,
         n: 1, // Explicitly set to 1
         size: size,
         quality: quality,
