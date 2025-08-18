@@ -422,16 +422,16 @@ Please ensure all content is tailored to this specific context and audience.` : 
 STYLE INSTRUCTIONS:
 ${styleInstructions}` : '';
 
-  const prompt = promptTemplate || `Create 6-8 instructional slides for a lecture titled "${lectureTitle}" with the session theme "${sessionTheme}".${contextualPrompt}${stylePrompt}
+  const basePrompt = promptTemplate || `Create 6-8 instructional slides for a lecture titled "${lectureTitle}" with the session theme "${sessionTheme}".${contextualPrompt}${stylePrompt}
 
 Each slide must return JSON with fields: slide_number, title, content, slide_type, svg_animation, speaker_notes.
 
 CONTENT RULES (CRITICAL):
 - For content, write 4-6 NEWLINE-SEPARATED bullets, each starting with "• ".
-- Each bullet must TEACH in imperative voice: guide an action, insight, or decision.
-- Avoid vague meta bullets like "Introduction to…", "Overview of…", "Set expectations…".
-- Include at least one of each on the slide deck overall: "Ask:" Socratic question, "Try:" micro-activity, and "Example:" concrete illustration. Distribute them across slides naturally.
-- Bullets should be 12-22 words, specific, and outcome-oriented. No filler.
+- Bullets must teach directly to the learner in second person ("you"), present tense.
+- Do NOT instruct the teacher or narrate teaching actions. Avoid verbs like "Frame", "Map out", "Compare", "Introduce".
+- Include at least one of each across the entire deck: "Question:" (Socratic prompt), "Try this:" (micro-activity), and "Example:" (concrete illustration). Distribute them naturally.
+- Bullets should be 12-20 words, specific, and outcome-oriented. No filler.
 
 SPEAKER NOTES:
 - Provide 3-5 sentences with rationale, transitions, and a quick debrief question.
@@ -445,13 +445,18 @@ Return ONLY this JSON structure:
     {
       "slide_number": 1,
       "title": "Slide Title",
-      "content": "• Do this specific teaching action...\n• Ask: Socratic prompt...\n• Try: Micro-activity...",
+      "content": "• Focused attention directs your engineering effort toward impact.\n• Question: What makes someone stand out in a Fortune 500 tech team?\n• Try this: Reflect on last week and spot a moment questioning could change the outcome.\n• Example: A developer questions requirements and uncovers a simpler solution.",
       "slide_type": "content",
       "svg_animation": "Simple motion idea that supports the teaching point",
       "speaker_notes": "Instructor guidance with transitions and debrief"
     }
   ]
 }`;
+
+  // Absolute voice override to ensure learner-facing tone even if library prompt differs
+  const voiceOverride = `\n\nVOICE AND TONE (OVERRIDE ANY EARLIER INSTRUCTIONS):\n- Address the learner directly using \"you\" in present tense.\n- Never instruct the teacher or describe teaching actions.\n- Use labels: \"Question:\", \"Try this:\", and \"Example:\" when appropriate.\n- Slide content is strictly learner-facing; speaker_notes may guide the instructor.`;
+
+  const prompt = `${basePrompt}${voiceOverride}`;
 
   console.log('🤖 Making OpenAI request for slides...');
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
