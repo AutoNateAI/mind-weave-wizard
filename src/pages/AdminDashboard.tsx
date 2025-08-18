@@ -32,6 +32,7 @@ import { LocationsTab } from "@/components/Admin/LocationsTab";
 import { SocialMediaTab } from "@/components/Admin/SocialMediaTab";
 import { ContentCreationTab } from "@/components/Admin/ContentCreationTab";
 import { AIPromptManagerTab } from "@/components/Admin/AIPromptManagerTab";
+import { SessionGameView } from "@/components/Admin/SessionGameView";
 import { PageMeta } from "@/components/UI/PageMeta";
 import { useAdminViewSwitch } from "@/hooks/useAdminViewSwitch";
 import { Navigate } from "react-router-dom";
@@ -198,6 +199,10 @@ export default function AdminDashboard() {
                 <TabsTrigger value="games" className="gap-2 whitespace-nowrap flex-shrink-0">
                   <Gamepad2 className="w-4 h-4" />
                   Games
+                </TabsTrigger>
+                <TabsTrigger value="session-games" className="gap-2 whitespace-nowrap flex-shrink-0">
+                  <Gamepad2 className="w-4 h-4" />
+                  Session Games
                 </TabsTrigger>
                 <TabsTrigger value="users" className="gap-2 whitespace-nowrap flex-shrink-0">
                   <Users className="w-4 h-4" />
@@ -458,6 +463,17 @@ export default function AdminDashboard() {
                       <p>Select a course to create and manage games for its sessions.</p>
                     </div>
                   )}
+                </div>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="session-games">
+              <Card className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold">Session Game Generator</h2>
+                  </div>
+                  <SessionGameView />
                 </div>
               </Card>
             </TabsContent>
