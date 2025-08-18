@@ -154,52 +154,52 @@ export default function AdminDashboard() {
 
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
             <div className="w-full overflow-x-auto scrollbar-hide">
-              <TabsList className="inline-flex w-max min-w-full lg:grid lg:grid-cols-11 h-auto p-1">
-                <TabsTrigger value="overview" className="gap-2 whitespace-nowrap">
+              <TabsList className="inline-flex w-max min-w-full h-auto p-1 gap-1">
+                <TabsTrigger value="overview" className="gap-2 whitespace-nowrap flex-shrink-0">
                   <BarChart3 className="w-4 h-4" />
                   Overview
                 </TabsTrigger>
-                <TabsTrigger value="planning" className="gap-2 whitespace-nowrap">
+                <TabsTrigger value="planning" className="gap-2 whitespace-nowrap flex-shrink-0">
                   <MessageSquare className="w-4 h-4" />
                   Course Planning
                 </TabsTrigger>
-                <TabsTrigger value="chat-history" className="gap-2 whitespace-nowrap">
+                <TabsTrigger value="chat-history" className="gap-2 whitespace-nowrap flex-shrink-0">
                   <MessageSquare className="w-4 h-4" />
                   Chat History
                 </TabsTrigger>
-                <TabsTrigger value="locations" className="gap-2 whitespace-nowrap">
+                <TabsTrigger value="locations" className="gap-2 whitespace-nowrap flex-shrink-0">
                   <MapPin className="w-4 h-4" />
                   Locations
                 </TabsTrigger>
-                <TabsTrigger value="social-media" className="gap-2 whitespace-nowrap">
+                <TabsTrigger value="social-media" className="gap-2 whitespace-nowrap flex-shrink-0">
                   <Share2 className="w-4 h-4" />
                   Social Media
                 </TabsTrigger>
-                <TabsTrigger value="content-creation" className="gap-2 whitespace-nowrap">
+                <TabsTrigger value="content-creation" className="gap-2 whitespace-nowrap flex-shrink-0">
                   <Sparkles className="w-4 h-4" />
                   Content Creation
                 </TabsTrigger>
-                <TabsTrigger value="ai-prompts" className="gap-2 whitespace-nowrap">
+                <TabsTrigger value="ai-prompts" className="gap-2 whitespace-nowrap flex-shrink-0">
                   <Bot className="w-4 h-4" />
                   AI Prompts
                 </TabsTrigger>
-                <TabsTrigger value="structure" className="gap-2 whitespace-nowrap">
+                <TabsTrigger value="structure" className="gap-2 whitespace-nowrap flex-shrink-0">
                   <BookOpen className="w-4 h-4" />
                   Course Structure
                 </TabsTrigger>
-                <TabsTrigger value="slides" className="gap-2 whitespace-nowrap">
+                <TabsTrigger value="slides" className="gap-2 whitespace-nowrap flex-shrink-0">
                   <FileText className="w-4 h-4" />
                   Slides
                 </TabsTrigger>
-                <TabsTrigger value="session-slides" className="gap-2 whitespace-nowrap">
+                <TabsTrigger value="session-slides" className="gap-2 whitespace-nowrap flex-shrink-0">
                   <FileText className="w-4 h-4" />
                   Session View
                 </TabsTrigger>
-                <TabsTrigger value="games" className="gap-2 whitespace-nowrap">
+                <TabsTrigger value="games" className="gap-2 whitespace-nowrap flex-shrink-0">
                   <Gamepad2 className="w-4 h-4" />
                   Games
                 </TabsTrigger>
-                <TabsTrigger value="users" className="gap-2 whitespace-nowrap">
+                <TabsTrigger value="users" className="gap-2 whitespace-nowrap flex-shrink-0">
                   <Users className="w-4 h-4" />
                   Users
                 </TabsTrigger>
