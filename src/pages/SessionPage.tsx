@@ -120,7 +120,7 @@ export default function SessionPage() {
 
   return (
     <main className="container py-10 space-y-8">
-      <PageMeta title={`Session ${n} — ${sessionData.theme || sessionData.title}`} description={`Thinking Wizard Session ${n}: ${sessionData.theme || sessionData.title}`} />
+      <PageMeta title={`Session ${n} — ${sessionData.title || sessionData.theme}`} description={`Thinking Wizard Session ${n}: ${sessionData.title || sessionData.theme}`} />
       
       {/* Navigation Header */}
       <div className="flex justify-between items-center">
@@ -155,7 +155,7 @@ export default function SessionPage() {
 
       <header className="space-y-2">
         <p className="text-sm text-muted-foreground">Session {n} Theme</p>
-        <h1 className="text-3xl font-bold gradient-text">{sessionData.theme || sessionData.title}</h1>
+        <h1 className="text-3xl font-bold gradient-text">{sessionData.title || sessionData.theme}</h1>
       </header>
 
       {/* New 3-Lecture Structure */}
