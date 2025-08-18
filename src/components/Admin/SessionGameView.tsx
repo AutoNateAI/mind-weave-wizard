@@ -3,12 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { AlertCircle, CheckCircle, Clock, Gamepad2 } from "lucide-react";
+import { CheckCircle, Clock, Gamepad2, Zap, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { LectureGameViewer } from "@/components/Games/LectureGameViewer";
 
 interface Course {
   id: string;
@@ -32,24 +30,12 @@ interface Lecture {
   content?: string;
 }
 
-interface GameTemplate {
-  id: string;
-  name: string;
-  category: string;
-  description: string;
-}
-
-interface GeneratedGame {
+interface LectureGameSuite {
   lectureNumber: number;
   lectureTitle: string;
-  games: {
-    templateId: string;
-    templateName: string;
-    gameData: any;
-    status: 'pending' | 'generating' | 'completed' | 'error';
-    error?: string;
-    gameId?: string;
-  }[];
+  status: 'pending' | 'generating' | 'completed' | 'error';
+  error?: string;
+  gamesCreated?: number;
 }
 
 export function SessionGameView() {
@@ -58,23 +44,21 @@ export function SessionGameView() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [lectures, setLectures] = useState<Lecture[]>([]);
-  const [gameTemplates, setGameTemplates] = useState<GameTemplate[]>([]);
-  const [generatedGames, setGeneratedGames] = useState<GeneratedGame[]>([]);
+  const [lectureGameSuites, setLectureGameSuites] = useState<LectureGameSuite[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
-  const [currentGeneratingGame, setCurrentGeneratingGame] = useState<string>('');
+  const [currentGeneratingLecture, setCurrentGeneratingLecture] = useState<string>('');
   const { toast } = useToast();
 
   useEffect(() => {
     fetchCourses();
-    fetchGameTemplates();
   }, []);
 
   useEffect(() => {
     if (selectedCourse) {
       fetchSessions(selectedCourse.id);
       setSelectedSession(null);
-      setGeneratedGames([]);
+      setLectureGameSuites([]);
     }
   }, [selectedCourse]);
 
@@ -143,27 +127,8 @@ export function SessionGameView() {
     }
   };
 
-  const fetchGameTemplates = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('game_templates')
-        .select('id, name, category, description')
-        .limit(3);
-
-      if (error) throw error;
-      setGameTemplates(data || []);
-    } catch (error) {
-      console.error('Error fetching game templates:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch game templates",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const generateAllGames = async () => {
-    if (!selectedSession || lectures.length === 0 || gameTemplates.length === 0) {
+  const generateAllGameSuites = async () => {
+    if (!selectedSession || lectures.length === 0) {
       toast({
         title: "Error",
         description: "Please select a session with lectures",
@@ -175,118 +140,115 @@ export function SessionGameView() {
     setIsGenerating(true);
     setGenerationProgress(0);
 
-    // Pre-create cards so users can see progress per lecture/template immediately
-    const initialGames: GeneratedGame[] = lectures.map((lecture) => ({
+    // Initialize the status tracking for each lecture
+    const initialSuites: LectureGameSuite[] = lectures.map((lecture) => ({
       lectureNumber: lecture.lecture_number,
       lectureTitle: lecture.title,
-      games: gameTemplates.map((template) => ({
-        templateId: template.id,
-        templateName: template.name,
-        gameData: null,
-        status: 'generating'
-      }))
+      status: 'generating'
     }));
 
-    setGeneratedGames(initialGames);
-    setCurrentGeneratingGame('Generating all games in parallel...');
+    setLectureGameSuites(initialSuites);
+    setCurrentGeneratingLecture('Generating complete game suites for all lectures...');
 
-    const totalGames = lectures.length * gameTemplates.length;
+    const totalLectures = lectures.length;
     let completedCount = 0;
     let successCount = 0;
 
-    // Kick off all generations in parallel and update UI as each one finishes
-    const tasks = lectures.flatMap((lecture, lectureIndex) =>
-      gameTemplates.map(async (template, templateIndex) => {
-        try {
-          const { data: gameData, error: gameError } = await supabase.functions.invoke('ai-game-generator', {
-            body: {
-              sessionNumber: selectedSession.session_number,
-              lectureNumber: lecture.lecture_number,
-              lectureContent: lecture.content || '',
-              templateId: template.id,
-              gameType: template.category
-            }
-          });
+    // Generate game suites for all lectures in parallel using the existing GameSuiteBuilder logic
+    const tasks = lectures.map(async (lecture, lectureIndex) => {
+      try {
+        setCurrentGeneratingLecture(`Generating suite for Lecture ${lecture.lecture_number}: ${lecture.title}`);
 
-          if (gameError) throw gameError;
+        // Call the same edge function that GameSuiteBuilder uses
+        const { data: gameData, error: gameError } = await supabase.functions.invoke('ai-game-generator', {
+          body: {
+            sessionNumber: selectedSession.session_number,
+            lectureNumber: lecture.lecture_number,
+            lectureContent: lecture.content || '',
+            mode: 'batch', // This tells the edge function to generate a complete suite
+            gameContexts: {} // Using default contexts like GameSuiteBuilder does
+          }
+        });
 
-          const computedTitle = `${template.name}: Session ${selectedSession.session_number}, Lecture ${lecture.lecture_number}`;
-          const computedDescription = `Interactive ${template.category} game enhancing ${(gameData?.heuristicTargets || []).join(', ') || 'critical thinking'}`;
+        if (gameError) throw gameError;
 
-          const { data: savedGame, error: saveError } = await supabase
-            .from('lecture_games')
-            .insert({
-              session_number: selectedSession.session_number,
-              lecture_number: lecture.lecture_number,
-              game_template_id: template.id,
-              title: computedTitle,
-              description: computedDescription,
-              instructions: gameData.instructions,
-              game_data: gameData.gameData,
-              hints: gameData.hints || [],
-              win_conditions: gameData.winConditions || {},
-              validation_rules: gameData.validationRules || {},
-              heuristic_targets: gameData.heuristicTargets || [],
-              order_index: templateIndex,
-              is_published: true
-            })
-            .select()
-            .single();
-
-          if (saveError) throw saveError;
-
-          // Update UI immediately for this card
-          setGeneratedGames((prev) => {
-            const updated = [...prev];
-            updated[lectureIndex].games[templateIndex] = {
-              ...updated[lectureIndex].games[templateIndex],
-              status: 'completed',
-              gameData: { ...gameData, title: computedTitle, description: computedDescription },
-              gameId: savedGame.id
-            };
-            return updated;
-          });
-
-          successCount++;
-          setCurrentGeneratingGame(`Saved: Lecture ${lecture.lecture_number} • ${template.name}`);
-        } catch (err: any) {
-          console.error(`Error generating game for lecture ${lecture.lecture_number}, template ${template.name}:`, err);
-          const message = err?.message || 'Failed to generate game';
-
-          setGeneratedGames((prev) => {
-            const updated = [...prev];
-            updated[lectureIndex].games[templateIndex] = {
-              ...updated[lectureIndex].games[templateIndex],
-              status: 'error',
-              error: message
-            };
-            return updated;
-          });
-
-          setCurrentGeneratingGame(`Error: Lecture ${lecture.lecture_number} • ${template.name}`);
-        } finally {
-          completedCount++;
-          setGenerationProgress((completedCount / totalGames) * 100);
+        if (!gameData || !gameData.games) {
+          throw new Error('No game suite data returned from AI generator');
         }
-      })
-    );
+
+        // Save all games from the suite to the database
+        const gameInserts = gameData.games.map((game: any, index: number) => ({
+          session_number: selectedSession.session_number,
+          lecture_number: lecture.lecture_number,
+          title: `${game.templateName}: Session ${selectedSession.session_number}, Lecture ${lecture.lecture_number}`,
+          description: `Enhanced ${game.templateName.toLowerCase()} game targeting ${game.heuristicTargets.join(', ')}`,
+          instructions: game.instructions,
+          game_data: game.gameData,
+          hints: game.hints,
+          game_template_id: game.templateId,
+          order_index: index,
+          is_published: true,
+          heuristic_targets: game.heuristicTargets,
+          validation_rules: game.validationRules,
+          win_conditions: game.winConditions
+        }));
+
+        const { error: saveError } = await supabase
+          .from('lecture_games')
+          .insert(gameInserts);
+
+        if (saveError) throw saveError;
+
+        // Update UI immediately for this lecture
+        setLectureGameSuites((prev) => {
+          const updated = [...prev];
+          updated[lectureIndex] = {
+            ...updated[lectureIndex],
+            status: 'completed',
+            gamesCreated: gameData.games.length
+          };
+          return updated;
+        });
+
+        successCount++;
+        setCurrentGeneratingLecture(`Completed: Lecture ${lecture.lecture_number} - ${gameData.games.length} games created`);
+      } catch (err: any) {
+        console.error(`Error generating game suite for lecture ${lecture.lecture_number}:`, err);
+        const message = err?.message || 'Failed to generate game suite';
+
+        setLectureGameSuites((prev) => {
+          const updated = [...prev];
+          updated[lectureIndex] = {
+            ...updated[lectureIndex],
+            status: 'error',
+            error: message
+          };
+          return updated;
+        });
+
+        setCurrentGeneratingLecture(`Error: Lecture ${lecture.lecture_number} - ${message}`);
+      } finally {
+        completedCount++;
+        setGenerationProgress((completedCount / totalLectures) * 100);
+      }
+    });
 
     try {
       await Promise.allSettled(tasks);
       toast({
         title: "Generation Complete",
-        description: `Generated ${successCount} out of ${totalGames} games for ${selectedSession.title}`,
+        description: `Generated complete game suites for ${successCount} out of ${totalLectures} lectures in ${selectedSession.title}`,
       });
     } catch (error) {
       console.error('Error in batch generation:', error);
       toast({
         title: "Generation Error",
-        description: "Failed to complete game generation",
+        description: "Failed to complete game suite generation",
         variant: "destructive"
       });
     } finally {
       setIsGenerating(false);
-      setCurrentGeneratingGame('');
+      setCurrentGeneratingLecture('');
     }
   };
 
@@ -319,8 +281,8 @@ export function SessionGameView() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Gamepad2 className="w-6 h-6" />
-        <h1 className="text-2xl font-bold">Session Game Generator</h1>
+        <Zap className="w-6 h-6" />
+        <h1 className="text-2xl font-bold">Session Game Suite Generator</h1>
       </div>
 
       {/* Course and Session Selection */}
@@ -354,10 +316,10 @@ export function SessionGameView() {
               <Select onValueChange={(value) => {
                 const session = sessions.find(s => s.id === value);
                 setSelectedSession(session || null);
-                setGeneratedGames([]);
+                setLectureGameSuites([]);
               }}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Choose a session to generate games for..." />
+                  <SelectValue placeholder="Choose a session to generate complete game suites for..." />
                 </SelectTrigger>
                 <SelectContent>
                   {sessions.map((session) => (
@@ -376,15 +338,15 @@ export function SessionGameView() {
               <p className="text-sm text-muted-foreground mb-3">{selectedSession.theme}</p>
               <div className="flex items-center justify-between">
                 <div className="text-sm">
-                  {lectures.length} lectures × {gameTemplates.length} game types = {lectures.length * gameTemplates.length} total games
+                  {lectures.length} lectures • Complete game suite for each (3 games per lecture)
                 </div>
                 <Button 
-                  onClick={generateAllGames}
+                  onClick={generateAllGameSuites}
                   disabled={isGenerating || lectures.length === 0}
                   className="flex items-center gap-2"
                 >
-                  <Gamepad2 className="w-4 h-4" />
-                  {isGenerating ? 'Generating...' : 'Generate All Games'}
+                  <Zap className="w-4 h-4" />
+                  {isGenerating ? 'Generating...' : 'Generate Complete Game Suites'}
                 </Button>
               </div>
             </div>
@@ -402,10 +364,10 @@ export function SessionGameView() {
                 <span>{Math.round(generationProgress)}%</span>
               </div>
               <Progress value={generationProgress} />
-              {currentGeneratingGame && (
+              {currentGeneratingLecture && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                  Currently generating: {currentGeneratingGame}
+                  {currentGeneratingLecture}
                 </div>
               )}
             </div>
@@ -413,91 +375,64 @@ export function SessionGameView() {
         </Card>
       )}
 
-      {/* Generated Games Display */}
-      {generatedGames.length > 0 && (
+      {/* Generated Game Suites Display */}
+      {lectureGameSuites.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Generated Games</CardTitle>
+            <CardTitle>Generated Game Suites</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="0" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 gap-1">
-                {generatedGames.map((lectureGame, index) => (
-                  <TabsTrigger key={index} value={index.toString()} className="text-xs">
-                    Lecture {lectureGame.lectureNumber}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-
-              {generatedGames.map((lectureGame, lectureIndex) => (
-                <TabsContent key={lectureIndex} value={lectureIndex.toString()} className="space-y-4">
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">
-                      Lecture {lectureGame.lectureNumber}: {lectureGame.lectureTitle}
-                    </h3>
-                    
-                    <div className="grid gap-4">
-                      {lectureGame.games.map((game, gameIndex) => (
-                        <Card key={gameIndex}>
-                          <CardHeader>
-                            <div className="flex items-center justify-between">
-                              <CardTitle className="text-base">{game.templateName}</CardTitle>
-                              <div className="flex items-center gap-2">
-                                {getStatusIcon(game.status)}
-                                <Badge className={getStatusColor(game.status)}>
-                                  {game.status}
-                                </Badge>
-                              </div>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            {game.status === 'completed' && game.gameData && game.gameId && (
-                              <div className="space-y-4">
-                                <div>
-                                  <h4 className="font-medium mb-2">{game.gameData.title}</h4>
-                                  <p className="text-sm text-muted-foreground mb-4">{game.gameData.description}</p>
-                                </div>
-                                <div className="border rounded-lg p-4 bg-muted/30">
-                                  <h5 className="font-medium mb-2">Game Preview</h5>
-                                  <div className="text-sm space-y-2">
-                                    <div><strong>Instructions:</strong> {game.gameData.instructions}</div>
-                                    {game.gameData.hints && game.gameData.hints.length > 0 && (
-                                      <div><strong>Hints Available:</strong> {game.gameData.hints.length}</div>
-                                    )}
-                                    <div className="pt-2">
-                                      <Button size="sm" asChild>
-                                        <a href={`/admin?view=games&gameId=${game.gameId}`} target="_blank" rel="noopener noreferrer">
-                                          View Full Game
-                                        </a>
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            {game.status === 'error' && (
-                              <div className="text-red-600 text-sm">
-                                Error: {game.error}
-                              </div>
-                            )}
-                            {game.status === 'generating' && (
-                              <div className="text-blue-600 text-sm">
-                                Generating game...
-                              </div>
-                            )}
-                            {game.status === 'pending' && (
-                              <div className="text-gray-500 text-sm">
-                                Waiting to generate...
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))}
+            <div className="space-y-4">
+              {lectureGameSuites.map((lectureSuite, index) => (
+                <Card key={index} className="border">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base">
+                        Lecture {lectureSuite.lectureNumber}: {lectureSuite.lectureTitle}
+                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(lectureSuite.status)}
+                        <Badge className={getStatusColor(lectureSuite.status)}>
+                          {lectureSuite.status}
+                        </Badge>
+                      </div>
                     </div>
-                  </div>
-                </TabsContent>
+                  </CardHeader>
+                  <CardContent>
+                    {lectureSuite.status === 'completed' && (
+                      <div className="space-y-3">
+                        <div className="text-sm text-muted-foreground">
+                          ✅ Complete game suite generated: {lectureSuite.gamesCreated} games created
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Games include: Critical Decision Path, Problem Analysis Web, and System Mapping
+                        </div>
+                        <Button size="sm" asChild>
+                          <a href={`/admin?view=games&session=${selectedSession?.session_number}&lecture=${lectureSuite.lectureNumber}`} target="_blank" rel="noopener noreferrer">
+                            View Games for This Lecture
+                          </a>
+                        </Button>
+                      </div>
+                    )}
+                    {lectureSuite.status === 'error' && (
+                      <div className="text-red-600 text-sm">
+                        Error: {lectureSuite.error}
+                      </div>
+                    )}
+                    {lectureSuite.status === 'generating' && (
+                      <div className="text-blue-600 text-sm">
+                        Generating complete game suite...
+                      </div>
+                    )}
+                    {lectureSuite.status === 'pending' && (
+                      <div className="text-gray-500 text-sm">
+                        Waiting to generate...
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               ))}
-            </Tabs>
+            </div>
           </CardContent>
         </Card>
       )}
