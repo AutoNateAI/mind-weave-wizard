@@ -175,11 +175,11 @@ export function SessionGameView() {
     setIsGenerating(true);
     setGenerationProgress(0);
 
-    // Initialize generated games structure
-    const initialGames: GeneratedGame[] = lectures.map(lecture => ({
+    // Pre-create cards so users can see progress per lecture/template immediately
+    const initialGames: GeneratedGame[] = lectures.map((lecture) => ({
       lectureNumber: lecture.lecture_number,
       lectureTitle: lecture.title,
-      games: gameTemplates.map(template => ({
+      games: gameTemplates.map((template) => ({
         templateId: template.id,
         templateName: template.name,
         gameData: null,
@@ -191,12 +191,13 @@ export function SessionGameView() {
     setCurrentGeneratingGame('Generating all games in parallel...');
 
     const totalGames = lectures.length * gameTemplates.length;
+    let completedCount = 0;
+    let successCount = 0;
 
-    // Create all game generation promises
-    const gamePromises = lectures.flatMap((lecture, lectureIndex) =>
+    // Kick off all generations in parallel and update UI as each one finishes
+    const tasks = lectures.flatMap((lecture, lectureIndex) =>
       gameTemplates.map(async (template, templateIndex) => {
         try {
-          // Generate game using the existing edge function
           const { data: gameData, error: gameError } = await supabase.functions.invoke('ai-game-generator', {
             body: {
               sessionNumber: selectedSession.session_number,
@@ -212,7 +213,6 @@ export function SessionGameView() {
           const computedTitle = `${template.name}: Session ${selectedSession.session_number}, Lecture ${lecture.lecture_number}`;
           const computedDescription = `Interactive ${template.category} game enhancing ${(gameData?.heuristicTargets || []).join(', ') || 'critical thinking'}`;
 
-          // Save game to database
           const { data: savedGame, error: saveError } = await supabase
             .from('lecture_games')
             .insert({
@@ -235,69 +235,48 @@ export function SessionGameView() {
 
           if (saveError) throw saveError;
 
-          return {
-            lectureIndex,
-            templateIndex,
-            success: true,
-            gameData: { ...gameData, title: computedTitle, description: computedDescription },
-            gameId: savedGame.id
-          };
+          // Update UI immediately for this card
+          setGeneratedGames((prev) => {
+            const updated = [...prev];
+            updated[lectureIndex].games[templateIndex] = {
+              ...updated[lectureIndex].games[templateIndex],
+              status: 'completed',
+              gameData: { ...gameData, title: computedTitle, description: computedDescription },
+              gameId: savedGame.id
+            };
+            return updated;
+          });
 
-        } catch (error) {
-          console.error(`Error generating game for lecture ${lecture.lecture_number}, template ${template.name}:`, error);
-          return {
-            lectureIndex,
-            templateIndex,
-            success: false,
-            error: error.message || 'Failed to generate game'
-          };
+          successCount++;
+          setCurrentGeneratingGame(`Saved: Lecture ${lecture.lecture_number} • ${template.name}`);
+        } catch (err: any) {
+          console.error(`Error generating game for lecture ${lecture.lecture_number}, template ${template.name}:`, err);
+          const message = err?.message || 'Failed to generate game';
+
+          setGeneratedGames((prev) => {
+            const updated = [...prev];
+            updated[lectureIndex].games[templateIndex] = {
+              ...updated[lectureIndex].games[templateIndex],
+              status: 'error',
+              error: message
+            };
+            return updated;
+          });
+
+          setCurrentGeneratingGame(`Error: Lecture ${lecture.lecture_number} • ${template.name}`);
+        } finally {
+          completedCount++;
+          setGenerationProgress((completedCount / totalGames) * 100);
         }
       })
     );
 
     try {
-      // Execute all game generations in parallel
-      const results = await Promise.allSettled(gamePromises);
-      let completedGames = 0;
-
-      // Process results and update state
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          const gameResult = result.value;
-          const { lectureIndex, templateIndex, success } = gameResult;
-
-          setGeneratedGames(prev => {
-            const updated = [...prev];
-            if (success) {
-              updated[lectureIndex].games[templateIndex] = {
-                ...updated[lectureIndex].games[templateIndex],
-                status: 'completed',
-                gameData: gameResult.gameData,
-                gameId: gameResult.gameId
-              };
-              completedGames++;
-            } else {
-              updated[lectureIndex].games[templateIndex] = {
-                ...updated[lectureIndex].games[templateIndex],
-                status: 'error',
-                error: gameResult.error
-              };
-            }
-            return updated;
-          });
-        }
-
-        // Update progress
-        setGenerationProgress(((index + 1) / totalGames) * 100);
-      });
-
-      const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
-      
+      await Promise.allSettled(tasks);
       toast({
         title: "Generation Complete",
         description: `Generated ${successCount} out of ${totalGames} games for ${selectedSession.title}`,
       });
-
     } catch (error) {
       console.error('Error in batch generation:', error);
       toast({
