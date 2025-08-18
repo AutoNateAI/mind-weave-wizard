@@ -265,34 +265,27 @@ export function SessionSlideView({ selectedCourseId }: SessionSlideViewProps) {
     
     toast.success(`Starting image generation for ${allSlides.length} slides across all lectures...`);
 
-    // Process slides in parallel with a maximum concurrency of 3
-    const batchSize = 3;
-    const batches = [];
-    for (let i = 0; i < allSlides.length; i += batchSize) {
-      batches.push(allSlides.slice(i, i + batchSize));
-    }
-
     let completedCount = 0;
     const totalSlides = allSlides.length;
 
     try {
-      for (const batch of batches) {
-        const promises = batch.map(async (slide) => {
-          const success = await generateImageForSlide(slide, true, customPrompt);
-          if (success) {
-            completedCount++;
-            setGenerationProgress({ completed: completedCount, total: totalSlides });
-          }
-        });
+      // Generate all images simultaneously
+      const promises = allSlides.map(async (slide) => {
+        const success = await generateImageForSlide(slide, true, customPrompt);
+        if (success) {
+          completedCount++;
+          setGenerationProgress({ completed: completedCount, total: totalSlides });
+        }
+        return success;
+      });
 
-        // Wait for current batch to complete before starting next batch
-        await Promise.all(promises);
-      }
+      // Wait for all requests to complete
+      await Promise.all(promises);
 
       toast.success(`Completed! Generated images for ${completedCount} out of ${totalSlides} slides.`);
     } catch (error) {
-      console.error('Error in batch image generation:', error);
-      toast.error('Error during batch image generation');
+      console.error('Error in image generation:', error);
+      toast.error('Error during image generation');
     } finally {
       setIsGeneratingAll(false);
       setGenerationProgress({ completed: 0, total: 0 });
