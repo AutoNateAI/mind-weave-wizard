@@ -19,7 +19,8 @@ import {
   FileText,
   BarChart3,
   Users,
-  Upload
+  Upload,
+  Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -74,6 +75,8 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isGeneratingAllImages, setIsGeneratingAllImages] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState({ completed: 0, total: 0 });
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
 
   useEffect(() => {
     loadSessions();
@@ -347,23 +350,22 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
     const slideTitle = targetSlideForImage.title;
     const slideContent = targetSlideForImage.content;
 
-    // Build context-aware prompt
+    // Build context-aware prompt using enhanced approach
     let contextPrompt = "";
     
     if (imagePrompt.trim()) {
       contextPrompt = imagePrompt;
     } else {
-      // Generate prompt from slide content and style
-      const slideContentText = slideTitle + (slideContent ? ": " + slideContent : "");
-      const styleDescriptions = {
-        animated_charts: "animated style chart or graph with nodes and connections",
-        animated_concept: "animated style conceptual illustration with visual metaphors",
-        complex_overlay: "complex animated scenario overlayed on a beautiful, vibrant background",
-        minimalist_diagram: "clean, minimalist animated diagram with clear visual hierarchy",
-        artistic_abstract: "artistic animated abstract representation with flowing elements"
-      };
-      
-      contextPrompt = `Create a ${styleDescriptions[imageStyle]} for this slide content: ${slideContentText}. Make it visually engaging and educational. Ultra high resolution.`;
+      // Extract text content and create enhanced prompt
+      const textContent = slideContent
+        .replace(/!\[.*?\]\(.*?\)/g, '') // Remove existing image markdown
+        .replace(/[•\-\*]/g, '') // Remove bullet points
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .join('. ');
+
+      contextPrompt = `Educational slide visualization: ${slideTitle}. ${textContent}. Focus on creating engaging animated cartoon-style educational content with visual metaphors, charts, or conceptual diagrams that enhance understanding.`;
     }
 
     // Add to generating set and close modal immediately
@@ -372,13 +374,8 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
     setImagePrompt('');
     toast.success('Image generation started...');
 
-    // Run generation in background with timeout
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Image generation timed out after 2 minutes')), 120000)
-    );
-
     try {
-      const generationPromise = supabase.functions.invoke('generate-image', {
+      const response = await supabase.functions.invoke('generate-image', {
         body: {
           prompt: contextPrompt,
           size: imageDimensions,
@@ -386,29 +383,32 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
         }
       });
 
-      const response = await Promise.race([generationPromise, timeoutPromise]) as any;
-
       if (response?.error) throw response.error;
       
       if (response?.data?.imageUrl) {
-        // Update the slide content with the generated image URL at the top
-        const updatedContent = `![Generated Image](${response.data.imageUrl})\n\n${slideContent}`;
+        // Extract existing content without image markdown
+        const existingContent = slideContent
+          .replace(/!\[Generated Image\]\([^)]+\)\n\n?/g, '') // Remove existing generated image
+          .trim();
+
+        // Add new image at the top
+        const updatedContent = `![Generated Image](${response.data.imageUrl})\n\n${existingContent}`;
         
         await supabase
           .from('lecture_slides')
           .update({ content: updatedContent })
           .eq('id', slideId);
+
+        // Update local state immediately
+        setSlides(prev => prev.map(s => 
+          s.id === slideId ? { ...s, content: updatedContent } : s
+        ));
         
         toast.success(`Image generated and added to slide: ${slideTitle}`);
-        loadSlides();
       }
     } catch (error) {
       console.error('Error generating image:', error);
-      if (error.message.includes('timed out')) {
-        toast.error(`Image generation timed out for slide: ${slideTitle}. Please try again.`);
-      } else {
-        toast.error(`Failed to generate image for slide: ${slideTitle}`);
-      }
+      toast.error(`Failed to generate image for slide: ${slideTitle}`);
     } finally {
       // Remove from generating set
       setGeneratingImageSlides(prev => {
@@ -426,7 +426,13 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
     }
 
     setIsGeneratingAllImages(true);
+    setGenerationProgress({ completed: 0, total: slides.length });
+    setShowGenerateModal(false);
     toast.success(`Starting image generation for ${slides.length} slides...`);
+
+    // Add all slides to generating set
+    const slideIds = slides.map(s => s.id);
+    setGeneratingImageSlides(new Set(slideIds));
 
     // Process slides in parallel with a maximum concurrency of 3
     const batchSize = 3;
@@ -453,8 +459,6 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
 
             const enhancedPrompt = `Educational slide visualization: ${slide.title}. ${textContent}. Focus on creating engaging animated cartoon-style educational content with visual metaphors, charts, or conceptual diagrams that enhance understanding.`;
 
-            console.log(`Generating image for slide ${slide.slide_number}: ${slide.title}`);
-
             const response = await supabase.functions.invoke('generate-image', {
               body: {
                 prompt: enhancedPrompt,
@@ -477,14 +481,36 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
                 .update({ content: updatedContent })
                 .eq('id', slide.id);
 
+              // Update local state immediately
+              setSlides(prev => prev.map(s => 
+                s.id === slide.id ? { ...s, content: updatedContent } : s
+              ));
+
+              // Remove from generating set
+              setGeneratingImageSlides(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(slide.id);
+                return newSet;
+              });
+
               completedCount++;
+              setGenerationProgress({ completed: completedCount, total: totalSlides });
               toast.success(`Image generated for slide ${slide.slide_number}: ${slide.title} (${completedCount}/${totalSlides})`);
             } else {
-              console.error(`Failed to generate image for slide ${slide.slide_number}`);
+              setGeneratingImageSlides(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(slide.id);
+                return newSet;
+              });
               toast.error(`Failed to generate image for slide ${slide.slide_number}: ${slide.title}`);
             }
           } catch (error) {
             console.error(`Error generating image for slide ${slide.slide_number}:`, error);
+            setGeneratingImageSlides(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(slide.id);
+              return newSet;
+            });
             toast.error(`Error generating image for slide ${slide.slide_number}: ${slide.title}`);
           }
         });
@@ -493,14 +519,14 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
         await Promise.all(promises);
       }
 
-      // Reload slides to show all generated images
-      await loadSlides();
       toast.success(`Completed! Generated images for ${completedCount} out of ${totalSlides} slides.`);
     } catch (error) {
       console.error('Error in batch image generation:', error);
       toast.error('Error during batch image generation');
     } finally {
       setIsGeneratingAllImages(false);
+      setGenerationProgress({ completed: 0, total: 0 });
+      setGeneratingImageSlides(new Set());
     }
   };
 
@@ -656,20 +682,105 @@ export function SlideManagement({ selectedCourseId }: SlideManagementProps) {
         <>
           {/* Slide Management Header */}
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold">Slide Management</h3>
-            <div className="flex gap-2">
-              <Button onClick={createNewSlide} className="gap-2">
-                <Plus className="w-4 h-4" />
-                Add Slide
-              </Button>
-              <Button 
-                onClick={generateAllImages}
-                disabled={isGeneratingAllImages || slides.length === 0}
-                className="gap-2 bg-blue-600 hover:bg-blue-700"
-              >
-                <Image className="w-4 h-4" />
-                {isGeneratingAllImages ? 'Generating...' : 'Generate All Images'}
-              </Button>
+            <div>
+              <h3 className="text-lg font-semibold">Slide Management</h3>
+              {isGeneratingAllImages && (
+                <p className="text-sm text-muted-foreground">
+                  Generating images: {generationProgress.completed}/{generationProgress.total} completed
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-4">
+              {isGeneratingAllImages && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>
+                    {generationProgress.completed}/{generationProgress.total}
+                  </span>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Button onClick={createNewSlide} className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Add Slide
+                </Button>
+                <Dialog open={showGenerateModal} onOpenChange={setShowGenerateModal}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      disabled={isGeneratingAllImages || slides.length === 0}
+                      className="gap-2 bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Image className="w-4 h-4" />
+                      Generate All Images
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Generate Images for All Slides</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        This will generate images for all {slides.length} slides in this lecture using the enhanced animated cartoon-style prompt.
+                      </p>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Image Style</label>
+                          <Select value={imageStyle} onValueChange={setImageStyle}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="animated_charts">Animated Charts & Graphs</SelectItem>
+                              <SelectItem value="animated_concept">Animated Conceptual Illustration</SelectItem>
+                              <SelectItem value="complex_overlay">Complex Scenario Overlay</SelectItem>
+                              <SelectItem value="minimalist_diagram">Minimalist Diagram</SelectItem>
+                              <SelectItem value="artistic_abstract">Artistic Abstract</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Dimensions</label>
+                          <Select value={imageDimensions} onValueChange={setImageDimensions}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1024x1024">Square (1024x1024)</SelectItem>
+                              <SelectItem value="1024x1536">Portrait (1024x1536)</SelectItem>
+                              <SelectItem value="1536x1024">Landscape (1536x1024)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Custom Context (Optional)</label>
+                          <Textarea
+                            value={imagePrompt}
+                            onChange={(e) => setImagePrompt(e.target.value)}
+                            placeholder="Leave empty to auto-generate from slide content, or add custom context for all images..."
+                            className="min-h-20"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            AI will use slide content and selected style if no custom context provided
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 pt-4">
+                        <Button variant="outline" onClick={() => setShowGenerateModal(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={generateAllImages} className="flex-1">
+                          <Image className="w-4 h-4 mr-2" />
+                          Generate All Images
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           </div>
 

@@ -26,6 +26,7 @@ import { CourseStructureView } from "@/components/Admin/CourseStructureView";
 import { ChatHistoryView } from "@/components/Admin/ChatHistoryView";
 import { GameBuilderView } from "@/components/Admin/GameBuilderView";
 import { SlideManagement } from "@/components/Admin/SlideManagement";
+import { SessionSlideView } from "@/components/Admin/SessionSlideView";
 import { CoursePublishing } from "@/components/Admin/CoursePublishing";
 import { LocationsTab } from "@/components/Admin/LocationsTab";
 import { SocialMediaTab } from "@/components/Admin/SocialMediaTab";
@@ -189,6 +190,10 @@ export default function AdminDashboard() {
                 <TabsTrigger value="slides" className="gap-2 whitespace-nowrap">
                   <FileText className="w-4 h-4" />
                   Slides
+                </TabsTrigger>
+                <TabsTrigger value="session-slides" className="gap-2 whitespace-nowrap">
+                  <FileText className="w-4 h-4" />
+                  Session View
                 </TabsTrigger>
                 <TabsTrigger value="games" className="gap-2 whitespace-nowrap">
                   <Gamepad2 className="w-4 h-4" />
@@ -408,6 +413,17 @@ export default function AdminDashboard() {
                       <p>Select a course to manage its slides and content.</p>
                     </div>
                   )}
+                </div>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="session-slides">
+              <Card className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold">Session Slide View</h2>
+                  </div>
+                  <SessionSlideView selectedCourseId={selectedCourse} />
                 </div>
               </Card>
             </TabsContent>
