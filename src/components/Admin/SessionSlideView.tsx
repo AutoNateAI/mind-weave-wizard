@@ -61,9 +61,12 @@ export function SessionSlideView({ selectedCourseId }: SessionSlideViewProps) {
   
   // Modal states
   const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [showIndividualGenerateModal, setShowIndividualGenerateModal] = useState(false);
+  const [selectedSlideForGeneration, setSelectedSlideForGeneration] = useState<Slide | null>(null);
   const [imageStyle, setImageStyle] = useState('animated_charts');
   const [imageDimensions, setImageDimensions] = useState('1536x1024');
   const [customPrompt, setCustomPrompt] = useState('');
+  const [individualCustomPrompt, setIndividualCustomPrompt] = useState('');
 
   useEffect(() => {
     loadCourses();
@@ -178,7 +181,7 @@ export function SessionSlideView({ selectedCourseId }: SessionSlideViewProps) {
     }
   };
 
-  const generateImageForSlide = async (slide: Slide, useCustomPrompt: boolean = false) => {
+  const generateImageForSlide = async (slide: Slide, useCustomPrompt: boolean = false, customPromptText: string = '') => {
     const slideId = slide.id;
     
     // Add to generating set
@@ -188,8 +191,8 @@ export function SessionSlideView({ selectedCourseId }: SessionSlideViewProps) {
       // Build context-aware prompt
       let contextPrompt = "";
       
-      if (useCustomPrompt && customPrompt.trim()) {
-        contextPrompt = customPrompt;
+      if (useCustomPrompt && customPromptText.trim()) {
+        contextPrompt = customPromptText;
       } else {
         // Extract text content and create enhanced prompt
         const textContent = slide.content
@@ -275,7 +278,7 @@ export function SessionSlideView({ selectedCourseId }: SessionSlideViewProps) {
     try {
       for (const batch of batches) {
         const promises = batch.map(async (slide) => {
-          const success = await generateImageForSlide(slide, true);
+          const success = await generateImageForSlide(slide, true, customPrompt);
           if (success) {
             completedCount++;
             setGenerationProgress({ completed: completedCount, total: totalSlides });
@@ -294,6 +297,15 @@ export function SessionSlideView({ selectedCourseId }: SessionSlideViewProps) {
       setIsGeneratingAll(false);
       setGenerationProgress({ completed: 0, total: 0 });
     }
+  };
+
+  const handleIndividualImageGeneration = async () => {
+    if (!selectedSlideForGeneration) return;
+    
+    setShowIndividualGenerateModal(false);
+    await generateImageForSlide(selectedSlideForGeneration, true, individualCustomPrompt);
+    setSelectedSlideForGeneration(null);
+    setIndividualCustomPrompt('');
   };
 
   const getSlideIcon = (slideType: string | null) => {
@@ -531,7 +543,10 @@ export function SessionSlideView({ selectedCourseId }: SessionSlideViewProps) {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => generateImageForSlide(slide)}
+                                onClick={() => {
+                                  setSelectedSlideForGeneration(slide);
+                                  setShowIndividualGenerateModal(true);
+                                }}
                                 title="Generate Image for this slide"
                                 disabled={generatingSlides.has(slide.id)}
                               >
@@ -558,6 +573,79 @@ export function SessionSlideView({ selectedCourseId }: SessionSlideViewProps) {
               );
             })}
           </div>
+
+          {/* Individual Slide Image Generation Modal */}
+          <Dialog open={showIndividualGenerateModal} onOpenChange={setShowIndividualGenerateModal}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Generate Image for Slide</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Generate an image for: <strong>{selectedSlideForGeneration?.title || 'Untitled Slide'}</strong>
+                </p>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Image Style</label>
+                    <Select value={imageStyle} onValueChange={setImageStyle}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="animated_charts">Animated Charts & Graphs</SelectItem>
+                        <SelectItem value="animated_concept">Animated Conceptual Illustration</SelectItem>
+                        <SelectItem value="complex_overlay">Complex Scenario Overlay</SelectItem>
+                        <SelectItem value="minimalist_diagram">Minimalist Diagram</SelectItem>
+                        <SelectItem value="artistic_abstract">Artistic Abstract</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Dimensions</label>
+                    <Select value={imageDimensions} onValueChange={setImageDimensions}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1024x1024">Square (1024x1024)</SelectItem>
+                        <SelectItem value="1024x1536">Portrait (1024x1536)</SelectItem>
+                        <SelectItem value="1536x1024">Landscape (1536x1024)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Custom Context (Optional)</label>
+                    <Textarea
+                      value={individualCustomPrompt}
+                      onChange={(e) => setIndividualCustomPrompt(e.target.value)}
+                      placeholder="Leave empty to auto-generate from slide content, or add custom context for this image..."
+                      className="min-h-20"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      AI will use slide content and selected style if no custom context provided
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <Button variant="outline" onClick={() => {
+                    setShowIndividualGenerateModal(false);
+                    setSelectedSlideForGeneration(null);
+                    setIndividualCustomPrompt('');
+                  }}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleIndividualImageGeneration} className="flex-1">
+                    <Image className="w-4 h-4 mr-2" />
+                    Generate Image
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Slide Preview Dialog */}
           <Dialog open={!!previewingSlide} onOpenChange={() => setPreviewingSlide(null)}>
