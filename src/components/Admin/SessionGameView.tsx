@@ -183,107 +183,119 @@ export function SessionGameView() {
         templateId: template.id,
         templateName: template.name,
         gameData: null,
-        status: 'pending'
+        status: 'generating'
       }))
     }));
 
     setGeneratedGames(initialGames);
+    setCurrentGeneratingGame('Generating all games in parallel...');
 
     const totalGames = lectures.length * gameTemplates.length;
-    let completedGames = 0;
 
-    try {
-      for (let lectureIndex = 0; lectureIndex < lectures.length; lectureIndex++) {
-        const lecture = lectures[lectureIndex];
-        
-        for (let templateIndex = 0; templateIndex < gameTemplates.length; templateIndex++) {
-          const template = gameTemplates[templateIndex];
-          
-          // Update current generating game status
-          setCurrentGeneratingGame(`Lecture ${lecture.lecture_number}: ${template.name}`);
-          
-          // Update status to generating
-          setGeneratedGames(prev => {
-            const updated = [...prev];
-            updated[lectureIndex].games[templateIndex].status = 'generating';
-            return updated;
+    // Create all game generation promises
+    const gamePromises = lectures.flatMap((lecture, lectureIndex) =>
+      gameTemplates.map(async (template, templateIndex) => {
+        try {
+          // Generate game using the existing edge function
+          const { data: gameData, error: gameError } = await supabase.functions.invoke('ai-game-generator', {
+            body: {
+              sessionNumber: selectedSession.session_number,
+              lectureNumber: lecture.lecture_number,
+              lectureContent: lecture.content || '',
+              templateId: template.id,
+              gameType: template.category
+            }
           });
 
-          try {
-            // Generate game using the existing edge function
-            const { data: gameData, error: gameError } = await supabase.functions.invoke('ai-game-generator', {
-              body: {
-                sessionNumber: selectedSession.session_number,
-                lectureNumber: lecture.lecture_number,
-                lectureContent: lecture.content || '',
-                templateId: template.id,
-                gameType: template.category
-              }
-            });
+          if (gameError) throw gameError;
 
-            if (gameError) throw gameError;
+          const computedTitle = `${template.name}: Session ${selectedSession.session_number}, Lecture ${lecture.lecture_number}`;
+          const computedDescription = `Interactive ${template.category} game enhancing ${(gameData?.heuristicTargets || []).join(', ') || 'critical thinking'}`;
 
-            const computedTitle = `${template.name}: Session ${selectedSession.session_number}, Lecture ${lecture.lecture_number}`;
-            const computedDescription = `Interactive ${template.category} game enhancing ${(gameData?.heuristicTargets || []).join(', ') || 'critical thinking'}`;
+          // Save game to database
+          const { data: savedGame, error: saveError } = await supabase
+            .from('lecture_games')
+            .insert({
+              session_number: selectedSession.session_number,
+              lecture_number: lecture.lecture_number,
+              game_template_id: template.id,
+              title: computedTitle,
+              description: computedDescription,
+              instructions: gameData.instructions,
+              game_data: gameData.gameData,
+              hints: gameData.hints || [],
+              win_conditions: gameData.winConditions || {},
+              validation_rules: gameData.validationRules || {},
+              heuristic_targets: gameData.heuristicTargets || [],
+              order_index: templateIndex,
+              is_published: true
+            })
+            .select()
+            .single();
 
-            // Save game to database
-            const { data: savedGame, error: saveError } = await supabase
-              .from('lecture_games')
-              .insert({
-                session_number: selectedSession.session_number,
-                lecture_number: lecture.lecture_number,
-                game_template_id: template.id,
-                title: computedTitle,
-                description: computedDescription,
-                instructions: gameData.instructions,
-                game_data: gameData.gameData,
-                hints: gameData.hints || [],
-                win_conditions: gameData.winConditions || {},
-                validation_rules: gameData.validationRules || {},
-                heuristic_targets: gameData.heuristicTargets || [],
-                order_index: templateIndex,
-                is_published: true
-              })
-              .select()
-              .single();
+          if (saveError) throw saveError;
 
-            if (saveError) throw saveError;
+          return {
+            lectureIndex,
+            templateIndex,
+            success: true,
+            gameData: { ...gameData, title: computedTitle, description: computedDescription },
+            gameId: savedGame.id
+          };
 
-            // Update status to completed
-            setGeneratedGames(prev => {
-              const updated = [...prev];
+        } catch (error) {
+          console.error(`Error generating game for lecture ${lecture.lecture_number}, template ${template.name}:`, error);
+          return {
+            lectureIndex,
+            templateIndex,
+            success: false,
+            error: error.message || 'Failed to generate game'
+          };
+        }
+      })
+    );
+
+    try {
+      // Execute all game generations in parallel
+      const results = await Promise.allSettled(gamePromises);
+      let completedGames = 0;
+
+      // Process results and update state
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          const gameResult = result.value;
+          const { lectureIndex, templateIndex, success } = gameResult;
+
+          setGeneratedGames(prev => {
+            const updated = [...prev];
+            if (success) {
               updated[lectureIndex].games[templateIndex] = {
                 ...updated[lectureIndex].games[templateIndex],
                 status: 'completed',
-                gameData: { ...gameData, title: computedTitle, description: computedDescription },
-                gameId: savedGame.id
+                gameData: gameResult.gameData,
+                gameId: gameResult.gameId
               };
-              return updated;
-            });
-
-          } catch (error) {
-            console.error(`Error generating game for lecture ${lecture.lecture_number}, template ${template.name}:`, error);
-            
-            // Update status to error
-            setGeneratedGames(prev => {
-              const updated = [...prev];
+              completedGames++;
+            } else {
               updated[lectureIndex].games[templateIndex] = {
                 ...updated[lectureIndex].games[templateIndex],
                 status: 'error',
-                error: error.message || 'Failed to generate game'
+                error: gameResult.error
               };
-              return updated;
-            });
-          }
-
-          completedGames++;
-          setGenerationProgress((completedGames / totalGames) * 100);
+            }
+            return updated;
+          });
         }
-      }
 
+        // Update progress
+        setGenerationProgress(((index + 1) / totalGames) * 100);
+      });
+
+      const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+      
       toast({
         title: "Generation Complete",
-        description: `Generated ${completedGames} games for ${selectedSession.title}`,
+        description: `Generated ${successCount} out of ${totalGames} games for ${selectedSession.title}`,
       });
 
     } catch (error) {
@@ -295,6 +307,7 @@ export function SessionGameView() {
       });
     } finally {
       setIsGenerating(false);
+      setCurrentGeneratingGame('');
     }
   };
 
