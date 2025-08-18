@@ -88,7 +88,6 @@ export function SessionGameView() {
       const { data, error } = await supabase
         .from('courses')
         .select('id, title, description')
-        .eq('is_published', true)
         .order('title');
 
       if (error) throw error;
