@@ -432,6 +432,7 @@ CONTENT RULES (CRITICAL):
 - Address the learner directly in second person ("you"), present tense.
 - Never instruct the teacher or describe teaching actions. Avoid verbs like "Frame", "Map out", "Compare", "Introduce".
 - Ensure the slide stands alone: a learner reading only the content should understand the concept without narration.
+- Depth & Nuance: prioritize nuanced knowledge—include trade-offs, edge cases, counterexamples, constraints, failure modes, and common misconceptions when relevant. Avoid generic platitudes; use precise domain terms and briefly define them in plain language.
 - Across the entire deck, include at least one of each: "Question:" (Socratic prompt), "Try this:" (micro-activity), and "Example:" (concrete illustration). Distribute naturally.
 
 SPEAKER NOTES:
@@ -454,8 +455,8 @@ Return ONLY this JSON structure:
   ]
 }`;
 
-  // Absolute voice override to ensure learner-facing tone even if library prompt differs
-  const voiceOverride = `\n\nVOICE AND TONE + STRUCTURE (OVERRIDE ANY EARLIER INSTRUCTIONS):\n- Address the learner directly using \"you\" in present tense.\n- Slide content must be standalone: a learner understands without narration.\n- Content bullets: write 2-4 bullets, each bullet is 2-4 full sentences teaching one sub-concept.\n- Never instruct the teacher or describe teaching actions.\n- Use labels: \"Question:\", \"Try this:\", and \"Example:\" when appropriate across the deck.`;
+// Absolute voice override to ensure learner-facing tone even if library prompt differs
+  const voiceOverride = `\n\nVOICE AND TONE + STRUCTURE (OVERRIDE ANY EARLIER INSTRUCTIONS):\n- Address the learner directly using \"you\" in present tense.\n- Slide content must be standalone: a learner understands without narration.\n- Content bullets: write 5-7 bullets, each bullet is 2-4 full sentences teaching one sub-concept.\n- Emphasize nuanced knowledge: include trade-offs, edge cases, constraints, counterexamples, and common misconceptions where relevant; avoid platitudes; use precise terms with short definitions.\n- Never instruct the teacher or describe teaching actions.\n- Use labels: \"Question:\", \"Try this:\", and \"Example:\" when appropriate across the deck.`;
 
   const prompt = `${basePrompt}${voiceOverride}`;
 
