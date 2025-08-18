@@ -427,11 +427,12 @@ ${styleInstructions}` : '';
 Each slide must return JSON with fields: slide_number, title, content, slide_type, svg_animation, speaker_notes.
 
 CONTENT RULES (CRITICAL):
-- For content, write 4-6 NEWLINE-SEPARATED bullets, each starting with "• ".
-- Bullets must teach directly to the learner in second person ("you"), present tense.
-- Do NOT instruct the teacher or narrate teaching actions. Avoid verbs like "Frame", "Map out", "Compare", "Introduce".
-- Include at least one of each across the entire deck: "Question:" (Socratic prompt), "Try this:" (micro-activity), and "Example:" (concrete illustration). Distribute them naturally.
-- Bullets should be 12-20 words, specific, and outcome-oriented. No filler.
+- For content, write 2-4 NEWLINE-SEPARATED bullets, each starting with "• ".
+- Each bullet must be 2-4 full sentences that TEACH a specific sub-concept (not fragments).
+- Address the learner directly in second person ("you"), present tense.
+- Never instruct the teacher or describe teaching actions. Avoid verbs like "Frame", "Map out", "Compare", "Introduce".
+- Ensure the slide stands alone: a learner reading only the content should understand the concept without narration.
+- Across the entire deck, include at least one of each: "Question:" (Socratic prompt), "Try this:" (micro-activity), and "Example:" (concrete illustration). Distribute naturally.
 
 SPEAKER NOTES:
 - Provide 3-5 sentences with rationale, transitions, and a quick debrief question.
@@ -454,7 +455,7 @@ Return ONLY this JSON structure:
 }`;
 
   // Absolute voice override to ensure learner-facing tone even if library prompt differs
-  const voiceOverride = `\n\nVOICE AND TONE (OVERRIDE ANY EARLIER INSTRUCTIONS):\n- Address the learner directly using \"you\" in present tense.\n- Never instruct the teacher or describe teaching actions.\n- Use labels: \"Question:\", \"Try this:\", and \"Example:\" when appropriate.\n- Slide content is strictly learner-facing; speaker_notes may guide the instructor.`;
+  const voiceOverride = `\n\nVOICE AND TONE + STRUCTURE (OVERRIDE ANY EARLIER INSTRUCTIONS):\n- Address the learner directly using \"you\" in present tense.\n- Slide content must be standalone: a learner understands without narration.\n- Content bullets: write 2-4 bullets, each bullet is 2-4 full sentences teaching one sub-concept.\n- Never instruct the teacher or describe teaching actions.\n- Use labels: \"Question:\", \"Try this:\", and \"Example:\" when appropriate across the deck.`;
 
   const prompt = `${basePrompt}${voiceOverride}`;
 
