@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ContentProtectionModal, ExistingContent } from "./ContentProtectionModal";
 import { LectureContentViewer } from "./LectureContentViewer";
+import { ContextInputModal } from "./ContextInputModal";
 
 interface CourseStructureViewProps {
   courseId?: string;
@@ -53,6 +54,12 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
     operationType: 'all' | 'session' | 'single';
     title: string;
     onConfirm: (selectedLectures: string[]) => void;
+  } | null>(null);
+  const [showContextModal, setShowContextModal] = useState(false);
+  const [contextModalData, setContextModalData] = useState<{
+    type: 'single' | 'session' | 'all';
+    title: string;
+    data: any;
   } | null>(null);
 
   useEffect(() => {
@@ -186,7 +193,7 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
     return existingContent;
   };
 
-  const generateContent = async (lectureId: string, lectureTitle: string, sessionTheme: string, sessionNumber?: number, lectureNumber?: number) => {
+  const generateContent = async (lectureId: string, lectureTitle: string, sessionTheme: string, sessionNumber?: number, lectureNumber?: number, contextualInfo?: string) => {
     setGeneratingLectures(prev => new Set([...prev, lectureId]));
     
     try {
@@ -199,7 +206,9 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
             lectureTitle,
             sessionTheme,
             sessionNumber,
-            lectureNumber
+            lectureNumber,
+            contextualInfo,
+            styleInstructions: "Create lecture slides that read like engaging, standalone blog posts. Each slide should contain rich, substantial content that flows naturally when read. The content should be conversational yet informative, allowing students to both follow along during lectures and return later to read and reflect. Include compelling narratives, real-world examples, and thought-provoking insights that make complex concepts accessible and memorable."
           }
         }
       });
@@ -255,35 +264,16 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
       return;
     }
 
-    // Check for existing content first
-    const lectures = session.lectures_dynamic.map((lecture: any) => ({
-      id: lecture.id,
-      title: lecture.title,
-      sessionNumber: session.session_number,
-      lectureNumber: lecture.lecture_number
-    }));
-
-    const existingContent = await checkExistingContent(lectures);
-    
-    if (existingContent.length > 0) {
-      setProtectionData({
-        existingContent,
-        operationType: 'session',
-        title: `Generate Session "${session.title}" Content`,
-        onConfirm: (selectedLectures) => {
-          setShowProtectionModal(false);
-          executeSessionGeneration(session, selectedLectures);
-        }
-      });
-      setShowProtectionModal(true);
-      return;
-    }
-
-    // No existing content, proceed directly
-    executeSessionGeneration(session, lectures.map(l => l.id));
+    // Show context input modal first
+    setContextModalData({
+      type: 'session',
+      title: `Generate Session "${session.title}" Content`,
+      data: session
+    });
+    setShowContextModal(true);
   };
 
-  const executeSessionGeneration = async (session: any, allowedLectureIds: string[]) => {
+  const executeSessionGeneration = async (session: any, allowedLectureIds: string[], contextualInfo?: string) => {
     const sessionId = session.id;
     const sessionTitle = session.title;
     const lectures = session.lectures_dynamic.filter((lecture: any) => 
@@ -321,7 +311,8 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
             lecture.title, 
             sessionTitle, 
             session.session_number, 
-            lecture.lecture_number
+            lecture.lecture_number,
+            contextualInfo
           );
           
           const duration = Date.now() - startTime;
@@ -382,45 +373,16 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
       return;
     }
 
-    // Collect all lectures first
-    const allLectures: Array<{id: string, title: string, theme: string, sessionNumber: number, lectureNumber: number}> = [];
-    
-    for (const session of courseData.sessions_dynamic) {
-      if (session.lectures_dynamic) {
-        for (const lecture of session.lectures_dynamic) {
-          allLectures.push({
-            id: lecture.id,
-            title: lecture.title,
-            theme: session.theme,
-            sessionNumber: session.session_number,
-            lectureNumber: lecture.lecture_number
-          });
-        }
-      }
-    }
-
-    // Check for existing content first
-    const existingContent = await checkExistingContent(allLectures);
-    
-    if (existingContent.length > 0) {
-      setProtectionData({
-        existingContent,
-        operationType: 'all',
-        title: 'Generate All Course Content',
-        onConfirm: (selectedLectures) => {
-          setShowProtectionModal(false);
-          executeAllGeneration(allLectures.filter(l => selectedLectures.includes(l.id)));
-        }
-      });
-      setShowProtectionModal(true);
-      return;
-    }
-
-    // No existing content, proceed directly
-    executeAllGeneration(allLectures);
+    // Show context input modal first
+    setContextModalData({
+      type: 'all',
+      title: 'Generate All Course Content',
+      data: courseData
+    });
+    setShowContextModal(true);
   };
 
-  const executeAllGeneration = async (allLectures: Array<{id: string, title: string, theme: string, sessionNumber: number, lectureNumber: number}>) => {
+  const executeAllGeneration = async (allLectures: Array<{id: string, title: string, theme: string, sessionNumber: number, lectureNumber: number}>, contextualInfo?: string) => {
     setIsLoading(true);
     setIsGenerating(true);
     const total = allLectures.length;
@@ -438,7 +400,7 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
         
         try {
           console.log(`🎯 Starting generation for lecture ${index + 1}/${total}: ${lecture.title}`);
-          await generateContent(lecture.id, lecture.title, lecture.theme, lecture.sessionNumber, lecture.lectureNumber);
+          await generateContent(lecture.id, lecture.title, lecture.theme, lecture.sessionNumber, lecture.lectureNumber, contextualInfo);
           
           setCompletedLectures(prev => {
             const newCompleted = prev + 1;
@@ -647,33 +609,14 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
                                         <Button
                                           variant="outline"
                                           size="sm"
-                                          onClick={async () => {
-                                            const lectureData = [{
-                                              id: lecture.id,
-                                              title: lecture.title,
-                                              sessionNumber: session.session_number,
-                                              lectureNumber: lecture.lecture_number
-                                            }];
-                                            
-                                            const existingContent = await checkExistingContent(lectureData);
-                                            
-                                            if (existingContent.length > 0) {
-                                              setProtectionData({
-                                                existingContent,
-                                                operationType: 'single',
-                                                title: `Generate "${lecture.title}" Content`,
-                                                onConfirm: (selectedLectures) => {
-                                                  setShowProtectionModal(false);
-                                                  if (selectedLectures.includes(lecture.id)) {
-                                                    generateContent(lecture.id, lecture.title, session.theme, session.session_number, lecture.lecture_number);
-                                                  }
-                                                }
-                                              });
-                                              setShowProtectionModal(true);
-                                            } else {
-                                              generateContent(lecture.id, lecture.title, session.theme, session.session_number, lecture.lecture_number);
-                                            }
-                                          }}
+                                           onClick={() => {
+                                             setContextModalData({
+                                               type: 'single',
+                                               title: `Generate "${lecture.title}" Content`,
+                                               data: { lecture, session }
+                                             });
+                                             setShowContextModal(true);
+                                           }}
                                           disabled={generatingLectures.has(lecture.id) || isLoading}
                                           className="gap-2"
                                         >
@@ -716,6 +659,110 @@ export function CourseStructureView({ courseId }: CourseStructureViewProps) {
             </div>
           </ScrollArea>
         </div>
+
+        {/* Context Input Modal */}
+        <ContextInputModal
+          isOpen={showContextModal}
+          onClose={() => {
+            setShowContextModal(false);
+            setContextModalData(null);
+          }}
+          onConfirm={async (contextualInfo) => {
+            if (!contextModalData) return;
+            
+            const { type, data } = contextModalData;
+            
+            if (type === 'single') {
+              const { lecture, session } = data;
+              const lectureData = [{
+                id: lecture.id,
+                title: lecture.title,
+                sessionNumber: session.session_number,
+                lectureNumber: lecture.lecture_number
+              }];
+              
+              const existingContent = await checkExistingContent(lectureData);
+              
+              if (existingContent.length > 0) {
+                setProtectionData({
+                  existingContent,
+                  operationType: 'single',
+                  title: `Generate "${lecture.title}" Content`,
+                  onConfirm: (selectedLectures) => {
+                    setShowProtectionModal(false);
+                    if (selectedLectures.includes(lecture.id)) {
+                      generateContent(lecture.id, lecture.title, session.theme, session.session_number, lecture.lecture_number, contextualInfo);
+                    }
+                  }
+                });
+                setShowProtectionModal(true);
+              } else {
+                generateContent(lecture.id, lecture.title, session.theme, session.session_number, lecture.lecture_number, contextualInfo);
+              }
+            } else if (type === 'session') {
+              const session = data;
+              const lectures = session.lectures_dynamic.map((lecture: any) => ({
+                id: lecture.id,
+                title: lecture.title,
+                sessionNumber: session.session_number,
+                lectureNumber: lecture.lecture_number
+              }));
+
+              const existingContent = await checkExistingContent(lectures);
+              
+              if (existingContent.length > 0) {
+                setProtectionData({
+                  existingContent,
+                  operationType: 'session',
+                  title: `Generate Session "${session.title}" Content`,
+                  onConfirm: (selectedLectures) => {
+                    setShowProtectionModal(false);
+                    executeSessionGeneration(session, selectedLectures, contextualInfo);
+                  }
+                });
+                setShowProtectionModal(true);
+              } else {
+                executeSessionGeneration(session, lectures.map(l => l.id), contextualInfo);
+              }
+            } else if (type === 'all') {
+              const courseData = data;
+              const allLectures: Array<{id: string, title: string, theme: string, sessionNumber: number, lectureNumber: number}> = [];
+              
+              for (const session of courseData.sessions_dynamic) {
+                if (session.lectures_dynamic) {
+                  for (const lecture of session.lectures_dynamic) {
+                    allLectures.push({
+                      id: lecture.id,
+                      title: lecture.title,
+                      theme: session.theme,
+                      sessionNumber: session.session_number,
+                      lectureNumber: lecture.lecture_number
+                    });
+                  }
+                }
+              }
+
+              const existingContent = await checkExistingContent(allLectures);
+              
+              if (existingContent.length > 0) {
+                setProtectionData({
+                  existingContent,
+                  operationType: 'all',
+                  title: 'Generate All Course Content',
+                  onConfirm: (selectedLectures) => {
+                    setShowProtectionModal(false);
+                    executeAllGeneration(allLectures.filter(l => selectedLectures.includes(l.id)), contextualInfo);
+                  }
+                });
+                setShowProtectionModal(true);
+              } else {
+                executeAllGeneration(allLectures, contextualInfo);
+              }
+            }
+          }}
+          title={contextModalData?.title || 'Generate Content'}
+          courseId={courseId}
+        />
 
         {/* Content Protection Modal */}
         {protectionData && (
