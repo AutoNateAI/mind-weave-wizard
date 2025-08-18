@@ -10,11 +10,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { LectureGameViewer } from "@/components/Games/LectureGameViewer";
 
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+}
+
 interface Session {
   id: string;
   session_number: number;
   title: string;
   theme: string;
+  course_id: string;
 }
 
 interface Lecture {
@@ -45,6 +52,8 @@ interface GeneratedGame {
 }
 
 export function SessionGameView() {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [lectures, setLectures] = useState<Lecture[]>([]);
@@ -52,12 +61,21 @@ export function SessionGameView() {
   const [generatedGames, setGeneratedGames] = useState<GeneratedGame[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
+  const [currentGeneratingGame, setCurrentGeneratingGame] = useState<string>('');
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchSessions();
+    fetchCourses();
     fetchGameTemplates();
   }, []);
+
+  useEffect(() => {
+    if (selectedCourse) {
+      fetchSessions(selectedCourse.id);
+      setSelectedSession(null);
+      setGeneratedGames([]);
+    }
+  }, [selectedCourse]);
 
   useEffect(() => {
     if (selectedSession) {
@@ -65,11 +83,32 @@ export function SessionGameView() {
     }
   }, [selectedSession]);
 
-  const fetchSessions = async () => {
+  const fetchCourses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('id, title, description')
+        .eq('is_published', true)
+        .order('title');
+
+      if (error) throw error;
+      setCourses(data || []);
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch courses",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const fetchSessions = async (courseId: string) => {
     try {
       const { data, error } = await supabase
         .from('sessions_dynamic')
-        .select('id, session_number, title, theme')
+        .select('id, session_number, title, theme, course_id')
+        .eq('course_id', courseId)
         .order('session_number');
 
       if (error) throw error;
@@ -159,6 +198,9 @@ export function SessionGameView() {
         
         for (let templateIndex = 0; templateIndex < gameTemplates.length; templateIndex++) {
           const template = gameTemplates[templateIndex];
+          
+          // Update current generating game status
+          setCurrentGeneratingGame(`Lecture ${lecture.lecture_number}: ${template.name}`);
           
           // Update status to generating
           setGeneratedGames(prev => {
@@ -286,28 +328,52 @@ export function SessionGameView() {
         <h1 className="text-2xl font-bold">Session Game Generator</h1>
       </div>
 
-      {/* Session Selection */}
+      {/* Course and Session Selection */}
       <Card>
         <CardHeader>
-          <CardTitle>Select Session</CardTitle>
+          <CardTitle>Select Course and Session</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Select onValueChange={(value) => {
-            const session = sessions.find(s => s.id === value);
-            setSelectedSession(session || null);
-            setGeneratedGames([]);
-          }}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choose a session to generate games for..." />
-            </SelectTrigger>
-            <SelectContent>
-              {sessions.map((session) => (
-                <SelectItem key={session.id} value={session.id}>
-                  Session {session.session_number}: {session.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Course</label>
+            <Select onValueChange={(value) => {
+              const course = courses.find(c => c.id === value);
+              setSelectedCourse(course || null);
+            }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a course..." />
+              </SelectTrigger>
+              <SelectContent>
+                {courses.map((course) => (
+                  <SelectItem key={course.id} value={course.id}>
+                    {course.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selectedCourse && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Session</label>
+              <Select onValueChange={(value) => {
+                const session = sessions.find(s => s.id === value);
+                setSelectedSession(session || null);
+                setGeneratedGames([]);
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a session to generate games for..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {sessions.map((session) => (
+                    <SelectItem key={session.id} value={session.id}>
+                      Session {session.session_number}: {session.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {selectedSession && (
             <div className="p-4 bg-muted rounded-lg">
@@ -335,12 +401,18 @@ export function SessionGameView() {
       {isGenerating && (
         <Card>
           <CardContent className="pt-6">
-            <div className="space-y-2">
+            <div className="space-y-4">
               <div className="flex justify-between text-sm">
                 <span>Generation Progress</span>
                 <span>{Math.round(generationProgress)}%</span>
               </div>
               <Progress value={generationProgress} />
+              {currentGeneratingGame && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  Currently generating: {currentGeneratingGame}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
