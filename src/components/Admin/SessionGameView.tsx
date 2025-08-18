@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Clock, Gamepad2, Zap, AlertCircle } from "lucide-react";
+import { CheckCircle, Clock, Gamepad2, Zap, AlertCircle, Settings, BarChart3, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -38,6 +38,18 @@ interface LectureGameSuite {
   gamesCreated?: number;
 }
 
+interface LectureGame {
+  id: string;
+  title: string;
+  description: string;
+  instructions: string;
+  game_data: any;
+  hints: any;
+  game_template_id: string;
+  order_index: number;
+  heuristic_targets: string[];
+}
+
 export function SessionGameView() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
@@ -48,6 +60,7 @@ export function SessionGameView() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [currentGeneratingLecture, setCurrentGeneratingLecture] = useState<string>('');
+  const [existingGames, setExistingGames] = useState<Record<number, LectureGame[]>>({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -65,6 +78,7 @@ export function SessionGameView() {
   useEffect(() => {
     if (selectedSession) {
       fetchLectures(selectedSession.id);
+      fetchExistingGames(selectedSession.session_number);
     }
   }, [selectedSession]);
 
@@ -127,6 +141,37 @@ export function SessionGameView() {
     }
   };
 
+  const fetchExistingGames = async (sessionNumber: number) => {
+    try {
+      const { data, error } = await supabase
+        .from('lecture_games')
+        .select('*')
+        .eq('session_number', sessionNumber)
+        .eq('is_published', true)
+        .order('lecture_number, order_index');
+
+      if (error) throw error;
+
+      // Group by lecture number and transform data to match interface
+      const gamesByLecture = (data || []).reduce((acc, game) => {
+        if (!acc[game.lecture_number]) {
+          acc[game.lecture_number] = [];
+        }
+        acc[game.lecture_number].push({
+          ...game,
+          heuristic_targets: Array.isArray(game.heuristic_targets) 
+            ? game.heuristic_targets 
+            : []
+        } as LectureGame);
+        return acc;
+      }, {} as Record<number, LectureGame[]>);
+
+      setExistingGames(gamesByLecture);
+    } catch (error) {
+      console.error('Error fetching existing games:', error);
+    }
+  };
+
   const generateAllGameSuites = async () => {
     if (!selectedSession || lectures.length === 0) {
       toast({
@@ -140,12 +185,16 @@ export function SessionGameView() {
     setIsGenerating(true);
     setGenerationProgress(0);
 
-    // Initialize the status tracking for each lecture
-    const initialSuites: LectureGameSuite[] = lectures.map((lecture) => ({
-      lectureNumber: lecture.lecture_number,
-      lectureTitle: lecture.title,
-      status: 'generating'
-    }));
+    // Initialize the status tracking for each lecture, checking for existing games
+    const initialSuites: LectureGameSuite[] = lectures.map((lecture) => {
+      const existingGamesForLecture = existingGames[lecture.lecture_number] || [];
+      return {
+        lectureNumber: lecture.lecture_number,
+        lectureTitle: lecture.title,
+        status: existingGamesForLecture.length > 0 ? 'completed' : 'generating',
+        gamesCreated: existingGamesForLecture.length
+      };
+    });
 
     setLectureGameSuites(initialSuites);
     setCurrentGeneratingLecture('Generating complete game suites for all lectures...');
@@ -399,21 +448,13 @@ export function SessionGameView() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {lectureSuite.status === 'completed' && (
-                      <div className="space-y-3">
-                        <div className="text-sm text-muted-foreground">
-                          ✅ Complete game suite generated: {lectureSuite.gamesCreated} games created
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Games include: Critical Decision Path, Problem Analysis Web, and System Mapping
-                        </div>
-                        <Button size="sm" asChild>
-                          <a href={`/admin?view=games&session=${selectedSession?.session_number}&lecture=${lectureSuite.lectureNumber}`} target="_blank" rel="noopener noreferrer">
-                            View Games for This Lecture
-                          </a>
-                        </Button>
-                      </div>
-                    )}
+              {lectureSuite.status === 'completed' && (
+                <LectureGamesView 
+                  sessionNumber={selectedSession?.session_number || 0}
+                  lectureNumber={lectureSuite.lectureNumber}
+                  gamesCreated={lectureSuite.gamesCreated || 0}
+                />
+              )}
                     {lectureSuite.status === 'error' && (
                       <div className="text-red-600 text-sm">
                         Error: {lectureSuite.error}
@@ -435,6 +476,119 @@ export function SessionGameView() {
             </div>
           </CardContent>
         </Card>
+      )}
+    </div>
+  );
+}
+
+// Component to display games for a specific lecture
+function LectureGamesView({ sessionNumber, lectureNumber, gamesCreated }: {
+  sessionNumber: number;
+  lectureNumber: number;
+  gamesCreated: number;
+}) {
+  const [games, setGames] = useState<LectureGame[]>([]);
+  const [expanded, setExpanded] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const loadGames = async () => {
+    if (loading) return;
+    setLoading(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('lecture_games')
+        .select('*')
+        .eq('session_number', sessionNumber)
+        .eq('lecture_number', lectureNumber)
+        .eq('is_published', true)
+        .order('order_index');
+
+      if (error) throw error;
+      
+      // Transform data to match interface
+      const transformedGames = (data || []).map(game => ({
+        ...game,
+        heuristic_targets: Array.isArray(game.heuristic_targets) 
+          ? game.heuristic_targets 
+          : []
+      })) as LectureGame[];
+      
+      setGames(transformedGames);
+    } catch (error) {
+      console.error('Error loading games:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleExpanded = () => {
+    if (!expanded && games.length === 0) {
+      loadGames();
+    }
+    setExpanded(!expanded);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="text-sm text-muted-foreground">
+        ✅ Complete game suite generated: {gamesCreated} games created
+      </div>
+      <div className="text-xs text-muted-foreground">
+        Games include: Critical Decision Path, Problem Analysis Web, and System Mapping
+      </div>
+      
+      <Button 
+        size="sm" 
+        variant="outline"
+        onClick={toggleExpanded}
+        disabled={loading}
+        className="gap-2"
+      >
+        <Gamepad2 className="w-4 h-4" />
+        {expanded ? 'Hide Games' : 'View Games'}
+        {loading && <div className="w-3 h-3 border border-t-transparent rounded-full animate-spin" />}
+      </Button>
+
+      {expanded && (
+        <div className="space-y-3 mt-4 pt-4 border-t">
+          {games.map((game, index) => (
+            <Card key={game.id} className="p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <h4 className="font-medium text-sm mb-1">{game.title}</h4>
+                  <p className="text-xs text-muted-foreground mb-2">{game.description}</p>
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {game.heuristic_targets?.map((target, idx) => (
+                      <Badge key={idx} variant="secondary" className="text-xs">
+                        {target}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" className="gap-1">
+                  <Play className="w-3 h-3" />
+                  Play
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1">
+                  <Settings className="w-3 h-3" />
+                  Edit
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1">
+                  <BarChart3 className="w-3 h-3" />
+                  Analytics
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1">
+                  <CheckCircle className="w-3 h-3" />
+                  Preview
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
       )}
     </div>
   );
