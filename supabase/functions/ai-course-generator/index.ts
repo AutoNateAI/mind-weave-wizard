@@ -62,6 +62,8 @@ serve(async (req) => {
     console.log('📦 Payload:', JSON.stringify(payload, null, 2));
 
     switch (action) {
+      case 'enhance_context':
+        return await enhanceContext(payload);
       case 'plan_course':
         return await planCourse(payload);
       case 'planning_chat':
@@ -84,6 +86,64 @@ serve(async (req) => {
     });
   }
 });
+
+// Enhanced Context Function
+async function enhanceContext(payload: any) {
+  const { contextualInfo, courseId } = payload;
+  
+  if (!contextualInfo) {
+    throw new Error('Contextual information is required for enhancement');
+  }
+
+  const enhancementPrompt = `
+You are an AI course content strategist. Your task is to take basic contextual information and enhance it with deeper insights for course content generation.
+
+Original Context: "${contextualInfo}"
+
+Please enhance this context by:
+1. Expanding on target audience characteristics and learning preferences
+2. Suggesting specific pedagogical approaches that would work well
+3. Identifying key learning objectives and outcomes
+4. Recommending tone, style, and engagement strategies
+5. Noting any industry-specific examples or case studies that would be relevant
+6. Suggesting how to make the content more actionable and practical
+
+Return an enhanced, detailed context that an AI content generator can use to create highly targeted and effective educational content. Be specific and actionable.
+`;
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4.1-2025-04-14',
+      messages: [
+        { role: 'system', content: 'You are an expert educational content strategist who creates detailed, actionable context for course development.' },
+        { role: 'user', content: enhancementPrompt }
+      ],
+      max_tokens: 800,
+      temperature: 0.7
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('OpenAI API error:', errorText);
+    throw new Error(`OpenAI API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const enhancedContext = data.choices[0].message.content;
+
+  return new Response(JSON.stringify({ 
+    enhancedContext,
+    success: true 
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
 
 async function planCourse(payload: any) {
   const { courseDescription, chatHistory, userId } = payload;
@@ -261,7 +321,7 @@ Keep replies concise and conversational. Focus on how to adapt the course themes
 }
 
 async function generateContent(payload: any) {
-  const { lectureId, lectureTitle, sessionTheme, sessionNumber, lectureNumber } = payload;
+  const { lectureId, lectureTitle, sessionTheme, sessionNumber, lectureNumber, contextualInfo, styleInstructions } = payload;
 
   console.log('🚀 Starting content generation with payload:', JSON.stringify(payload, null, 2));
 
@@ -282,10 +342,10 @@ async function generateContent(payload: any) {
 
   console.log(`🎯 Generating content for: ${lectureTitle} (Session ${actualSessionNumber}, Lecture ${actualLectureNumber})`);
 
-  // Generate all content types in parallel
+  // Generate all content types in parallel with contextual information
   const contentPromises = [
-    generateSlides(lectureId, lectureTitle, sessionTheme),
-    generateAssessmentsContent(actualSessionNumber, actualLectureNumber, lectureTitle, sessionTheme)
+    generateSlides(lectureId, lectureTitle, sessionTheme, contextualInfo, styleInstructions),
+    generateAssessmentsContent(actualSessionNumber, actualLectureNumber, lectureTitle, sessionTheme, contextualInfo)
   ];
 
   console.log('⚡ Starting parallel content generation...');
@@ -324,25 +384,41 @@ async function generateContent(payload: any) {
   });
 }
 
-async function generateSlides(lectureId: string, lectureTitle: string, sessionTheme: string) {
+async function generateSlides(lectureId: string, lectureTitle: string, sessionTheme: string, contextualInfo?: string, styleInstructions?: string) {
   const promptTemplate = await getPromptTemplate('slide_generation_prompt', {
     lecture_title: lectureTitle,
-    session_theme: sessionTheme
+    session_theme: sessionTheme,
+    contextual_info: contextualInfo || '',
+    style_instructions: styleInstructions || ''
   });
 
-  const prompt = promptTemplate || `Create detailed slide content for a lecture titled "${lectureTitle}" with the session theme "${sessionTheme}".
+  // Enhanced prompt with contextual information and style instructions
+  const contextualPrompt = contextualInfo ? `
 
-This is part of the AutoNateAI: Thinking Wizard Course - a journey through graph theory and mental models.
+CONTEXTUAL INFORMATION:
+${contextualInfo}
 
-Generate 4-6 slides with the following structure for each slide:
-- Title: Clear, engaging slide title
-- Content: MUST be formatted as bullet points separated by newlines. Each bullet point should start with "• " and be on its own line. This will be parsed on the frontend to display individual slide points.
-- Slide Type: MUST be one of: "intro", "content", "example", "summary" (these are the only valid values)
+Please ensure all content is tailored to this specific context and audience.` : '';
+
+  const stylePrompt = styleInstructions ? `
+
+STYLE INSTRUCTIONS:
+${styleInstructions}` : '';
+
+  const prompt = promptTemplate || `Create engaging, blog-like slide content for a lecture titled "${lectureTitle}" with the session theme "${sessionTheme}".
+
+This is part of the AutoNateAI: Thinking Wizard Course - a journey through graph theory and mental models.${contextualPrompt}${stylePrompt}
+
+Generate 6-10 slides with rich, substantial content that reads like engaging blog posts. Each slide should contain enough content that students can read and reflect on it later, almost like reading a chapter from a book.
+
+For each slide:
+- Title: Clear, engaging slide title that captures the essence
+- Content: Rich, blog-like content (300-500 words) formatted as flowing paragraphs, NOT bullet points. Write in a conversational yet informative tone with compelling narratives, real-world examples, and thought-provoking insights.
+- Slide Type: MUST be one of: "intro", "content", "example", "summary", "concept", "application"
 - SVG Animation: Describe a simple SVG animation concept that would enhance this slide
-- Speaker Notes: Detailed notes for the instructor
+- Speaker Notes: Additional talking points and context for the instructor
 
-IMPORTANT: For the "content" field, format it as bullet points separated by newlines. Example format:
-"• First key concept or point\n• Second important detail\n• Third supporting idea\n• Fourth practical application"
+IMPORTANT: For the "content" field, write substantial paragraphs that flow naturally. Make it read like an engaging blog post or book chapter that students will want to read and re-read. Include stories, examples, and insights that make complex concepts accessible and memorable.
 
 Return the response in this exact JSON format:
 {
@@ -350,7 +426,7 @@ Return the response in this exact JSON format:
     {
       "slide_number": 1,
       "title": "Slide Title",
-      "content": "• First bullet point\n• Second bullet point\n• Third bullet point",
+      "content": "Rich, engaging paragraph content that reads like a well-written blog post. Include compelling narratives, real-world examples, and thought-provoking insights that make the concept come alive for students...",
       "slide_type": "content",
       "svg_animation": "Description of animation concept",
       "speaker_notes": "Detailed instructor notes"
@@ -464,15 +540,23 @@ Return the response in this exact JSON format:
   return slideData;
 }
 
-async function generateAssessmentsContent(sessionNumber: number, lectureNumber: number, lectureTitle: string, sessionTheme: string) {
+async function generateAssessmentsContent(sessionNumber: number, lectureNumber: number, lectureTitle: string, sessionTheme: string, contextualInfo?: string) {
   const promptTemplate = await getPromptTemplate('assessment_generation_prompt', {
     lecture_title: lectureTitle,
     session_number: sessionNumber.toString(),
     lecture_number: lectureNumber.toString(),
-    session_theme: sessionTheme
+    session_theme: sessionTheme,
+    contextual_info: contextualInfo || ''
   });
 
-  const prompt = promptTemplate || `Based on the lecture "${lectureTitle}" (Session ${sessionNumber}, Lecture ${lectureNumber}) with theme "${sessionTheme}" from the AutoNateAI: Thinking Wizard Course, generate comprehensive educational assessments.
+  const contextualPrompt = contextualInfo ? `
+
+CONTEXTUAL INFORMATION:
+${contextualInfo}
+
+Please ensure all assessments are tailored to this specific context and audience.` : '';
+
+  const prompt = promptTemplate || `Based on the lecture "${lectureTitle}" (Session ${sessionNumber}, Lecture ${lectureNumber}) with theme "${sessionTheme}" from the AutoNateAI: Thinking Wizard Course, generate comprehensive educational assessments.${contextualPrompt}
 
 This course teaches structured thinking using graphs, mental models, and cognitive frameworks. Create assessments that:
 1. Test understanding of key concepts
