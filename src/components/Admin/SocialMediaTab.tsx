@@ -220,54 +220,51 @@ export function SocialMediaTab() {
     }
 
     try {
-      const profileData = {
-        full_name: manualProfile.full_name,
-        username: manualProfile.username,
-        profile_url: manualProfile.profile_url,
-        headline: manualProfile.headline,
-        location: manualProfile.location,
-        summary: manualProfile.bio,
-        platform: manualProfile.platform,
-        target_location_id: manualProfile.company_id,
-        followers_count: manualProfile.followers_count ? parseInt(manualProfile.followers_count) : null,
-        connections_count: manualProfile.connections_count ? parseInt(manualProfile.connections_count) : null,
-        posts_count: manualProfile.posts_count ? parseInt(manualProfile.posts_count) : null
-      };
-
-      // Insert into appropriate table based on platform
-      let error;
-      if (manualProfile.platform === 'linkedin') {
-        const { error: insertError } = await supabase
-          .from('linkedin_profiles')
-          .insert({
-            ...profileData,
-            linkedin_profile_id: manualProfile.username,
-            public_id: manualProfile.username,
-            first_name: manualProfile.full_name.split(' ')[0],
-            last_name: manualProfile.full_name.split(' ').slice(1).join(' '),
-            occupation: manualProfile.headline
-          });
-        error = insertError;
-      } else {
-        // For Instagram and Reddit, we'll store in a general social_profiles table
-        // For now, let's use linkedin_profiles with platform identifier
-        const { error: insertError } = await supabase
-          .from('linkedin_profiles')
-          .insert({
-            ...profileData,
-            linkedin_profile_id: `${manualProfile.platform}_${manualProfile.username}`,
-            public_id: manualProfile.username,
-            first_name: manualProfile.full_name.split(' ')[0],
-            last_name: manualProfile.full_name.split(' ').slice(1).join(' '),
-            occupation: manualProfile.headline
-          });
-        error = insertError;
+      if (manualProfile.platform !== 'linkedin') {
+        // For now, we only persist LinkedIn profiles in the CRM schema
+        toast.error('Only LinkedIn profiles can be added right now. Instagram/Reddit coming soon.');
+        return;
       }
 
-      if (error) throw error;
+      const firstName = manualProfile.full_name.split(' ')[0] || manualProfile.full_name;
+      const lastName = manualProfile.full_name.split(' ').slice(1).join(' ') || null;
 
-      toast.success(`${manualProfile.platform} profile added successfully!`);
-      
+      // Only send columns that exist in linkedin_profiles
+      const linkedinPayload = {
+        full_name: manualProfile.full_name,
+        profile_url: manualProfile.profile_url,
+        headline: manualProfile.headline || null,
+        location: manualProfile.location || null,
+        summary: manualProfile.bio || null,
+        linkedin_profile_id: manualProfile.username,
+        public_id: manualProfile.username,
+        first_name: firstName,
+        last_name: lastName,
+        occupation: manualProfile.headline || null,
+      };
+
+      const { data: inserted, error: insertError } = await supabase
+        .from('linkedin_profiles')
+        .insert(linkedinPayload)
+        .select('id')
+        .single();
+
+      if (insertError) throw insertError;
+
+      // If a company is selected, create a mapping to that location
+      if (manualProfile.company_id && inserted?.id) {
+        const { error: mappingError } = await supabase
+          .from('location_social_mapping')
+          .insert({
+            location_id: manualProfile.company_id,
+            linkedin_profile_id: inserted.id,
+            mapping_type: 'linkedin_profile',
+          });
+        if (mappingError) throw mappingError;
+      }
+
+      toast.success('LinkedIn profile added successfully!');
+
       // Reset form
       setManualProfile({
         platform: 'linkedin',
