@@ -23,6 +23,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { LeadsAnalytics } from './LeadsAnalytics';
 
 interface SocialAccount {
   id: string;
@@ -68,6 +69,22 @@ interface ManualProfile {
   followers_count: string;
   connections_count: string;
   posts_count: string;
+}
+
+interface LinkedInProfile {
+  id: string;
+  full_name: string;
+  linkedin_profile_id: string;
+  profile_url: string;
+  headline: string | null;
+  location: string | null;
+  summary: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  occupation: string | null;
+  created_at: string;
+  company_name?: string;
+  office_address?: string;
 }
 
 export function SocialMediaTab() {
@@ -731,58 +748,7 @@ export function SocialMediaTab() {
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Profiles</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">0</div>
-                <p className="text-xs text-muted-foreground">LinkedIn profiles uploaded</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Posts</CardTitle>
-                <MessageSquare className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">0</div>
-                <p className="text-xs text-muted-foreground">LinkedIn posts analyzed</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Connected Accounts</CardTitle>
-                <Link2 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{socialAccounts.filter(a => a.is_connected).length}</div>
-                <p className="text-xs text-muted-foreground">Active social accounts</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Data Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Detailed analytics will appear here once you start uploading LinkedIn data and connecting social accounts.
-                You'll be able to see:
-              </p>
-              <ul className="list-disc list-inside mt-2 space-y-1 text-muted-foreground">
-                <li>Profile demographics by location</li>
-                <li>Post engagement metrics</li>
-                <li>Critical thinking concept analysis</li>
-                <li>Geographic targeting effectiveness</li>
-              </ul>
-            </CardContent>
-          </Card>
+          <LeadsAnalytics />
         </TabsContent>
       </Tabs>
     </div>

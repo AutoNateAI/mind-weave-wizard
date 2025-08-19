@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Trash2, MapPin, Plus, Filter, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { LocationsGraph } from './LocationsGraph';
 
 interface TargetedLocation {
   id: string;
@@ -477,6 +478,9 @@ export function LocationsTab() {
           </Card>
         </div>
       </div>
+
+      {/* LinkedIn Profiles Network Graph */}
+      <LocationsGraph />
 
       {/* Location Details Modal */}
       <Dialog open={showLocationModal} onOpenChange={(open) => {
