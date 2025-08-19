@@ -50,6 +50,7 @@ export function LocationsTab() {
     loadLocations();
   }, []);
 
+  // Initialize map when token is available
   useEffect(() => {
     if (mapboxToken && mapContainer.current && !map.current) {
       mapboxgl.accessToken = mapboxToken;
@@ -62,46 +63,60 @@ export function LocationsTab() {
       });
 
       map.current.addControl(new mapboxgl.NavigationControl());
+
+      // Add markers after map is loaded
+      map.current.on('load', () => {
+        addMarkersToMap();
+      });
     }
   }, [mapboxToken]);
 
-  // Add markers when locations change or map is ready
+  // Add markers when locations change
+  useEffect(() => {
+    if (map.current && map.current.isStyleLoaded()) {
+      addMarkersToMap();
+    }
+  }, [locations]);
+
+  // Ensure markers are added when both map and locations are ready
   useEffect(() => {
     if (map.current && locations.length > 0) {
-      // Clear existing markers
-      markersRef.current.forEach(marker => marker.remove());
-      markersRef.current = [];
-
-      // Add new markers
-      locations.forEach(location => {
-        if (location.latitude && location.longitude) {
-          const marker = new mapboxgl.Marker({
-            color: location.is_active ? '#3b82f6' : '#6b7280'
-          })
-            .setLngLat([location.longitude, location.latitude])
-            .addTo(map.current!);
-
-          marker.getElement().addEventListener('click', () => {
-            setSelectedLocation(location);
-            setShowLocationModal(true);
-          });
-
-          markersRef.current.push(marker);
-        }
-      });
+      // Check if map is loaded, if not wait for it
+      if (map.current.isStyleLoaded()) {
+        addMarkersToMap();
+      } else {
+        map.current.on('load', () => {
+          addMarkersToMap();
+        });
+      }
     }
-  }, [locations, map.current]);
+  }, [locations, mapboxToken]);
 
-  // Navigate to selected location
-  useEffect(() => {
-    if (selectedLocation && selectedLocation.latitude && selectedLocation.longitude && map.current) {
-      map.current.flyTo({
-        center: [selectedLocation.longitude, selectedLocation.latitude],
-        zoom: 14,
-        duration: 2000
-      });
-    }
-  }, [selectedLocation]);
+  const addMarkersToMap = () => {
+    if (!map.current) return;
+
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+
+    // Add new markers
+    locations.forEach(location => {
+      if (location.latitude && location.longitude) {
+        const marker = new mapboxgl.Marker({
+          color: location.is_active ? '#3b82f6' : '#6b7280'
+        })
+          .setLngLat([location.longitude, location.latitude])
+          .addTo(map.current!);
+
+        marker.getElement().addEventListener('click', () => {
+          setSelectedLocation(location);
+          setShowLocationModal(true);
+        });
+
+        markersRef.current.push(marker);
+      }
+    });
+  };
 
   const loadMapboxToken = async () => {
     try {
@@ -351,9 +366,15 @@ export function LocationsTab() {
                        }`}
                       onClick={() => {
                         setSelectedLocation(location);
-                        if (location.latitude && location.longitude) {
-                          setShowLocationModal(true);
+                        // Navigate map to location
+                        if (location.latitude && location.longitude && map.current) {
+                          map.current.flyTo({
+                            center: [location.longitude, location.latitude],
+                            zoom: 14,
+                            duration: 2000
+                          });
                         }
+                        setShowLocationModal(true);
                       }}
                     >
                       <div className="flex items-start justify-between">
@@ -361,7 +382,14 @@ export function LocationsTab() {
                           <h4 className="font-medium">{location.company_name}</h4>
                           <p className="text-sm text-muted-foreground">{location.office_address}</p>
                           {location.notes && (
-                            <p className="text-xs text-muted-foreground mt-1">{location.notes}</p>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {location.notes.split('\n\n').filter(note => note.trim()).map((note, index) => (
+                                <div key={index} className="flex items-start gap-1">
+                                  <span className="mt-1">•</span>
+                                  <span>{note.trim()}</span>
+                                </div>
+                              ))}
+                            </div>
                           )}
                           <div className="flex items-center gap-2 mt-2">
                             <Badge variant={location.is_active ? 'default' : 'secondary'} className="text-xs">
