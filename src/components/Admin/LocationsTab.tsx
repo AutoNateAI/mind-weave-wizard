@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
-import { Trash2, MapPin, Plus, Filter, X, Building, Users, Eye, EyeOff, Network, Settings, Search } from 'lucide-react';
+import { Trash2, MapPin, Plus, Filter, X, Building, Users, Eye, EyeOff, Network, Settings, Search, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
@@ -81,6 +81,14 @@ export function LocationsTab() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileFormData, setProfileFormData] = useState({
+    full_name: '',
+    headline: '',
+    profile_url: '',
+    picture_url: ''
+  });
+  const [activeControlsTab, setActiveControlsTab] = useState<'network' | 'locations'>('network');
+  const [showAddEmployee, setShowAddEmployee] = useState(false);
+  const [employeeFormData, setEmployeeFormData] = useState({
     full_name: '',
     headline: '',
     profile_url: '',
@@ -580,193 +588,94 @@ export function LocationsTab() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Map View */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Interactive Map
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div 
-                ref={mapContainer} 
-                className="w-full h-96 rounded-lg border"
-                style={{ minHeight: '400px' }}
-              />
-              {!mapboxToken && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
-                  <p className="text-gray-600">Loading map...</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Locations List & Controls */}
-        <div className="space-y-4">
-          {/* Add Location Form */}
-          {showAddForm && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Add New Location</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="company_name">Company Name *</Label>
-                  <Input
-                    id="company_name"
-                    value={formData.company_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
-                    placeholder="Enter company name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="office_address">Office Address *</Label>
-                  <Input
-                    id="office_address"
-                    value={formData.office_address}
-                    onChange={(e) => setFormData(prev => ({ ...prev, office_address: e.target.value }))}
-                    placeholder="123 Main St, City, State, ZIP"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label htmlFor="city">City</Label>
-                    <Input
-                      id="city"
-                      value={formData.city}
-                      onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                      placeholder="City"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="state">State</Label>
-                    <Input
-                      id="state"
-                      value={formData.state}
-                      onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
-                      placeholder="State"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea
-                    id="notes"
-                    value={formData.notes}
-                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                    placeholder="Additional notes about this location"
-                    rows={3}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button onClick={handleAddLocation} className="flex-1">
-                    Add Location
-                  </Button>
-                  <Button variant="outline" onClick={() => setShowAddForm(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+      {/* Full Width Map */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Interactive Map
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div 
+            ref={mapContainer} 
+            className="w-full rounded-lg border"
+            style={{ height: '100vh' }}
+          />
+          {!mapboxToken && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
+              <p className="text-gray-600">Loading map...</p>
+            </div>
           )}
+        </CardContent>
+      </Card>
 
-          {/* Locations List */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                Targeted Locations
-                <Badge variant="secondary">{filteredLocations.length} locations</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Search Input */}
-              <div className="mb-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search locations..."
-                    value={locationSearchQuery}
-                    onChange={(e) => setLocationSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+      {/* Add Location Form Modal */}
+      <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Location</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="company_name">Company Name *</Label>
+              <Input
+                id="company_name"
+                value={formData.company_name}
+                onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
+                placeholder="Enter company name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="office_address">Office Address *</Label>
+              <Input
+                id="office_address"
+                value={formData.office_address}
+                onChange={(e) => setFormData(prev => ({ ...prev, office_address: e.target.value }))}
+                placeholder="123 Main St, City, State, ZIP"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  value={formData.city}
+                  onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                  placeholder="City"
+                />
               </div>
-              
-              <div className="space-y-3 max-h-96 overflow-y-auto scrollbar-hide">
-                {filteredLocations.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-4">
-                    {locationSearchQuery ? 'No locations match your search.' : 'No locations added yet. Click "Add Location" to get started.'}
-                  </p>
-                ) : (
-                  filteredLocations.map((location) => (
-                    <div
-                      key={location.id}
-                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                        selectedLocation?.id === location.id
-                          ? 'border-primary bg-primary/5'
-                          : 'hover:bg-muted/50'
-                       }`}
-                      onClick={() => {
-                        setSelectedLocation(location);
-                        // Navigate map to location
-                        if (location.latitude && location.longitude && map.current) {
-                          map.current.flyTo({
-                            center: [location.longitude, location.latitude],
-                            zoom: 14,
-                            duration: 2000
-                          });
-                        }
-                      }}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-medium">{location.company_name}</h4>
-                          <p className="text-sm text-muted-foreground">{location.office_address}</p>
-                          {location.notes && (
-                            <div className="text-xs text-muted-foreground mt-1 space-y-1">
-                              {location.notes.split('\n\n').filter(note => note.trim()).map((note, index) => (
-                                <div key={index} className="flex items-start gap-1">
-                                  <span className="mt-1">•</span>
-                                  <span>{note.trim()}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          <div className="flex items-center gap-2 mt-2">
-                            <Badge variant={location.is_active ? 'default' : 'secondary'} className="text-xs">
-                              {location.is_active ? 'Active' : 'Inactive'}
-                            </Badge>
-                            {location.latitude && location.longitude && (
-                              <Badge variant="outline" className="text-xs">
-                                Geocoded
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteLocation(location.id);
-                          }}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                )}
+              <div>
+                <Label htmlFor="state">State</Label>
+                <Input
+                  id="state"
+                  value={formData.state}
+                  onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
+                  placeholder="State"
+                />
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            </div>
+            <div>
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Additional notes about this location"
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleAddLocation} className="flex-1">
+                Add Location
+              </Button>
+              <Button variant="outline" onClick={() => setShowAddForm(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Floating Controls Button */}
       {companiesData.length > 0 && (
@@ -779,71 +688,190 @@ export function LocationsTab() {
         </Button>
       )}
 
-      {/* Network Controls Modal */}
+      {/* Controls Modal with Tabs */}
       <Dialog open={showNetworkModal} onOpenChange={setShowNetworkModal}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl max-h-[80vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Network className="h-5 w-5" />
-              LinkedIn Network Controls
+              <Settings className="h-5 w-5" />
+              Map Controls
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium">Show All</Label>
-                <p className="text-xs text-muted-foreground">
-                  Toggle all companies
-                </p>
-              </div>
-              <Switch
-                checked={visibleCompanies.size === companiesData.length}
-                onCheckedChange={toggleAllCompanies}
-              />
-            </div>
-            
-            <div className="pt-2 border-t">
-              <div className="flex items-center justify-between mb-3">
-                <Label className="text-sm font-medium">Companies</Label>
-                <Badge variant="secondary" className="text-xs">
-                  {visibleCompanies.size}/{companiesData.length}
-                </Badge>
-              </div>
-              
-              <div className="space-y-2 max-h-64 overflow-y-auto scrollbar-hide">
-                {companiesData.map((company) => (
-                  <div key={company.id} className="flex items-center justify-between p-2 rounded border">
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate">
-                        {company.company_name}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {company.profile_count} profiles
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => toggleCompanyVisibility(company.id)}
-                      className="ml-2 p-1 h-auto"
-                    >
-                      {visibleCompanies.has(company.id) ? (
-                        <Eye className="h-4 w-4" />
-                      ) : (
-                        <EyeOff className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
+          
+          {/* Tabs */}
+          <div className="flex space-x-1 border-b">
+            <button
+              onClick={() => setActiveControlsTab('network')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                activeControlsTab === 'network'
+                  ? 'border-b-2 border-primary text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Network className="h-4 w-4 inline mr-2" />
+              LinkedIn Network
+            </button>
+            <button
+              onClick={() => setActiveControlsTab('locations')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                activeControlsTab === 'locations'
+                  ? 'border-b-2 border-primary text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <MapPin className="h-4 w-4 inline mr-2" />
+              Targeted Locations
+            </button>
+          </div>
 
-            <div className="pt-2 border-t">
-              <div className="text-xs text-muted-foreground">
-                LinkedIn profiles appear as small blue circles around company markers on the map. 
-                Click any profile circle to view details and access their LinkedIn page.
+          <div className="mt-4 overflow-y-auto">
+            {activeControlsTab === 'network' ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">Show All</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Toggle all companies
+                    </p>
+                  </div>
+                  <Switch
+                    checked={visibleCompanies.size === companiesData.length}
+                    onCheckedChange={toggleAllCompanies}
+                  />
+                </div>
+                
+                <div className="pt-2 border-t">
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="text-sm font-medium">Companies</Label>
+                    <Badge variant="secondary" className="text-xs">
+                      {visibleCompanies.size}/{companiesData.length}
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-2 max-h-64 overflow-y-auto scrollbar-hide">
+                    {companiesData.map((company) => (
+                      <div key={company.id} className="flex items-center justify-between p-2 rounded border">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm truncate">
+                            {company.company_name}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {company.profile_count} profiles
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => toggleCompanyVisibility(company.id)}
+                          className="ml-2 p-1 h-auto"
+                        >
+                          {visibleCompanies.has(company.id) ? (
+                            <Eye className="h-4 w-4" />
+                          ) : (
+                            <EyeOff className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t">
+                  <div className="text-xs text-muted-foreground">
+                    LinkedIn profiles appear as small blue circles around company markers on the map. 
+                    Click any profile circle to view details and access their LinkedIn page.
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Targeted Locations</Label>
+                  <Badge variant="secondary" className="text-xs">
+                    {filteredLocations.length} locations
+                  </Badge>
+                </div>
+                
+                {/* Search Input */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search locations..."
+                    value={locationSearchQuery}
+                    onChange={(e) => setLocationSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                <div className="space-y-3 max-h-64 overflow-y-auto scrollbar-hide">
+                  {filteredLocations.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-4">
+                      {locationSearchQuery ? 'No locations match your search.' : 'No locations added yet. Click "Add Location" to get started.'}
+                    </p>
+                  ) : (
+                    filteredLocations.map((location) => (
+                      <div
+                        key={location.id}
+                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                          selectedLocation?.id === location.id
+                            ? 'border-primary bg-primary/5'
+                            : 'hover:bg-muted/50'
+                         }`}
+                        onClick={() => {
+                          setSelectedLocation(location);
+                          // Navigate map to location
+                          if (location.latitude && location.longitude && map.current) {
+                            map.current.flyTo({
+                              center: [location.longitude, location.latitude],
+                              zoom: 14,
+                              duration: 2000
+                            });
+                          }
+                        }}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium">{location.company_name}</h4>
+                            <p className="text-sm text-muted-foreground">{location.office_address}</p>
+                            {location.notes && (
+                              <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                                {location.notes.split('\n\n').filter(note => note.trim()).map((note, index) => (
+                                  <div key={index} className="flex items-start gap-1">
+                                    <span className="mt-1">•</span>
+                                    <span>{note.trim()}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge variant={location.is_active ? 'default' : 'secondary'} className="text-xs">
+                                {location.is_active ? 'Active' : 'Inactive'}
+                              </Badge>
+                              {location.latitude && location.longitude && (
+                                <Badge variant="outline" className="text-xs">
+                                  Geocoded
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteLocation(location.id);
+                            }}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -1142,23 +1170,33 @@ export function LocationsTab() {
                     </Button>
                   </div>
                 ) : (
-                  <>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setEditFormData({
-                          company_name: selectedLocation.company_name,
-                          office_address: selectedLocation.office_address,
-                          city: selectedLocation.city || '',
-                          state: selectedLocation.state || '',
-                          country: selectedLocation.country,
-                          notes: selectedLocation.notes || ''
-                        });
-                        setIsEditingLocation(true);
-                      }}
-                    >
-                      Edit Location
-                    </Button>
+                  <div className="flex justify-between w-full">
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setEditFormData({
+                            company_name: selectedLocation.company_name,
+                            office_address: selectedLocation.office_address,
+                            city: selectedLocation.city || '',
+                            state: selectedLocation.state || '',
+                            country: selectedLocation.country,
+                            notes: selectedLocation.notes || ''
+                          });
+                          setIsEditingLocation(true);
+                        }}
+                      >
+                        Edit Location
+                      </Button>
+                      <Button
+                        variant="outline" 
+                        onClick={() => setShowAddEmployee(true)}
+                        className="gap-2"
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        Add Employee
+                      </Button>
+                    </div>
                     <div className="flex gap-2">
                       <Button
                         variant="destructive"
@@ -1178,11 +1216,118 @@ export function LocationsTab() {
                         Close
                       </Button>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Employee Modal */}
+      <Dialog open={showAddEmployee} onOpenChange={setShowAddEmployee}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Add Employee to {selectedLocation?.company_name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="employee_full_name">Full Name *</Label>
+              <Input
+                id="employee_full_name"
+                value={employeeFormData.full_name}
+                onChange={(e) => setEmployeeFormData(prev => ({ ...prev, full_name: e.target.value }))}
+                placeholder="Enter full name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="employee_headline">Headline</Label>
+              <Input
+                id="employee_headline"
+                value={employeeFormData.headline}
+                onChange={(e) => setEmployeeFormData(prev => ({ ...prev, headline: e.target.value }))}
+                placeholder="Professional headline"
+              />
+            </div>
+            <div>
+              <Label htmlFor="employee_profile_url">LinkedIn Profile URL *</Label>
+              <Input
+                id="employee_profile_url"
+                value={employeeFormData.profile_url}
+                onChange={(e) => setEmployeeFormData(prev => ({ ...prev, profile_url: e.target.value }))}
+                placeholder="https://linkedin.com/in/username"
+              />
+            </div>
+            <div>
+              <Label htmlFor="employee_picture_url">Profile Picture URL</Label>
+              <Input
+                id="employee_picture_url"
+                value={employeeFormData.picture_url}
+                onChange={(e) => setEmployeeFormData(prev => ({ ...prev, picture_url: e.target.value }))}
+                placeholder="https://example.com/profile-image.jpg"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                onClick={async () => {
+                  if (!employeeFormData.full_name || !employeeFormData.profile_url || !selectedLocation) {
+                    toast.error('Full name and LinkedIn URL are required');
+                    return;
+                  }
+
+                  try {
+                    // First, create the LinkedIn profile
+                    const { data: profileData, error: profileError } = await supabase
+                      .from('linkedin_profiles')
+                      .insert([{
+                        full_name: employeeFormData.full_name,
+                        headline: employeeFormData.headline || null,
+                        profile_url: employeeFormData.profile_url,
+                        picture_url: employeeFormData.picture_url || null
+                      }])
+                      .select()
+                      .single();
+
+                    if (profileError) throw profileError;
+
+                    // Then, create the mapping to the location
+                    const { error: mappingError } = await supabase
+                      .from('location_social_mapping')
+                      .insert([{
+                        location_id: selectedLocation.id,
+                        linkedin_profile_id: profileData.id,
+                        mapping_type: 'linkedin',
+                        confidence_score: 1.0
+                      }]);
+
+                    if (mappingError) throw mappingError;
+
+                    setEmployeeFormData({
+                      full_name: '',
+                      headline: '',
+                      profile_url: '',
+                      picture_url: ''
+                    });
+                    setShowAddEmployee(false);
+                    toast.success('Employee added successfully');
+                    loadCompaniesData(); // Refresh the map data
+                  } catch (error) {
+                    console.error('Error adding employee:', error);
+                    toast.error('Failed to add employee');
+                  }
+                }}
+                className="flex-1"
+              >
+                Add Employee
+              </Button>
+              <Button variant="outline" onClick={() => setShowAddEmployee(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
