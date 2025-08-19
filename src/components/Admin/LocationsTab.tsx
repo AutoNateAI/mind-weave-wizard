@@ -28,18 +28,21 @@ interface TargetedLocation {
   created_at: string;
 }
 
+interface LinkedInProfile {
+  id: string;
+  full_name: string;
+  headline: string | null;
+  profile_url: string;
+  picture_url: string | null;
+}
+
 interface CompanyData {
   id: string;
   company_name: string;
   latitude: number | null;
   longitude: number | null;
   profile_count: number;
-  profiles: {
-    id: string;
-    full_name: string;
-    headline: string | null;
-    profile_url: string;
-  }[];
+  profiles: LinkedInProfile[];
 }
 
 export function LocationsTab() {
@@ -74,6 +77,15 @@ export function LocationsTab() {
   });
   const [showNetworkModal, setShowNetworkModal] = useState(false);
   const [locationSearchQuery, setLocationSearchQuery] = useState('');
+  const [selectedProfile, setSelectedProfile] = useState<LinkedInProfile | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileFormData, setProfileFormData] = useState({
+    full_name: '',
+    headline: '',
+    profile_url: '',
+    picture_url: ''
+  });
 
   // Initialize map and load locations
   useEffect(() => {
@@ -109,7 +121,8 @@ export function LocationsTab() {
               id,
               full_name,
               headline,
-              profile_url
+              profile_url,
+              picture_url
             )
           )
         `)
@@ -180,43 +193,56 @@ export function LocationsTab() {
         const profileEl = document.createElement('div');
         profileEl.className = 'profile-marker';
         const borderColor = theme === 'dark' ? '#1f2937' : 'white';
-        profileEl.style.cssText = `
-          width: 24px;
-          height: 24px;
-          background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-          border: 2px solid ${borderColor};
-          border-radius: 50%;
-          cursor: pointer;
-          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 10px;
-          color: white;
-          font-weight: bold;
-        `;
-        profileEl.textContent = profile.full_name.charAt(0);
+        
+        if (profile.picture_url) {
+          // Use profile image
+          profileEl.style.cssText = `
+            width: 28px;
+            height: 28px;
+            border: 2px solid ${borderColor};
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+            background-image: url('${profile.picture_url}');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+          `;
+        } else {
+          // Use initials fallback
+          profileEl.style.cssText = `
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border: 2px solid ${borderColor};
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: white;
+            font-weight: bold;
+          `;
+          profileEl.textContent = profile.full_name.charAt(0);
+        }
 
         const profileMarker = new mapboxgl.Marker({ element: profileEl })
           .setLngLat([profileLng, profileLat])
           .addTo(map.current!);
 
-        // Add popup for profile
-        const popup = new mapboxgl.Popup({ 
-          offset: 25,
-          className: theme === 'dark' ? 'dark-popup' : ''
-        })
-          .setHTML(`
-            <div class="p-2 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'} rounded-lg shadow-lg">
-              <div class="font-semibold text-sm">${profile.full_name}</div>
-              ${profile.headline ? `<div class="text-xs ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} mt-1">${profile.headline}</div>` : ''}
-              <div class="text-xs text-blue-400 mt-1">
-                <a href="${profile.profile_url}" target="_blank" class="hover:underline">View Profile</a>
-              </div>
-            </div>
-          `);
-
-        profileMarker.setPopup(popup);
+        // Add click handler to open custom modal
+        profileEl.addEventListener('click', () => {
+          setSelectedProfile(profile);
+          setProfileFormData({
+            full_name: profile.full_name,
+            headline: profile.headline || '',
+            profile_url: profile.profile_url,
+            picture_url: profile.picture_url || ''
+          });
+          setShowProfileModal(true);
+        });
         profileMarkersRef.current.push(profileMarker);
 
         // Add connection line data
@@ -819,6 +845,170 @@ export function LocationsTab() {
               </div>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* LinkedIn Profile Modal */}
+      <Dialog open={showProfileModal} onOpenChange={(open) => {
+        setShowProfileModal(open);
+        if (!open) {
+          setIsEditingProfile(false);
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              {isEditingProfile ? 'Edit Profile' : selectedProfile?.full_name}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedProfile && (
+            <div className="space-y-4">
+              {isEditingProfile ? (
+                // Edit Form
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="profile_full_name">Full Name *</Label>
+                    <Input
+                      id="profile_full_name"
+                      value={profileFormData.full_name}
+                      onChange={(e) => setProfileFormData(prev => ({ ...prev, full_name: e.target.value }))}
+                      placeholder="Enter full name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="profile_headline">Headline</Label>
+                    <Input
+                      id="profile_headline"
+                      value={profileFormData.headline}
+                      onChange={(e) => setProfileFormData(prev => ({ ...prev, headline: e.target.value }))}
+                      placeholder="Professional headline"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="profile_url">LinkedIn Profile URL *</Label>
+                    <Input
+                      id="profile_url"
+                      value={profileFormData.profile_url}
+                      onChange={(e) => setProfileFormData(prev => ({ ...prev, profile_url: e.target.value }))}
+                      placeholder="https://linkedin.com/in/username"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="profile_picture_url">Profile Picture URL</Label>
+                    <Input
+                      id="profile_picture_url"
+                      value={profileFormData.picture_url}
+                      onChange={(e) => setProfileFormData(prev => ({ ...prev, picture_url: e.target.value }))}
+                      placeholder="https://example.com/profile-image.jpg"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={async () => {
+                        try {
+                          const { error } = await supabase
+                            .from('linkedin_profiles')
+                            .update({
+                              full_name: profileFormData.full_name,
+                              headline: profileFormData.headline || null,
+                              profile_url: profileFormData.profile_url,
+                              picture_url: profileFormData.picture_url || null
+                            })
+                            .eq('id', selectedProfile.id);
+
+                          if (error) throw error;
+
+                          setIsEditingProfile(false);
+                          toast.success('Profile updated successfully');
+                          loadCompaniesData(); // Refresh data
+                        } catch (error) {
+                          console.error('Error updating profile:', error);
+                          toast.error('Failed to update profile');
+                        }
+                      }}
+                      className="flex-1"
+                    >
+                      Save Changes
+                    </Button>
+                    <Button variant="outline" onClick={() => setIsEditingProfile(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                // View Mode
+                <>
+                  {/* Profile Image */}
+                  <div className="flex justify-center">
+                    {selectedProfile.picture_url ? (
+                      <img 
+                        src={selectedProfile.picture_url} 
+                        alt={selectedProfile.full_name}
+                        className="w-20 h-20 rounded-full border-2 border-border object-cover"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white text-2xl font-bold">
+                        {selectedProfile.full_name.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="text-center space-y-2">
+                    <h3 className="font-semibold text-lg">{selectedProfile.full_name}</h3>
+                    {selectedProfile.headline && (
+                      <p className="text-muted-foreground text-sm">{selectedProfile.headline}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground mb-1">LinkedIn Profile</h4>
+                      <a 
+                        href={selectedProfile.profile_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline text-sm break-all"
+                      >
+                        {selectedProfile.profile_url}
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={() => setIsEditingProfile(true)}
+                      className="flex-1"
+                    >
+                      Edit Profile
+                    </Button>
+                    <Button 
+                      variant="destructive"
+                      onClick={async () => {
+                        try {
+                          const { error } = await supabase
+                            .from('linkedin_profiles')
+                            .delete()
+                            .eq('id', selectedProfile.id);
+
+                          if (error) throw error;
+
+                          setShowProfileModal(false);
+                          toast.success('Profile deleted successfully');
+                          loadCompaniesData(); // Refresh data
+                        } catch (error) {
+                          console.error('Error deleting profile:', error);
+                          toast.error('Failed to delete profile');
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
