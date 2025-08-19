@@ -34,6 +34,15 @@ export function LocationsTab() {
   const [selectedLocation, setSelectedLocation] = useState<TargetedLocation | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
+  const [isEditingLocation, setIsEditingLocation] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    company_name: '',
+    office_address: '',
+    city: '',
+    state: '',
+    country: 'US',
+    notes: ''
+  });
   const [mapboxToken, setMapboxToken] = useState<string>('');
   const [formData, setFormData] = useState({
     company_name: '',
@@ -212,6 +221,50 @@ export function LocationsTab() {
     }
   };
 
+  const handleUpdateLocation = async () => {
+    if (!selectedLocation || !editFormData.company_name || !editFormData.office_address) {
+      toast.error('Company name and office address are required');
+      return;
+    }
+
+    try {
+      // Geocode the address if it changed
+      let coordinates = null;
+      if (editFormData.office_address !== selectedLocation.office_address) {
+        coordinates = await geocodeAddress(editFormData.office_address);
+      }
+
+      const { data, error } = await supabase
+        .from('targeted_locations')
+        .update({
+          ...editFormData,
+          latitude: coordinates?.latitude || selectedLocation.latitude,
+          longitude: coordinates?.longitude || selectedLocation.longitude,
+        })
+        .eq('id', selectedLocation.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setLocations(prev => prev.map(loc => loc.id === selectedLocation.id ? data : loc));
+      setSelectedLocation(data);
+      setIsEditingLocation(false);
+      toast.success('Location updated successfully');
+
+      // Navigate to updated location if coordinates changed
+      if (coordinates && map.current) {
+        map.current.flyTo({
+          center: [coordinates.longitude, coordinates.latitude],
+          zoom: 14
+        });
+      }
+    } catch (error) {
+      console.error('Error updating location:', error);
+      toast.error('Failed to update location');
+    }
+  };
+
   const handleDeleteLocation = async (id: string) => {
     try {
       const { error } = await supabase
@@ -374,7 +427,6 @@ export function LocationsTab() {
                             duration: 2000
                           });
                         }
-                        setShowLocationModal(true);
                       }}
                     >
                       <div className="flex items-start justify-between">
@@ -382,7 +434,7 @@ export function LocationsTab() {
                           <h4 className="font-medium">{location.company_name}</h4>
                           <p className="text-sm text-muted-foreground">{location.office_address}</p>
                           {location.notes && (
-                            <div className="text-xs text-muted-foreground mt-1">
+                            <div className="text-xs text-muted-foreground mt-1 space-y-1">
                               {location.notes.split('\n\n').filter(note => note.trim()).map((note, index) => (
                                 <div key={index} className="flex items-start gap-1">
                                   <span className="mt-1">•</span>
@@ -424,80 +476,173 @@ export function LocationsTab() {
       </div>
 
       {/* Location Details Modal */}
-      <Dialog open={showLocationModal} onOpenChange={setShowLocationModal}>
+      <Dialog open={showLocationModal} onOpenChange={(open) => {
+        setShowLocationModal(open);
+        if (!open) {
+          setIsEditingLocation(false);
+        }
+      }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
-              {selectedLocation?.company_name}
+              {isEditingLocation ? 'Edit Location' : selectedLocation?.company_name}
             </DialogTitle>
           </DialogHeader>
           {selectedLocation && (
             <div className="space-y-4">
-              <div>
-                <h4 className="font-medium text-sm text-muted-foreground mb-1">Address</h4>
-                <p>{selectedLocation.office_address}</p>
-              </div>
-              
-              {(selectedLocation.city || selectedLocation.state) && (
-                <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-1">Location</h4>
-                  <p>{[selectedLocation.city, selectedLocation.state, selectedLocation.country].filter(Boolean).join(', ')}</p>
-                </div>
-              )}
-
-              {selectedLocation.latitude && selectedLocation.longitude && (
-                <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-1">Coordinates</h4>
-                  <p className="font-mono text-sm">
-                    {selectedLocation.latitude.toFixed(6)}, {selectedLocation.longitude.toFixed(6)}
-                  </p>
-                </div>
-              )}
-
-              {selectedLocation.notes && (
-                <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-1">Notes</h4>
-                  <div className="space-y-1">
-                    {selectedLocation.notes.split('\n\n').filter(note => note.trim()).map((note, index) => (
-                      <div key={index} className="flex items-start gap-2">
-                        <span className="text-muted-foreground mt-1">•</span>
-                        <p className="text-sm">{note.trim()}</p>
-                      </div>
-                    ))}
+              {isEditingLocation ? (
+                // Edit Form
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="edit_company_name">Company Name *</Label>
+                    <Input
+                      id="edit_company_name"
+                      value={editFormData.company_name}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, company_name: e.target.value }))}
+                      placeholder="Enter company name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit_office_address">Office Address *</Label>
+                    <Input
+                      id="edit_office_address"
+                      value={editFormData.office_address}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, office_address: e.target.value }))}
+                      placeholder="123 Main St, City, State, ZIP"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="edit_city">City</Label>
+                      <Input
+                        id="edit_city"
+                        value={editFormData.city}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, city: e.target.value }))}
+                        placeholder="City"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit_state">State</Label>
+                      <Input
+                        id="edit_state"
+                        value={editFormData.state}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, state: e.target.value }))}
+                        placeholder="State"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="edit_notes">Notes</Label>
+                    <Textarea
+                      id="edit_notes"
+                      value={editFormData.notes}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, notes: e.target.value }))}
+                      placeholder="Additional notes about this location"
+                      rows={3}
+                    />
                   </div>
                 </div>
+              ) : (
+                // View Mode
+                <>
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Address</h4>
+                    <p>{selectedLocation.office_address}</p>
+                  </div>
+                  
+                  {(selectedLocation.city || selectedLocation.state) && (
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground mb-1">Location</h4>
+                      <p>{[selectedLocation.city, selectedLocation.state, selectedLocation.country].filter(Boolean).join(', ')}</p>
+                    </div>
+                  )}
+
+                  {selectedLocation.latitude && selectedLocation.longitude && (
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground mb-1">Coordinates</h4>
+                      <p className="font-mono text-sm">
+                        {selectedLocation.latitude.toFixed(6)}, {selectedLocation.longitude.toFixed(6)}
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedLocation.notes && (
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground mb-1">Notes</h4>
+                      <div className="space-y-1">
+                        {selectedLocation.notes.split('\n\n').filter(note => note.trim()).map((note, index) => (
+                          <div key={index} className="flex items-start gap-2">
+                            <span className="text-muted-foreground mt-1">•</span>
+                            <p className="text-sm">{note.trim()}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <Badge variant={selectedLocation.is_active ? 'default' : 'secondary'}>
+                      {selectedLocation.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                    {selectedLocation.latitude && selectedLocation.longitude && (
+                      <Badge variant="outline">
+                        Geocoded
+                      </Badge>
+                    )}
+                  </div>
+                </>
               )}
 
-              <div className="flex items-center gap-2">
-                <Badge variant={selectedLocation.is_active ? 'default' : 'secondary'}>
-                  {selectedLocation.is_active ? 'Active' : 'Inactive'}
-                </Badge>
-                {selectedLocation.latitude && selectedLocation.longitude && (
-                  <Badge variant="outline">
-                    Geocoded
-                  </Badge>
+              <div className="flex justify-between pt-4 border-t">
+                {isEditingLocation ? (
+                  <div className="flex gap-2 ml-auto">
+                    <Button variant="outline" onClick={() => setIsEditingLocation(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleUpdateLocation}>
+                      Save Changes
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setEditFormData({
+                          company_name: selectedLocation.company_name,
+                          office_address: selectedLocation.office_address,
+                          city: selectedLocation.city || '',
+                          state: selectedLocation.state || '',
+                          country: selectedLocation.country,
+                          notes: selectedLocation.notes || ''
+                        });
+                        setIsEditingLocation(true);
+                      }}
+                    >
+                      Edit Location
+                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          handleDeleteLocation(selectedLocation.id);
+                          setShowLocationModal(false);
+                        }}
+                        className="gap-2"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowLocationModal(false)}
+                      >
+                        Close
+                      </Button>
+                    </div>
+                  </>
                 )}
-              </div>
-
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    handleDeleteLocation(selectedLocation.id);
-                    setShowLocationModal(false);
-                  }}
-                  className="gap-2"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete Location
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowLocationModal(false)}
-                >
-                  Close
-                </Button>
               </div>
             </div>
           )}
