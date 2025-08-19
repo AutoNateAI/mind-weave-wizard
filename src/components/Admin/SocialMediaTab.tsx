@@ -16,8 +16,11 @@ import {
   Trash2,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  UserPlus,
+  Building
 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -44,6 +47,29 @@ interface UploadBatch {
   created_at: string;
 }
 
+interface TargetedLocation {
+  id: string;
+  company_name: string;
+  office_address: string;
+  city: string | null;
+  state: string | null;
+  country: string;
+}
+
+interface ManualProfile {
+  platform: 'linkedin' | 'instagram' | 'reddit';
+  full_name: string;
+  username: string;
+  profile_url: string;
+  company_id: string | null;
+  headline: string;
+  location: string;
+  bio: string;
+  followers_count: string;
+  connections_count: string;
+  posts_count: string;
+}
+
 export function SocialMediaTab() {
   const [activeTab, setActiveTab] = useState('accounts');
   const [socialAccounts, setSocialAccounts] = useState<SocialAccount[]>([]);
@@ -54,11 +80,42 @@ export function SocialMediaTab() {
     data_source: 'apify_people_search',
     description: ''
   });
+  const [locations, setLocations] = useState<TargetedLocation[]>([]);
+  const [manualProfile, setManualProfile] = useState<ManualProfile>({
+    platform: 'linkedin',
+    full_name: '',
+    username: '',
+    profile_url: '',
+    company_id: null,
+    headline: '',
+    location: '',
+    bio: '',
+    followers_count: '',
+    connections_count: '',
+    posts_count: ''
+  });
 
   useEffect(() => {
     loadSocialAccounts();
     loadUploadBatches();
+    loadLocations();
   }, []);
+
+  const loadLocations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('targeted_locations')
+        .select('id, company_name, office_address, city, state, country')
+        .eq('is_active', true)
+        .order('company_name');
+
+      if (error) throw error;
+      setLocations(data || []);
+    } catch (error) {
+      console.error('Error loading locations:', error);
+      toast.error('Failed to load locations');
+    }
+  };
 
   const loadSocialAccounts = async () => {
     try {
@@ -153,6 +210,81 @@ export function SocialMediaTab() {
     } catch (error) {
       console.error('Error uploading file:', error);
       toast.error('Failed to process upload');
+    }
+  };
+
+  const handleManualProfileUpload = async () => {
+    if (!manualProfile.full_name || !manualProfile.username || !manualProfile.profile_url) {
+      toast.error('Please fill in required fields: Full Name, Username, and Profile URL');
+      return;
+    }
+
+    try {
+      const profileData = {
+        full_name: manualProfile.full_name,
+        username: manualProfile.username,
+        profile_url: manualProfile.profile_url,
+        headline: manualProfile.headline,
+        location: manualProfile.location,
+        summary: manualProfile.bio,
+        platform: manualProfile.platform,
+        target_location_id: manualProfile.company_id,
+        followers_count: manualProfile.followers_count ? parseInt(manualProfile.followers_count) : null,
+        connections_count: manualProfile.connections_count ? parseInt(manualProfile.connections_count) : null,
+        posts_count: manualProfile.posts_count ? parseInt(manualProfile.posts_count) : null
+      };
+
+      // Insert into appropriate table based on platform
+      let error;
+      if (manualProfile.platform === 'linkedin') {
+        const { error: insertError } = await supabase
+          .from('linkedin_profiles')
+          .insert({
+            ...profileData,
+            linkedin_profile_id: manualProfile.username,
+            public_id: manualProfile.username,
+            first_name: manualProfile.full_name.split(' ')[0],
+            last_name: manualProfile.full_name.split(' ').slice(1).join(' '),
+            occupation: manualProfile.headline
+          });
+        error = insertError;
+      } else {
+        // For Instagram and Reddit, we'll store in a general social_profiles table
+        // For now, let's use linkedin_profiles with platform identifier
+        const { error: insertError } = await supabase
+          .from('linkedin_profiles')
+          .insert({
+            ...profileData,
+            linkedin_profile_id: `${manualProfile.platform}_${manualProfile.username}`,
+            public_id: manualProfile.username,
+            first_name: manualProfile.full_name.split(' ')[0],
+            last_name: manualProfile.full_name.split(' ').slice(1).join(' '),
+            occupation: manualProfile.headline
+          });
+        error = insertError;
+      }
+
+      if (error) throw error;
+
+      toast.success(`${manualProfile.platform} profile added successfully!`);
+      
+      // Reset form
+      setManualProfile({
+        platform: 'linkedin',
+        full_name: '',
+        username: '',
+        profile_url: '',
+        company_id: null,
+        headline: '',
+        location: '',
+        bio: '',
+        followers_count: '',
+        connections_count: '',
+        posts_count: ''
+      });
+    } catch (error) {
+      console.error('Error adding manual profile:', error);
+      toast.error('Failed to add profile');
     }
   };
 
@@ -298,8 +430,190 @@ export function SocialMediaTab() {
         </TabsContent>
 
         <TabsContent value="upload" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Upload Form */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            {/* Manual Profile Upload */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserPlus className="h-5 w-5" />
+                  Add Individual Profile
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="platform">Platform *</Label>
+                  <Select 
+                    value={manualProfile.platform} 
+                    onValueChange={(value: 'linkedin' | 'instagram' | 'reddit') => 
+                      setManualProfile(prev => ({ ...prev, platform: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="linkedin">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 bg-blue-600 rounded flex items-center justify-center">
+                            <span className="text-white text-xs font-bold">in</span>
+                          </div>
+                          LinkedIn
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="instagram">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 rounded"></div>
+                          Instagram
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="reddit">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 bg-orange-500 rounded"></div>
+                          Reddit
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="full_name">Full Name *</Label>
+                  <Input
+                    id="full_name"
+                    value={manualProfile.full_name}
+                    onChange={(e) => setManualProfile(prev => ({ ...prev, full_name: e.target.value }))}
+                    placeholder="John Doe"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="username">Username *</Label>
+                  <Input
+                    id="username"
+                    value={manualProfile.username}
+                    onChange={(e) => setManualProfile(prev => ({ ...prev, username: e.target.value }))}
+                    placeholder="johndoe"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="profile_url">Profile URL *</Label>
+                  <Input
+                    id="profile_url"
+                    value={manualProfile.profile_url}
+                    onChange={(e) => setManualProfile(prev => ({ ...prev, profile_url: e.target.value }))}
+                    placeholder="https://linkedin.com/in/johndoe"
+                  />
+                </div>
+
+                {manualProfile.platform === 'linkedin' && (
+                  <div>
+                    <Label htmlFor="company">Company</Label>
+                    <Select 
+                      value={manualProfile.company_id || ''} 
+                      onValueChange={(value) => 
+                        setManualProfile(prev => ({ ...prev, company_id: value || null }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select company from locations" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {locations.map((location) => (
+                          <SelectItem key={location.id} value={location.id}>
+                            <div className="flex items-center gap-2">
+                              <Building className="h-4 w-4" />
+                              <div>
+                                <div>{location.company_name}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {location.city}, {location.state}
+                                </div>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div>
+                  <Label htmlFor="headline">Headline/Title</Label>
+                  <Input
+                    id="headline"
+                    value={manualProfile.headline}
+                    onChange={(e) => setManualProfile(prev => ({ ...prev, headline: e.target.value }))}
+                    placeholder="Software Engineer at TechCorp"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="location">Location</Label>
+                  <Input
+                    id="location"
+                    value={manualProfile.location}
+                    onChange={(e) => setManualProfile(prev => ({ ...prev, location: e.target.value }))}
+                    placeholder="San Francisco, CA"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="bio">Bio/Summary</Label>
+                  <Textarea
+                    id="bio"
+                    value={manualProfile.bio}
+                    onChange={(e) => setManualProfile(prev => ({ ...prev, bio: e.target.value }))}
+                    placeholder="Brief bio or summary"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <Label htmlFor="followers_count">Followers</Label>
+                    <Input
+                      id="followers_count"
+                      type="number"
+                      value={manualProfile.followers_count}
+                      onChange={(e) => setManualProfile(prev => ({ ...prev, followers_count: e.target.value }))}
+                      placeholder="500"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="connections_count">
+                      {manualProfile.platform === 'linkedin' ? 'Connections' : 'Following'}
+                    </Label>
+                    <Input
+                      id="connections_count"
+                      type="number"
+                      value={manualProfile.connections_count}
+                      onChange={(e) => setManualProfile(prev => ({ ...prev, connections_count: e.target.value }))}
+                      placeholder="250"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="posts_count">Posts</Label>
+                    <Input
+                      id="posts_count"
+                      type="number"
+                      value={manualProfile.posts_count}
+                      onChange={(e) => setManualProfile(prev => ({ ...prev, posts_count: e.target.value }))}
+                      placeholder="50"
+                    />
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={handleManualProfileUpload}
+                  disabled={!manualProfile.full_name || !manualProfile.username || !manualProfile.profile_url}
+                  className="w-full"
+                >
+                  Add Profile
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Apify Upload Form */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -377,7 +691,7 @@ export function SocialMediaTab() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+                <div className="space-y-3 max-h-96 overflow-y-auto scrollbar-hide">
                   {uploadBatches.length === 0 ? (
                     <p className="text-muted-foreground text-center py-4">
                       No uploads yet. Upload your first JSON file to get started.
