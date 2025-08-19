@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, MapPin, Plus, Filter } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Trash2, MapPin, Plus, Filter, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -28,9 +29,11 @@ interface TargetedLocation {
 export function LocationsTab() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [locations, setLocations] = useState<TargetedLocation[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<TargetedLocation | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
   const [mapboxToken, setMapboxToken] = useState<string>('');
   const [formData, setFormData] = useState({
     company_name: '',
@@ -62,12 +65,12 @@ export function LocationsTab() {
     }
   }, [mapboxToken]);
 
-  // Add markers when locations change
+  // Add markers when locations change or map is ready
   useEffect(() => {
     if (map.current && locations.length > 0) {
       // Clear existing markers
-      const existingMarkers = document.querySelectorAll('.mapboxgl-marker');
-      existingMarkers.forEach(marker => marker.remove());
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current = [];
 
       // Add new markers
       locations.forEach(location => {
@@ -76,23 +79,29 @@ export function LocationsTab() {
             color: location.is_active ? '#3b82f6' : '#6b7280'
           })
             .setLngLat([location.longitude, location.latitude])
-            .setPopup(
-              new mapboxgl.Popup().setHTML(`
-                <div class="p-2">
-                  <h3 class="font-semibold">${location.company_name}</h3>
-                  <p class="text-sm text-gray-600">${location.office_address}</p>
-                </div>
-              `)
-            )
             .addTo(map.current!);
 
           marker.getElement().addEventListener('click', () => {
             setSelectedLocation(location);
+            setShowLocationModal(true);
           });
+
+          markersRef.current.push(marker);
         }
       });
     }
-  }, [locations]);
+  }, [locations, map.current]);
+
+  // Navigate to selected location
+  useEffect(() => {
+    if (selectedLocation && selectedLocation.latitude && selectedLocation.longitude && map.current) {
+      map.current.flyTo({
+        center: [selectedLocation.longitude, selectedLocation.latitude],
+        zoom: 14,
+        duration: 2000
+      });
+    }
+  }, [selectedLocation]);
 
   const loadMapboxToken = async () => {
     try {
@@ -339,8 +348,13 @@ export function LocationsTab() {
                         selectedLocation?.id === location.id
                           ? 'border-primary bg-primary/5'
                           : 'hover:bg-muted/50'
-                      }`}
-                      onClick={() => setSelectedLocation(location)}
+                       }`}
+                      onClick={() => {
+                        setSelectedLocation(location);
+                        if (location.latitude && location.longitude) {
+                          setShowLocationModal(true);
+                        }
+                      }}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -380,6 +394,87 @@ export function LocationsTab() {
           </Card>
         </div>
       </div>
+
+      {/* Location Details Modal */}
+      <Dialog open={showLocationModal} onOpenChange={setShowLocationModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              {selectedLocation?.company_name}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedLocation && (
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium text-sm text-muted-foreground mb-1">Address</h4>
+                <p>{selectedLocation.office_address}</p>
+              </div>
+              
+              {(selectedLocation.city || selectedLocation.state) && (
+                <div>
+                  <h4 className="font-medium text-sm text-muted-foreground mb-1">Location</h4>
+                  <p>{[selectedLocation.city, selectedLocation.state, selectedLocation.country].filter(Boolean).join(', ')}</p>
+                </div>
+              )}
+
+              {selectedLocation.latitude && selectedLocation.longitude && (
+                <div>
+                  <h4 className="font-medium text-sm text-muted-foreground mb-1">Coordinates</h4>
+                  <p className="font-mono text-sm">
+                    {selectedLocation.latitude.toFixed(6)}, {selectedLocation.longitude.toFixed(6)}
+                  </p>
+                </div>
+              )}
+
+              {selectedLocation.notes && (
+                <div>
+                  <h4 className="font-medium text-sm text-muted-foreground mb-1">Notes</h4>
+                  <div className="space-y-1">
+                    {selectedLocation.notes.split('\n\n').filter(note => note.trim()).map((note, index) => (
+                      <div key={index} className="flex items-start gap-2">
+                        <span className="text-muted-foreground mt-1">•</span>
+                        <p className="text-sm">{note.trim()}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <Badge variant={selectedLocation.is_active ? 'default' : 'secondary'}>
+                  {selectedLocation.is_active ? 'Active' : 'Inactive'}
+                </Badge>
+                {selectedLocation.latitude && selectedLocation.longitude && (
+                  <Badge variant="outline">
+                    Geocoded
+                  </Badge>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    handleDeleteLocation(selectedLocation.id);
+                    setShowLocationModal(false);
+                  }}
+                  className="gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Location
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowLocationModal(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
