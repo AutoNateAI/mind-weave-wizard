@@ -406,7 +406,7 @@ export function LocationsTab() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
+              <div className="space-y-3 max-h-96 overflow-y-auto scrollbar-hide">
                 {locations.length === 0 ? (
                   <p className="text-muted-foreground text-center py-4">
                     No locations added yet. Click "Add Location" to get started.
