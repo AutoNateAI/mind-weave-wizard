@@ -122,6 +122,9 @@ export function LocationsTab() {
           setShowLocationModal(true);
         });
 
+        // Add cursor pointer on hover
+        marker.getElement().style.cursor = 'pointer';
+
         markersRef.current.push(marker);
       }
     });
