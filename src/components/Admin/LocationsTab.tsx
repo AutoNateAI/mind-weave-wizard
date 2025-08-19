@@ -8,10 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Trash2, MapPin, Plus, Filter, X } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Trash2, MapPin, Plus, Filter, X, Building, Users, Eye, EyeOff, Network } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { LocationsGraph } from './LocationsGraph';
 
 interface TargetedLocation {
   id: string;
@@ -27,11 +27,28 @@ interface TargetedLocation {
   created_at: string;
 }
 
+interface CompanyData {
+  id: string;
+  company_name: string;
+  latitude: number | null;
+  longitude: number | null;
+  profile_count: number;
+  profiles: {
+    id: string;
+    full_name: string;
+    headline: string | null;
+    profile_url: string;
+  }[];
+}
+
 export function LocationsTab() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const profileMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const [locations, setLocations] = useState<TargetedLocation[]>([]);
+  const [companiesData, setCompaniesData] = useState<CompanyData[]>([]);
+  const [visibleCompanies, setVisibleCompanies] = useState<Set<string>>(new Set());
   const [selectedLocation, setSelectedLocation] = useState<TargetedLocation | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
@@ -60,6 +77,198 @@ export function LocationsTab() {
     loadLocations();
   }, []);
 
+  // Load companies data with LinkedIn profiles
+  useEffect(() => {
+    loadCompaniesData();
+  }, []);
+
+  // Update markers when companies data changes
+  useEffect(() => {
+    if (map.current && map.current.isStyleLoaded()) {
+      addNetworkMarkersToMap();
+    }
+  }, [companiesData, visibleCompanies]);
+
+  const loadCompaniesData = async () => {
+    try {
+      // Get companies with their LinkedIn profiles
+      const { data, error } = await supabase
+        .from('targeted_locations')
+        .select(`
+          id,
+          company_name,
+          latitude,
+          longitude,
+          location_social_mapping!location_id (
+            linkedin_profile_id,
+            linkedin_profiles!linkedin_profile_id (
+              id,
+              full_name,
+              headline,
+              profile_url
+            )
+          )
+        `)
+        .eq('is_active', true);
+
+      if (error) throw error;
+
+      // Transform the data
+      const companiesWithProfiles = (data || [])
+        .map(company => {
+          const profiles = company.location_social_mapping
+            .map(mapping => mapping.linkedin_profiles)
+            .filter(profile => profile !== null)
+            .flat();
+
+          return {
+            id: company.id,
+            company_name: company.company_name,
+            latitude: company.latitude,
+            longitude: company.longitude,
+            profile_count: profiles.length,
+            profiles: profiles
+          };
+        })
+        .filter(company => company.profile_count > 0 && company.latitude && company.longitude);
+
+      setCompaniesData(companiesWithProfiles);
+      
+      // Initially show all companies
+      const allCompanyIds = new Set(companiesWithProfiles.map(c => c.id));
+      setVisibleCompanies(allCompanyIds);
+
+    } catch (error) {
+      console.error('Error loading companies data:', error);
+      toast.error('Failed to load companies data');
+    }
+  };
+
+  const addNetworkMarkersToMap = () => {
+    if (!map.current) return;
+
+    // Clear existing profile markers
+    profileMarkersRef.current.forEach(marker => marker.remove());
+    profileMarkersRef.current = [];
+
+    // Clear existing connection lines
+    if (map.current.getLayer('connections')) {
+      map.current.removeLayer('connections');
+    }
+    if (map.current.getSource('connections')) {
+      map.current.removeSource('connections');
+    }
+
+    // Create connection lines data
+    const connectionLines: any[] = [];
+
+    companiesData.forEach(company => {
+      if (!visibleCompanies.has(company.id) || !company.latitude || !company.longitude) return;
+
+      // Add profile markers around the company
+      company.profiles.forEach((profile, index) => {
+        const angle = (index / company.profiles.length) * 2 * Math.PI;
+        const radius = 0.002; // Small radius for nearby placement
+        const profileLat = company.latitude! + Math.cos(angle) * radius;
+        const profileLng = company.longitude! + Math.sin(angle) * radius;
+
+        // Create profile marker
+        const profileEl = document.createElement('div');
+        profileEl.className = 'profile-marker';
+        profileEl.style.cssText = `
+          width: 24px;
+          height: 24px;
+          background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+          border: 2px solid white;
+          border-radius: 50%;
+          cursor: pointer;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10px;
+          color: white;
+          font-weight: bold;
+        `;
+        profileEl.textContent = profile.full_name.charAt(0);
+
+        const profileMarker = new mapboxgl.Marker({ element: profileEl })
+          .setLngLat([profileLng, profileLat])
+          .addTo(map.current!);
+
+        // Add popup for profile
+        const popup = new mapboxgl.Popup({ offset: 25 })
+          .setHTML(`
+            <div class="p-2">
+              <div class="font-semibold text-sm">${profile.full_name}</div>
+              ${profile.headline ? `<div class="text-xs text-gray-600 mt-1">${profile.headline}</div>` : ''}
+              <div class="text-xs text-blue-600 mt-1">
+                <a href="${profile.profile_url}" target="_blank" class="hover:underline">View Profile</a>
+              </div>
+            </div>
+          `);
+
+        profileMarker.setPopup(popup);
+        profileMarkersRef.current.push(profileMarker);
+
+        // Add connection line data
+        connectionLines.push({
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: [
+              [company.longitude, company.latitude],
+              [profileLng, profileLat]
+            ]
+          }
+        });
+      });
+    });
+
+    // Add connection lines to map
+    if (connectionLines.length > 0) {
+      map.current.addSource('connections', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: connectionLines
+        }
+      });
+
+      map.current.addLayer({
+        id: 'connections',
+        type: 'line',
+        source: 'connections',
+        layout: {},
+        paint: {
+          'line-color': '#6b7280',
+          'line-width': 1,
+          'line-opacity': 0.6
+        }
+      });
+    }
+  };
+
+  const toggleCompanyVisibility = (companyId: string) => {
+    setVisibleCompanies(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(companyId)) {
+        newSet.delete(companyId);
+      } else {
+        newSet.add(companyId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleAllCompanies = (show: boolean) => {
+    if (show) {
+      setVisibleCompanies(new Set(companiesData.map(c => c.id)));
+    } else {
+      setVisibleCompanies(new Set());
+    }
+  };
+
   // Initialize map when token is available
   useEffect(() => {
     if (mapboxToken && mapContainer.current && !map.current) {
@@ -77,6 +286,7 @@ export function LocationsTab() {
       // Add markers after map is loaded
       map.current.on('load', () => {
         addMarkersToMap();
+        addNetworkMarkersToMap();
       });
     }
   }, [mapboxToken]);
@@ -201,6 +411,8 @@ export function LocationsTab() {
       if (error) throw error;
 
       setLocations(prev => [data, ...prev]);
+      // Reload companies data to update LinkedIn profiles network
+      loadCompaniesData();
       setFormData({
         company_name: '',
         office_address: '',
@@ -479,8 +691,74 @@ export function LocationsTab() {
         </div>
       </div>
 
-      {/* LinkedIn Profiles Network Graph */}
-      <LocationsGraph />
+      {/* LinkedIn Profiles Network Controls */}
+      {companiesData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Network className="h-5 w-5" />
+              LinkedIn Profiles Network
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm font-medium">Show All</Label>
+                <p className="text-xs text-muted-foreground">
+                  Toggle all companies
+                </p>
+              </div>
+              <Switch
+                checked={visibleCompanies.size === companiesData.length}
+                onCheckedChange={toggleAllCompanies}
+              />
+            </div>
+            
+            <div className="pt-2 border-t">
+              <div className="flex items-center justify-between mb-3">
+                <Label className="text-sm font-medium">Companies</Label>
+                <Badge variant="secondary" className="text-xs">
+                  {visibleCompanies.size}/{companiesData.length}
+                </Badge>
+              </div>
+              
+              <div className="space-y-2 max-h-64 overflow-y-auto scrollbar-hide">
+                {companiesData.map((company) => (
+                  <div key={company.id} className="flex items-center justify-between p-2 rounded border">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm truncate">
+                        {company.company_name}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {company.profile_count} profiles
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => toggleCompanyVisibility(company.id)}
+                      className="ml-2 p-1 h-auto"
+                    >
+                      {visibleCompanies.has(company.id) ? (
+                        <Eye className="h-4 w-4" />
+                      ) : (
+                        <EyeOff className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-2 border-t">
+              <div className="text-xs text-muted-foreground">
+                LinkedIn profiles appear as small blue circles around company markers on the map. 
+                Click any profile circle to view details and access their LinkedIn page.
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Location Details Modal */}
       <Dialog open={showLocationModal} onOpenChange={(open) => {
