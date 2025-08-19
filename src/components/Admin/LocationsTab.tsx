@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Trash2, MapPin, Plus, Filter, X, Building, Users, Eye, EyeOff, Network } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useTheme } from 'next-themes';
 
 interface TargetedLocation {
   id: string;
@@ -42,6 +43,7 @@ interface CompanyData {
 }
 
 export function LocationsTab() {
+  const { theme } = useTheme();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -175,14 +177,15 @@ export function LocationsTab() {
         // Create profile marker
         const profileEl = document.createElement('div');
         profileEl.className = 'profile-marker';
+        const borderColor = theme === 'dark' ? '#1f2937' : 'white';
         profileEl.style.cssText = `
           width: 24px;
           height: 24px;
           background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-          border: 2px solid white;
+          border: 2px solid ${borderColor};
           border-radius: 50%;
           cursor: pointer;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -197,12 +200,15 @@ export function LocationsTab() {
           .addTo(map.current!);
 
         // Add popup for profile
-        const popup = new mapboxgl.Popup({ offset: 25 })
+        const popup = new mapboxgl.Popup({ 
+          offset: 25,
+          className: theme === 'dark' ? 'dark-popup' : ''
+        })
           .setHTML(`
-            <div class="p-2">
+            <div class="p-2 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'} rounded-lg shadow-lg">
               <div class="font-semibold text-sm">${profile.full_name}</div>
-              ${profile.headline ? `<div class="text-xs text-gray-600 mt-1">${profile.headline}</div>` : ''}
-              <div class="text-xs text-blue-600 mt-1">
+              ${profile.headline ? `<div class="text-xs ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} mt-1">${profile.headline}</div>` : ''}
+              <div class="text-xs text-blue-400 mt-1">
                 <a href="${profile.profile_url}" target="_blank" class="hover:underline">View Profile</a>
               </div>
             </div>
@@ -241,9 +247,9 @@ export function LocationsTab() {
         source: 'connections',
         layout: {},
         paint: {
-          'line-color': '#6b7280',
+          'line-color': theme === 'dark' ? '#9ca3af' : '#6b7280',
           'line-width': 1,
-          'line-opacity': 0.6
+          'line-opacity': theme === 'dark' ? 0.8 : 0.6
         }
       });
     }
@@ -274,9 +280,13 @@ export function LocationsTab() {
     if (mapboxToken && mapContainer.current && !map.current) {
       mapboxgl.accessToken = mapboxToken;
       
+      const mapStyle = theme === 'dark' 
+        ? 'mapbox://styles/mapbox/dark-v11' 
+        : 'mapbox://styles/mapbox/light-v11';
+      
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/light-v11',
+        style: mapStyle,
         center: [-98.5, 39.8], // Center of US
         zoom: 4
       });
@@ -289,7 +299,24 @@ export function LocationsTab() {
         addNetworkMarkersToMap();
       });
     }
-  }, [mapboxToken]);
+  }, [mapboxToken, theme]);
+
+  // Update map style when theme changes
+  useEffect(() => {
+    if (map.current && mapboxToken) {
+      const mapStyle = theme === 'dark' 
+        ? 'mapbox://styles/mapbox/dark-v11' 
+        : 'mapbox://styles/mapbox/light-v11';
+      
+      map.current.setStyle(mapStyle);
+      
+      // Re-add markers and connections after style loads
+      map.current.once('styledata', () => {
+        addMarkersToMap();
+        addNetworkMarkersToMap();
+      });
+    }
+  }, [theme]);
 
   // Add markers when locations change
   useEffect(() => {
