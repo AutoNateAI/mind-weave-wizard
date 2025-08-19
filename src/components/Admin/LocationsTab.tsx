@@ -86,7 +86,7 @@ export function LocationsTab() {
     profile_url: '',
     picture_url: ''
   });
-  const [activeControlsTab, setActiveControlsTab] = useState<'network' | 'locations'>('network');
+  const [activeControlsTab, setActiveControlsTab] = useState<'network' | 'locations'>('locations');
   const [showAddEmployee, setShowAddEmployee] = useState(false);
   const [employeeFormData, setEmployeeFormData] = useState({
     full_name: '',
@@ -701,17 +701,6 @@ export function LocationsTab() {
           {/* Tabs */}
           <div className="flex space-x-1 border-b">
             <button
-              onClick={() => setActiveControlsTab('network')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
-                activeControlsTab === 'network'
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Network className="h-4 w-4 inline mr-2" />
-              LinkedIn Network
-            </button>
-            <button
               onClick={() => setActiveControlsTab('locations')}
               className={`px-4 py-2 text-sm font-medium transition-colors ${
                 activeControlsTab === 'locations'
@@ -722,10 +711,110 @@ export function LocationsTab() {
               <MapPin className="h-4 w-4 inline mr-2" />
               Targeted Locations
             </button>
+            <button
+              onClick={() => setActiveControlsTab('network')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                activeControlsTab === 'network'
+                  ? 'border-b-2 border-primary text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Network className="h-4 w-4 inline mr-2" />
+              LinkedIn Network
+            </button>
           </div>
 
           <div className="mt-4 overflow-y-auto">
-            {activeControlsTab === 'network' ? (
+            {activeControlsTab === 'locations' ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Targeted Locations</Label>
+                  <Badge variant="secondary" className="text-xs">
+                    {filteredLocations.length} locations
+                  </Badge>
+                </div>
+                
+                {/* Search Input */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search locations..."
+                    value={locationSearchQuery}
+                    onChange={(e) => setLocationSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                <div className="space-y-3 max-h-64 overflow-y-auto scrollbar-hide">
+                  {filteredLocations.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-4">
+                      {locationSearchQuery ? 'No locations match your search.' : 'No locations added yet. Click "Add Location" to get started.'}
+                    </p>
+                  ) : (
+                    filteredLocations.map((location) => (
+                      <div
+                        key={location.id}
+                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                          selectedLocation?.id === location.id
+                            ? 'border-primary bg-primary/5'
+                            : 'hover:bg-muted/50'
+                         }`}
+                        onClick={() => {
+                          setSelectedLocation(location);
+                          setShowNetworkModal(false); // Close modal to see navigation animation
+                          // Navigate map to location
+                          if (location.latitude && location.longitude && map.current) {
+                            map.current.flyTo({
+                              center: [location.longitude, location.latitude],
+                              zoom: 14,
+                              duration: 2000
+                            });
+                          }
+                        }}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium">{location.company_name}</h4>
+                            <p className="text-sm text-muted-foreground">{location.office_address}</p>
+                            {location.notes && (
+                              <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                                {location.notes.split('\n\n').filter(note => note.trim()).map((note, index) => (
+                                  <div key={index} className="flex items-start gap-1">
+                                    <span className="mt-1">•</span>
+                                    <span>{note.trim()}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge variant={location.is_active ? 'default' : 'secondary'} className="text-xs">
+                                {location.is_active ? 'Active' : 'Inactive'}
+                              </Badge>
+                              {location.latitude && location.longitude && (
+                                <Badge variant="outline" className="text-xs">
+                                  Geocoded
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteLocation(location.id);
+                            }}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            ) : (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -781,94 +870,6 @@ export function LocationsTab() {
                     LinkedIn profiles appear as small blue circles around company markers on the map. 
                     Click any profile circle to view details and access their LinkedIn page.
                   </div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Targeted Locations</Label>
-                  <Badge variant="secondary" className="text-xs">
-                    {filteredLocations.length} locations
-                  </Badge>
-                </div>
-                
-                {/* Search Input */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search locations..."
-                    value={locationSearchQuery}
-                    onChange={(e) => setLocationSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                
-                <div className="space-y-3 max-h-64 overflow-y-auto scrollbar-hide">
-                  {filteredLocations.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-4">
-                      {locationSearchQuery ? 'No locations match your search.' : 'No locations added yet. Click "Add Location" to get started.'}
-                    </p>
-                  ) : (
-                    filteredLocations.map((location) => (
-                      <div
-                        key={location.id}
-                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                          selectedLocation?.id === location.id
-                            ? 'border-primary bg-primary/5'
-                            : 'hover:bg-muted/50'
-                         }`}
-                        onClick={() => {
-                          setSelectedLocation(location);
-                          // Navigate map to location
-                          if (location.latitude && location.longitude && map.current) {
-                            map.current.flyTo({
-                              center: [location.longitude, location.latitude],
-                              zoom: 14,
-                              duration: 2000
-                            });
-                          }
-                        }}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-medium">{location.company_name}</h4>
-                            <p className="text-sm text-muted-foreground">{location.office_address}</p>
-                            {location.notes && (
-                              <div className="text-xs text-muted-foreground mt-1 space-y-1">
-                                {location.notes.split('\n\n').filter(note => note.trim()).map((note, index) => (
-                                  <div key={index} className="flex items-start gap-1">
-                                    <span className="mt-1">•</span>
-                                    <span>{note.trim()}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge variant={location.is_active ? 'default' : 'secondary'} className="text-xs">
-                                {location.is_active ? 'Active' : 'Inactive'}
-                              </Badge>
-                              {location.latitude && location.longitude && (
-                                <Badge variant="outline" className="text-xs">
-                                  Geocoded
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteLocation(location.id);
-                            }}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  )}
                 </div>
               </div>
             )}
