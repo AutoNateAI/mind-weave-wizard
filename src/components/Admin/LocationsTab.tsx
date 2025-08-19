@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
-import { Trash2, MapPin, Plus, Filter, X, Building, Users, Eye, EyeOff, Network } from 'lucide-react';
+import { Trash2, MapPin, Plus, Filter, X, Building, Users, Eye, EyeOff, Network, Settings, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
@@ -72,6 +72,8 @@ export function LocationsTab() {
     country: 'US',
     notes: ''
   });
+  const [showNetworkModal, setShowNetworkModal] = useState(false);
+  const [locationSearchQuery, setLocationSearchQuery] = useState('');
 
   // Initialize map and load locations
   useEffect(() => {
@@ -528,6 +530,15 @@ export function LocationsTab() {
     }
   };
 
+  // Filter locations based on search query
+  const filteredLocations = locations.filter(location => 
+    location.company_name.toLowerCase().includes(locationSearchQuery.toLowerCase()) ||
+    location.office_address.toLowerCase().includes(locationSearchQuery.toLowerCase()) ||
+    (location.city && location.city.toLowerCase().includes(locationSearchQuery.toLowerCase())) ||
+    (location.state && location.state.toLowerCase().includes(locationSearchQuery.toLowerCase())) ||
+    (location.notes && location.notes.toLowerCase().includes(locationSearchQuery.toLowerCase()))
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -642,17 +653,30 @@ export function LocationsTab() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 Targeted Locations
-                <Badge variant="secondary">{locations.length} locations</Badge>
+                <Badge variant="secondary">{filteredLocations.length} locations</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Search Input */}
+              <div className="mb-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search locations..."
+                    value={locationSearchQuery}
+                    onChange={(e) => setLocationSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              
               <div className="space-y-3 max-h-96 overflow-y-auto scrollbar-hide">
-                {locations.length === 0 ? (
+                {filteredLocations.length === 0 ? (
                   <p className="text-muted-foreground text-center py-4">
-                    No locations added yet. Click "Add Location" to get started.
+                    {locationSearchQuery ? 'No locations match your search.' : 'No locations added yet. Click "Add Location" to get started.'}
                   </p>
                 ) : (
-                  locations.map((location) => (
+                  filteredLocations.map((location) => (
                     <div
                       key={location.id}
                       className={`p-3 border rounded-lg cursor-pointer transition-colors ${
@@ -718,16 +742,27 @@ export function LocationsTab() {
         </div>
       </div>
 
-      {/* LinkedIn Profiles Network Controls */}
+      {/* Floating Controls Button */}
       {companiesData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Button
+          onClick={() => setShowNetworkModal(true)}
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 z-50"
+          size="icon"
+        >
+          <Settings className="h-6 w-6" />
+        </Button>
+      )}
+
+      {/* Network Controls Modal */}
+      <Dialog open={showNetworkModal} onOpenChange={setShowNetworkModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
               <Network className="h-5 w-5" />
-              LinkedIn Profiles Network
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+              LinkedIn Network Controls
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-sm font-medium">Show All</Label>
@@ -783,9 +818,9 @@ export function LocationsTab() {
                 Click any profile circle to view details and access their LinkedIn page.
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Location Details Modal */}
       <Dialog open={showLocationModal} onOpenChange={(open) => {
