@@ -1074,7 +1074,12 @@ export function LocationsTab() {
                 <QuickAnalysis />
                 <HeatmapControls 
                   activeLayer={activeHeatmapLayer}
-                  onLayerChange={setActiveHeatmapLayer}
+                  onLayerChange={(layer) => {
+                    setActiveHeatmapLayer(layer);
+                    if (layer !== 'none') {
+                      setShowControlsModal(false);
+                    }
+                  }}
                   compact={true}
                 />
               </div>
