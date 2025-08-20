@@ -9,10 +9,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trash2, MapPin, Plus, Filter, X, Building, Users, Eye, EyeOff, Network, Settings, Search, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
+import { LocationsGraph } from './LocationsGraph';
+import { HeatmapControls } from './HeatmapControls';
+import { AnalyticsDashboard } from './AnalyticsDashboard';
+import { QuickAnalysis } from './QuickAnalysis';
 
 interface TargetedLocation {
   id: string;
@@ -86,7 +91,7 @@ export function LocationsTab() {
     profile_url: '',
     picture_url: ''
   });
-  const [activeControlsTab, setActiveControlsTab] = useState<'network' | 'locations'>('locations');
+  const [activeControlsTab, setActiveControlsTab] = useState<'network' | 'locations' | 'heatmap'>('locations');
   const [activeHeatmapLayer, setActiveHeatmapLayer] = useState<string>('none');
   const [showControlsModal, setShowControlsModal] = useState(false);
   const [showAddEmployee, setShowAddEmployee] = useState(false);
@@ -714,6 +719,17 @@ export function LocationsTab() {
               Targeted Locations
             </button>
             <button
+              onClick={() => setActiveControlsTab('heatmap')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                activeControlsTab === 'heatmap'
+                  ? 'border-b-2 border-primary text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Eye className="h-4 w-4 inline mr-2" />
+              Heat Map Controls
+            </button>
+            <button
               onClick={() => setActiveControlsTab('network')}
               className={`px-4 py-2 text-sm font-medium transition-colors ${
                 activeControlsTab === 'network'
@@ -815,6 +831,14 @@ export function LocationsTab() {
                     ))
                   )}
                 </div>
+              </div>
+            ) : activeControlsTab === 'heatmap' ? (
+              <div className="space-y-4">
+                <QuickAnalysis />
+                <HeatmapControls 
+                  activeLayer={activeHeatmapLayer}
+                  onLayerChange={setActiveHeatmapLayer}
+                />
               </div>
             ) : (
               <div className="space-y-4">
@@ -1333,6 +1357,109 @@ export function LocationsTab() {
           </div>
         </DialogContent>
       </Dialog>
+      
+      {/* Add Location Form Modal */}
+      <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Add New Location
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="company_name">Company Name *</Label>
+              <Input
+                id="company_name"
+                value={formData.company_name}
+                onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
+                placeholder="Enter company name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="office_address">Office Address *</Label>
+              <Input
+                id="office_address"
+                value={formData.office_address}
+                onChange={(e) => setFormData(prev => ({ ...prev, office_address: e.target.value }))}
+                placeholder="Enter full office address"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  value={formData.city}
+                  onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                  placeholder="City"
+                />
+              </div>
+              <div>
+                <Label htmlFor="state">State</Label>
+                <Input
+                  id="state"
+                  value={formData.state}
+                  onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
+                  placeholder="State"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Additional notes about this location"
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleAddLocation} className="flex-1">
+                Add Location
+              </Button>
+              <Button variant="outline" onClick={() => setShowAddForm(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Tabs for different views */}
+      <Tabs defaultValue="map" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="map">Interactive Map</TabsTrigger>
+          <TabsTrigger value="graph">Network Graph</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="map" className="mt-4">
+          <Card className="relative">
+            <div 
+              ref={mapContainer} 
+              className="w-full h-[80vh] rounded-lg border overflow-hidden" 
+            />
+            {!mapboxToken && (
+              <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+                <div className="text-center">
+                  <p className="text-muted-foreground">Loading map...</p>
+                </div>
+              </div>
+            )}
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="graph" className="mt-4">
+          <LocationsGraph activeHeatmapLayer={activeHeatmapLayer} />
+        </TabsContent>
+        
+        <TabsContent value="analytics" className="mt-4">
+          <AnalyticsDashboard />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
