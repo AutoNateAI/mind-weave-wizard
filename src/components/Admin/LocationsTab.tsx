@@ -18,6 +18,7 @@ import { LocationsGraph } from './LocationsGraph';
 import { HeatmapControls } from './HeatmapControls';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { QuickAnalysis } from './QuickAnalysis';
+import { useHeatmapData } from '@/hooks/useHeatmapData';
 
 interface TargetedLocation {
   id: string;
@@ -56,6 +57,7 @@ export function LocationsTab() {
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const profileMarkersRef = useRef<mapboxgl.Marker[]>([]);
+  const { heatmapData, loading: heatmapLoading } = useHeatmapData();
   const [locations, setLocations] = useState<TargetedLocation[]>([]);
   const [companiesData, setCompaniesData] = useState<CompanyData[]>([]);
   const [visibleCompanies, setVisibleCompanies] = useState<Set<string>>(new Set());

@@ -154,8 +154,8 @@ async function processProfile(profile: any) {
 
   const analysis = await analyzeWithAI(profileText, 'profile');
   
-  // Extract location coordinates using existing location mapping
-  let latitude = null, longitude = null, locationName = null;
+  // Extract location coordinates and update profile company info
+  let latitude = null, longitude = null, locationName = null, companyName = null;
   
   // First, check if this profile is already mapped to a location
   const { data: mapping } = await supabase
@@ -178,6 +178,7 @@ async function processProfile(profile: any) {
     latitude = location.latitude;
     longitude = location.longitude;
     locationName = location.city || location.company_name;
+    companyName = location.company_name;
   }
 
   // If no mapping found, fallback to text-based matching
@@ -190,15 +191,25 @@ async function processProfile(profile: any) {
     
     if (locations) {
       for (const location of locations) {
-        const companyName = location.company_name.toLowerCase();
-        if (text.includes(companyName) || 
-            (companyName.includes('par hawaii') && text.includes('par')) ||
-            (companyName.includes('hawaiian') && text.includes('hawaiian')) ||
-            (companyName.includes('matson') && text.includes('matson')) ||
-            (companyName.includes('bank') && text.includes('bank'))) {
+        const companyNameLower = location.company_name.toLowerCase();
+        if (text.includes(companyNameLower) || 
+            (companyNameLower.includes('par hawaii') && text.includes('par')) ||
+            (companyNameLower.includes('hawaiian') && text.includes('hawaiian')) ||
+            (companyNameLower.includes('matson') && text.includes('matson')) ||
+            (companyNameLower.includes('bank') && text.includes('bank'))) {
           latitude = location.latitude;
           longitude = location.longitude;
           locationName = location.city || location.company_name;
+          companyName = location.company_name;
+          
+          // Update the profile with the matched company info  
+          await supabase
+            .from('linkedin_profiles')
+            .update({ 
+              company_name: location.company_name,
+              geo_location_name: location.city || location.company_name
+            })
+            .eq('id', profile.id);
           break;
         }
       }

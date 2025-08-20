@@ -29,6 +29,7 @@ export const AnalyticsDashboard: React.FC = () => {
   const { heatmapData, loading } = useHeatmapData();
   const [keywordTrends, setKeywordTrends] = useState<KeywordTrend[]>([]);
   const [locationInsights, setLocationInsights] = useState<LocationInsight[]>([]);
+  const [actualStats, setActualStats] = useState(false);
   const [totalStats, setTotalStats] = useState({
     totalKeywords: 0,
     totalProfiles: 0,
@@ -40,9 +41,9 @@ export const AnalyticsDashboard: React.FC = () => {
     if (heatmapData.length > 0) {
       generateAnalytics();
     }
-  }, [heatmapData]);
+  }, [heatmapData, actualStats]);
 
-  const generateAnalytics = () => {
+  const generateAnalytics = async () => {
     // Generate keyword trends
     const keywordMap = new Map<string, { count: number; sentiments: number[]; engagement: number; }>();
     
@@ -69,33 +70,57 @@ export const AnalyticsDashboard: React.FC = () => {
 
     setKeywordTrends(trends);
 
-    // Generate location insights
-    const locationMap = new Map<string, { profiles: Set<string>; posts: number; sentiments: number[]; keywords: Set<string>; }>();
-    
-    heatmapData.forEach(point => {
-      const location = point.location_name || 'Unknown';
-      if (!locationMap.has(location)) {
-        locationMap.set(location, { profiles: new Set(), posts: 0, sentiments: [], keywords: new Set() });
+    // Generate location insights - fetch actual company names
+    if (!actualStats) {
+      try {
+        // Get actual profile/post counts by company  
+        const { data } = await supabase
+          .from('keywords_analytics')
+          .select('location_name, source_type, source_id');
+        
+        if (data) {
+          const locationMap = new Map<string, { profiles: Set<string>; posts: Set<string>; }>();
+          
+          data.forEach(item => {
+            const location = item.location_name || 'Unknown';
+            if (!locationMap.has(location)) {
+              locationMap.set(location, { profiles: new Set(), posts: new Set() });
+            }
+            const locData = locationMap.get(location)!;
+            
+            // Count unique sources by type
+            if (item.source_type === 'profile') {
+              locData.profiles.add(item.source_id);
+            } else {
+              locData.posts.add(item.source_id);
+            }
+          });
+          
+          // Now get the heatmap data for each location
+          const locationInsightsTemp = Array.from(locationMap.entries())
+            .map(([location, data]) => {
+              const locationHeatmapPoints = heatmapData.filter(p => p.location_name === location);
+              const sentiments = locationHeatmapPoints.map(p => p.sentiment_avg);
+              const keywords = new Set(locationHeatmapPoints.map(p => p.keyword));
+              
+              return {
+                location,
+                profiles: data.profiles.size,
+                posts: data.posts.size,
+                avgSentiment: sentiments.length > 0 ? sentiments.reduce((a, b) => a + b, 0) / sentiments.length : 0,
+                topKeywords: Array.from(keywords).slice(0, 3) as string[]
+              };
+            })
+            .sort((a, b) => b.profiles - a.profiles)
+            .slice(0, 8);
+            
+          setLocationInsights(locationInsightsTemp);
+          setActualStats(true);
+        }
+      } catch (error) {
+        console.error('Error fetching location analytics:', error);
       }
-      const data = locationMap.get(location)!;
-      data.profiles.add(point.id); // Using point ID as proxy for unique profiles
-      data.posts += point.post_count;
-      data.sentiments.push(point.sentiment_avg);
-      data.keywords.add(point.keyword);
-    });
-
-    const insights = Array.from(locationMap.entries())
-      .map(([location, data]) => ({
-        location,
-        profiles: data.profiles.size,
-        posts: data.posts,
-        avgSentiment: data.sentiments.reduce((a, b) => a + b, 0) / data.sentiments.length,
-        topKeywords: Array.from(data.keywords).slice(0, 3)
-      }))
-      .sort((a, b) => b.profiles - a.profiles)
-      .slice(0, 8);
-
-    setLocationInsights(insights);
+    }
 
     // Calculate total stats
     const totalKeywords = new Set(heatmapData.map(p => p.keyword)).size;
