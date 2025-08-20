@@ -138,29 +138,36 @@ async function processProfile(profile: any) {
 
   const analysis = await analyzeWithAI(profileText, 'profile');
   
-  // Extract location coordinates
+  // Extract location coordinates using existing location mapping
   let latitude = null, longitude = null, locationName = null;
   
-  // Try to match by company_name first
-  if (profile.company_name) {
-    const { data: location } = await supabase
-      .from('targeted_locations')
-      .select('latitude, longitude, company_name, city')
-      .eq('company_name', profile.company_name)
-      .single();
-    
-    if (location) {
-      latitude = location.latitude;
-      longitude = location.longitude;
-      locationName = location.city || location.company_name;
-    }
+  // First, check if this profile is already mapped to a location
+  const { data: mapping } = await supabase
+    .from('location_social_mapping')
+    .select(`
+      location_id,
+      targeted_locations!inner(
+        latitude,
+        longitude,
+        company_name,
+        city
+      )
+    `)
+    .eq('linkedin_profile_id', profile.id)
+    .eq('mapping_type', 'linkedin_profile')
+    .single();
+  
+  if (mapping?.targeted_locations) {
+    const location = mapping.targeted_locations;
+    latitude = location.latitude;
+    longitude = location.longitude;
+    locationName = location.city || location.company_name;
   }
 
-  // If no match, try to match by headline/occupation containing company name
+  // If no mapping found, fallback to text-based matching
   if (!latitude && (profile.headline || profile.occupation)) {
     const text = `${profile.headline || ''} ${profile.occupation || ''}`.toLowerCase();
     
-    // Get all targeted locations to match against
     const { data: locations } = await supabase
       .from('targeted_locations')
       .select('latitude, longitude, company_name, city');
@@ -168,7 +175,6 @@ async function processProfile(profile: any) {
     if (locations) {
       for (const location of locations) {
         const companyName = location.company_name.toLowerCase();
-        // Check if the profile text mentions the company
         if (text.includes(companyName) || 
             (companyName.includes('par hawaii') && text.includes('par')) ||
             (companyName.includes('hawaiian') && text.includes('hawaiian')) ||
@@ -183,10 +189,9 @@ async function processProfile(profile: any) {
     }
   }
 
-  // If still no location found, use profile geo_location_name
+  // Final fallback to profile location
   if (!latitude && profile.geo_location_name) {
     locationName = profile.geo_location_name;
-    // For now, we'll leave lat/lng null - could enhance with geocoding API later
   }
 
   // Store keywords in keywords_analytics table
