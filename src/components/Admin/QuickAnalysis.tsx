@@ -77,7 +77,7 @@ export const QuickAnalysis: React.FC = () => {
   };
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Zap className="h-5 w-5 text-primary" />
