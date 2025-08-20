@@ -20,6 +20,19 @@ interface KeywordAnalysis {
   themes: string[];
 }
 
+// Stopwords to exclude from keyword extraction
+const STOPWORDS = new Set<string>([
+  'a','an','the','and','or','but','so','if','then','than','because','as','of','in','on','at','by','for','to','from','with','without','about','into','over','after','before','between','through','during','above','below','up','down','out','off','again','further','is','are','was','were','be','been','being','have','has','had','do','does','did','doing','would','should','could','can','will','just','not','no','nor','only','own','same','such','too','very','s','t','y','i','me','my','myself','we','our','ours','ourselves','you','your','yours','yourself','yourselves','he','him','his','himself','she','her','hers','herself','it','its','itself','they','them','their','theirs','themselves','this','that','these','those'
+]);
+
+function filterKeywords(keywords: string[]): string[] {
+  const cleaned = keywords
+    .map(k => String(k).toLowerCase().trim())
+    .filter(k => k && !STOPWORDS.has(k) && k.length > 2);
+  return Array.from(new Set(cleaned));
+}
+
+
 async function analyzeWithAI(text: string, type: 'profile' | 'post'): Promise<KeywordAnalysis> {
   const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
   if (!openAIApiKey) {
@@ -28,7 +41,7 @@ async function analyzeWithAI(text: string, type: 'profile' | 'post'): Promise<Ke
 
   const prompt = type === 'profile' 
     ? `Analyze this LinkedIn profile content and extract:
-1. Top 10 most relevant keywords/skills
+1. Top 10 most relevant keywords/skills (lowercase, deduplicated, EXCLUDE stopwords like: a, an, the, and, or, to, of, in, on, at, by, for, from)
 2. Industry classification
 3. Sentiment score (-1 to 1, where -1 is negative, 0 neutral, 1 positive)
 4. Professional themes
@@ -37,7 +50,7 @@ Content: ${text}
 
 Return JSON only: { "keywords": ["keyword1", "keyword2"], "sentiment": 0.5, "industries": ["industry1"], "skills": ["skill1"], "themes": ["theme1"] }`
     : `Analyze this LinkedIn post content and extract:
-1. Top 10 most relevant keywords/topics
+1. Top 10 most relevant keywords/topics (lowercase, deduplicated, EXCLUDE stopwords like: a, an, the, and, or, to, of, in, on, at, by, for, from)
 2. Sentiment score (-1 to 1)
 3. Main themes discussed
 4. Industry relevance
@@ -89,7 +102,7 @@ Return JSON only: { "keywords": ["keyword1", "keyword2"], "sentiment": 0.5, "ind
       const analysis = JSON.parse(cleanedContent);
       
       return {
-        keywords: Array.isArray(analysis.keywords) ? analysis.keywords.slice(0, 10) : [],
+        keywords: Array.isArray(analysis.keywords) ? filterKeywords(analysis.keywords).slice(0, 10) : [],
         sentiment: typeof analysis.sentiment === 'number' ? analysis.sentiment : 0,
         industries: Array.isArray(analysis.industries) ? analysis.industries : [],
         skills: Array.isArray(analysis.skills) ? analysis.skills : [],
@@ -103,11 +116,12 @@ Return JSON only: { "keywords": ["keyword1", "keyword2"], "sentiment": 0.5, "ind
     console.error('AI Analysis error:', error);
     console.error('Text being analyzed:', text.substring(0, 200) + '...');
     
-    // Return enhanced fallback analysis (include common words like 'at', 'the', 'and')
-    const words = (text.toLowerCase().match(/\b[\p{L}\p{N}']+\b/gu) ?? []).filter(w => w.length > 1);
+    // Return enhanced fallback analysis (exclude stopwords)
+    const tokens = (text.toLowerCase().match(/\b[\p{L}\p{N}']+\b/gu) ?? []);
+    const filtered = tokens.filter(w => w.length > 2 && !STOPWORDS.has(w));
     
     return {
-      keywords: [...new Set(words)].slice(0, 10),
+      keywords: [...new Set(filtered)].slice(0, 10),
       sentiment: 0,
       industries: [],
       skills: [],
