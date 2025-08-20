@@ -122,18 +122,33 @@ export const AnalyticsDashboard: React.FC = () => {
       }
     }
 
-    // Calculate total stats
+    // Calculate total stats - get unique profile/post counts
     const totalKeywords = new Set(heatmapData.map(p => p.keyword)).size;
-    const totalProfiles = heatmapData.reduce((sum, p) => sum + p.profile_count, 0);
-    const totalPosts = heatmapData.reduce((sum, p) => sum + p.post_count, 0);
     const avgSentiment = heatmapData.reduce((sum, p) => sum + p.sentiment_avg, 0) / heatmapData.length;
-
-    setTotalStats({
-      totalKeywords,
-      totalProfiles,
-      totalPosts,
-      avgSentiment: avgSentiment || 0
-    });
+    
+    // Get actual unique profile and post counts
+    const { data: profileStats } = await supabase
+      .from('keywords_analytics')
+      .select('source_id, source_type');
+    
+    if (profileStats) {
+      const uniqueProfiles = new Set(profileStats.filter(s => s.source_type === 'profile').map(s => s.source_id)).size;
+      const uniquePosts = new Set(profileStats.filter(s => s.source_type === 'post').map(s => s.source_id)).size;
+      
+      setTotalStats({
+        totalKeywords,
+        totalProfiles: uniqueProfiles,
+        totalPosts: uniquePosts,
+        avgSentiment: avgSentiment || 0
+      });
+    } else {
+      setTotalStats({
+        totalKeywords,
+        totalProfiles: 0,
+        totalPosts: 0,
+        avgSentiment: avgSentiment || 0
+      });
+    }
   };
 
   const chartConfig = {
