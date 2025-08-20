@@ -87,6 +87,8 @@ export function LocationsTab() {
     picture_url: ''
   });
   const [activeControlsTab, setActiveControlsTab] = useState<'network' | 'locations'>('locations');
+  const [activeHeatmapLayer, setActiveHeatmapLayer] = useState<string>('none');
+  const [showControlsModal, setShowControlsModal] = useState(false);
   const [showAddEmployee, setShowAddEmployee] = useState(false);
   const [employeeFormData, setEmployeeFormData] = useState({
     full_name: '',

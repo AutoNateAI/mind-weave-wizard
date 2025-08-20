@@ -9,6 +9,7 @@ import { Building, Users, Eye, EyeOff, Network } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
+import { useHeatmapData } from '@/hooks/useHeatmapData';
 import "@xyflow/react/dist/style.css";
 
 interface CompanyData {
@@ -23,13 +24,18 @@ interface CompanyData {
   }[];
 }
 
-export function LocationsGraph() {
+interface LocationsGraphProps {
+  activeHeatmapLayer?: string;
+}
+
+export function LocationsGraph({ activeHeatmapLayer = 'none' }: LocationsGraphProps = {}) {
   const { theme } = useTheme();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [companiesData, setCompaniesData] = useState<CompanyData[]>([]);
   const [visibleCompanies, setVisibleCompanies] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const { heatmapData, getHeatmapLayers } = useHeatmapData();
 
   useEffect(() => {
     loadCompaniesData();
@@ -97,6 +103,45 @@ export function LocationsGraph() {
     companiesData.forEach((company, companyIndex) => {
       if (!visibleCompanies.has(company.id)) return;
 
+      // Check if this location has heatmap data
+      const locationHeatmapData = heatmapData.filter(point => 
+        point.location_name?.toLowerCase().includes(company.company_name.toLowerCase())
+      );
+      
+      let heatmapStyle = {};
+      if (activeHeatmapLayer !== 'none' && locationHeatmapData.length > 0) {
+        const avgIntensity = locationHeatmapData.reduce((sum, point) => {
+          switch (activeHeatmapLayer) {
+            case 'density': return sum + point.density_score;
+            case 'engagement': return sum + point.engagement_score;
+            case 'sentiment': return sum + Math.abs(point.sentiment_avg);
+            default: return sum;
+          }
+        }, 0) / locationHeatmapData.length;
+        
+        // Apply heat map coloring
+        const intensity = Math.min(avgIntensity / 10, 1); // Normalize to 0-1
+        
+        if (activeHeatmapLayer === 'density') {
+          heatmapStyle = {
+            background: `linear-gradient(135deg, rgba(59, 130, 246, ${0.3 + intensity * 0.7}), rgba(37, 99, 235, ${0.5 + intensity * 0.5}))`,
+            boxShadow: `0 0 ${10 + intensity * 20}px rgba(59, 130, 246, ${intensity})`,
+          };
+        } else if (activeHeatmapLayer === 'engagement') {
+          heatmapStyle = {
+            background: `linear-gradient(135deg, rgba(34, 197, 94, ${0.3 + intensity * 0.7}), rgba(22, 163, 74, ${0.5 + intensity * 0.5}))`,
+            boxShadow: `0 0 ${10 + intensity * 20}px rgba(34, 197, 94, ${intensity})`,
+          };
+        } else if (activeHeatmapLayer === 'sentiment') {
+          const avgSentiment = locationHeatmapData.reduce((sum, point) => sum + point.sentiment_avg, 0) / locationHeatmapData.length;
+          const color = avgSentiment >= 0 ? '34, 197, 94' : '239, 68, 68'; // Green for positive, red for negative
+          heatmapStyle = {
+            background: `linear-gradient(135deg, rgba(${color}, ${0.3 + intensity * 0.7}), rgba(${color}, ${0.5 + intensity * 0.5}))`,
+            boxShadow: `0 0 ${10 + intensity * 20}px rgba(${color}, ${intensity})`,
+          };
+        }
+      }
+
       // Create company node
       const companyNode: Node = {
         id: `company-${company.id}`,
@@ -113,6 +158,11 @@ export function LocationsGraph() {
               <Badge variant="secondary" className="text-xs mt-1">
                 {company.profile_count} profiles
               </Badge>
+              {locationHeatmapData.length > 0 && activeHeatmapLayer !== 'none' && (
+                <Badge variant="outline" className="text-xs mt-1 ml-1">
+                  {locationHeatmapData.length} keywords
+                </Badge>
+              )}
             </div>
           )
         },
@@ -122,6 +172,8 @@ export function LocationsGraph() {
           borderRadius: '12px',
           width: 180,
           height: 120,
+          transition: 'all 0.3s ease',
+          ...heatmapStyle,
         },
       };
 
@@ -182,7 +234,7 @@ export function LocationsGraph() {
 
     setNodes(newNodes);
     setEdges(newEdges);
-  }, [companiesData, visibleCompanies, theme]);
+  }, [companiesData, visibleCompanies, theme, activeHeatmapLayer, heatmapData]);
 
   useEffect(() => {
     generateGraph();
@@ -305,6 +357,10 @@ export function LocationsGraph() {
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Connections:</span>
               <span className="font-medium">{edges.length}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Keyword Points:</span>
+              <span className="font-medium">{heatmapData.length}</span>
             </div>
           </CardContent>
         </Card>

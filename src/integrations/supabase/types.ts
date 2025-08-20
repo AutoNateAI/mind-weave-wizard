@@ -103,6 +103,51 @@ export type Database = {
         }
         Relationships: []
       }
+      attention_heatmap_data: {
+        Row: {
+          created_at: string
+          date_snapshot: string
+          density_score: number
+          engagement_score: number | null
+          id: string
+          keyword: string
+          location_latitude: number
+          location_longitude: number
+          post_count: number | null
+          profile_count: number | null
+          sentiment_avg: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_snapshot?: string
+          density_score?: number
+          engagement_score?: number | null
+          id?: string
+          keyword: string
+          location_latitude: number
+          location_longitude: number
+          post_count?: number | null
+          profile_count?: number | null
+          sentiment_avg?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_snapshot?: string
+          density_score?: number
+          engagement_score?: number | null
+          id?: string
+          keyword?: string
+          location_latitude?: number
+          location_longitude?: number
+          post_count?: number | null
+          profile_count?: number | null
+          sentiment_avg?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       content_campaigns: {
         Row: {
           campaign_name: string
@@ -399,6 +444,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      keywords_analytics: {
+        Row: {
+          created_at: string
+          frequency: number | null
+          id: string
+          industry_tags: Json | null
+          keyword: string
+          location_latitude: number | null
+          location_longitude: number | null
+          location_name: string | null
+          sentiment_score: number | null
+          source_id: string
+          source_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          frequency?: number | null
+          id?: string
+          industry_tags?: Json | null
+          keyword: string
+          location_latitude?: number | null
+          location_longitude?: number | null
+          location_name?: string | null
+          sentiment_score?: number | null
+          source_id: string
+          source_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          frequency?: number | null
+          id?: string
+          industry_tags?: Json | null
+          keyword?: string
+          location_latitude?: number | null
+          location_longitude?: number | null
+          location_name?: string | null
+          sentiment_score?: number | null
+          source_id?: string
+          source_type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       lecture_games: {
         Row: {
