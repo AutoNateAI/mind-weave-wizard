@@ -101,6 +101,10 @@ export function LocationsTab() {
     profile_url: '',
     picture_url: ''
   });
+  const [mapState, setMapState] = useState({
+    center: [-98.5, 39.8] as [number, number],
+    zoom: 4
+  });
 
   // Initialize map and load locations
   useEffect(() => {
@@ -333,7 +337,7 @@ export function LocationsTab() {
       return;
     }
     
-    console.log('Creating new map instance with theme:', theme);
+    console.log('Creating new map instance with theme:', theme, 'and state:', mapState);
     mapboxgl.accessToken = mapboxToken;
     
     const mapStyle = theme === 'dark' 
@@ -343,8 +347,8 @@ export function LocationsTab() {
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: mapStyle,
-      center: [-98.5, 39.8], // Center of US
-      zoom: 4
+      center: mapState.center,
+      zoom: mapState.zoom
     });
 
     map.current.addControl(new mapboxgl.NavigationControl());
@@ -364,25 +368,42 @@ export function LocationsTab() {
 
   const handleTabChange = (value: string) => {
     console.log('Tab changed to:', value);
+    
+    // Store current map state before switching away
+    if (value !== 'map' && map.current) {
+      const currentCenter = map.current.getCenter();
+      const currentZoom = map.current.getZoom();
+      setMapState({
+        center: [currentCenter.lng, currentCenter.lat],
+        zoom: currentZoom
+      });
+      console.log('Stored map state:', { center: [currentCenter.lng, currentCenter.lat], zoom: currentZoom });
+    }
+    
+    // Restore map when switching back
     if (value === 'map') {
       setTimeout(() => {
         if (map.current && mapContainer.current) {
-          console.log('Map container check:', mapContainer.current.offsetWidth, mapContainer.current.offsetHeight);
+          console.log('Restoring map with state:', mapState);
           
-          // Force map to recognize container size change
-          map.current.getContainer().style.visibility = 'hidden';
+          // Force container visibility and resize
+          const container = map.current.getContainer();
+          container.style.visibility = 'visible';
           map.current.resize();
-          map.current.getContainer().style.visibility = 'visible';
           
-          // Trigger a re-render
+          // Restore previous position
+          map.current.setCenter(mapState.center);
+          map.current.setZoom(mapState.zoom);
+          
+          // Force repaint
           map.current.triggerRepaint();
           
-          console.log('Map resized and repainted');
-        } else if (mapboxToken && mapContainer.current && !map.current) {
-          console.log('Map not found, reinitializing...');
+          console.log('Map restored successfully');
+        } else if (mapboxToken && mapContainer.current) {
+          console.log('No existing map, creating new one...');
           initializeMap();
         }
-      }, 300); // Longer timeout to ensure DOM is fully rendered
+      }, 100);
     }
   };
 
