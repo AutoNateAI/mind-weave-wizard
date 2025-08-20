@@ -1076,9 +1076,7 @@ export function LocationsTab() {
                   activeLayer={activeHeatmapLayer}
                   onLayerChange={(layer) => {
                     setActiveHeatmapLayer(layer);
-                    if (layer !== 'none') {
-                      setShowControlsModal(false);
-                    }
+                    setShowControlsModal(false);
                   }}
                   compact={true}
                 />
