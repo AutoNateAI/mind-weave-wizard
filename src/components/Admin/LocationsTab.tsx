@@ -318,31 +318,49 @@ export function LocationsTab() {
     }
   };
 
-  // Initialize map when token is available
+  // Initialize map when token is available and when tab becomes active
   useEffect(() => {
     if (mapboxToken && mapContainer.current && !map.current) {
-      mapboxgl.accessToken = mapboxToken;
-      
-      const mapStyle = theme === 'dark' 
-        ? 'mapbox://styles/mapbox/dark-v11' 
-        : 'mapbox://styles/mapbox/light-v11';
-      
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: mapStyle,
-        center: [-98.5, 39.8], // Center of US
-        zoom: 4
-      });
-
-      map.current.addControl(new mapboxgl.NavigationControl());
-
-      // Add markers after map is loaded
-      map.current.on('load', () => {
-        addMarkersToMap();
-        addNetworkMarkersToMap();
-      });
+      initializeMap();
     }
   }, [mapboxToken, theme]);
+
+  const initializeMap = () => {
+    if (!mapboxToken || !mapContainer.current) return;
+    
+    mapboxgl.accessToken = mapboxToken;
+    
+    const mapStyle = theme === 'dark' 
+      ? 'mapbox://styles/mapbox/dark-v11' 
+      : 'mapbox://styles/mapbox/light-v11';
+    
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: mapStyle,
+      center: [-98.5, 39.8], // Center of US
+      zoom: 4
+    });
+
+    map.current.addControl(new mapboxgl.NavigationControl());
+
+    // Add markers after map is loaded
+    map.current.on('load', () => {
+      addMarkersToMap();
+      addNetworkMarkersToMap();
+    });
+  };
+
+  const handleTabChange = (value: string) => {
+    if (value === 'map' && map.current) {
+      // Resize map when switching back to map tab
+      setTimeout(() => {
+        if (map.current) {
+          map.current.resize();
+          map.current.getCanvas().focus();
+        }
+      }, 100);
+    }
+  };
 
   // Update map style when theme changes
   useEffect(() => {
@@ -1420,7 +1438,7 @@ export function LocationsTab() {
       </Dialog>
 
       {/* Tabs for different views */}
-      <Tabs defaultValue="map" className="w-full">
+      <Tabs defaultValue="map" className="w-full" onValueChange={handleTabChange}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="map">Interactive Map</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
