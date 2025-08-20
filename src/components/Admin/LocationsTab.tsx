@@ -684,16 +684,6 @@ export function LocationsTab() {
         </DialogContent>
       </Dialog>
 
-      {/* Floating Controls Button - Legacy */}
-      {companiesData.length > 0 && (
-        <Button
-          onClick={() => setShowControlsModal(true)}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 z-50"
-          size="icon"
-        >
-          <Settings className="h-6 w-6" />
-        </Button>
-      )}
 
       {/* Controls Modal with Tabs */}
       <Dialog open={showControlsModal} onOpenChange={setShowControlsModal}>
@@ -777,18 +767,18 @@ export function LocationsTab() {
                             ? 'border-primary bg-primary/5'
                             : 'hover:bg-muted/50'
                          }`}
-                        onClick={() => {
-                          setSelectedLocation(location);
-                          setShowNetworkModal(false); // Close modal to see navigation animation
-                          // Navigate map to location
-                          if (location.latitude && location.longitude && map.current) {
-                            map.current.flyTo({
-                              center: [location.longitude, location.latitude],
-                              zoom: 14,
-                              duration: 2000
-                            });
-                          }
-                        }}
+                         onClick={() => {
+                           setSelectedLocation(location);
+                           setShowControlsModal(false); // Close modal to see navigation animation
+                           // Navigate map to location
+                           if (location.latitude && location.longitude && map.current) {
+                             map.current.flyTo({
+                               center: [location.longitude, location.latitude],
+                               zoom: 14,
+                               duration: 2000
+                             });
+                           }
+                         }}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -1431,9 +1421,8 @@ export function LocationsTab() {
 
       {/* Tabs for different views */}
       <Tabs defaultValue="map" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="map">Interactive Map</TabsTrigger>
-          <TabsTrigger value="graph">Network Graph</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
         
@@ -1461,10 +1450,6 @@ export function LocationsTab() {
               </div>
             )}
           </div>
-        </TabsContent>
-        
-        <TabsContent value="graph" className="mt-4">
-          <LocationsGraph activeHeatmapLayer={activeHeatmapLayer} />
         </TabsContent>
         
         <TabsContent value="analytics" className="mt-4">
