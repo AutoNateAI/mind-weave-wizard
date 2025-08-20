@@ -333,7 +333,7 @@ export function LocationsTab() {
       return;
     }
     
-    console.log('Creating new map instance');
+    console.log('Creating new map instance with theme:', theme);
     mapboxgl.accessToken = mapboxToken;
     
     const mapStyle = theme === 'dark' 
@@ -351,30 +351,45 @@ export function LocationsTab() {
 
     // Add markers after map is loaded
     map.current.on('load', () => {
-      console.log('Map loaded, adding markers');
+      console.log('Map loaded successfully with style:', mapStyle);
       addMarkersToMap();
       addNetworkMarkersToMap();
+    });
+
+    // Handle style load events
+    map.current.on('styledata', () => {
+      console.log('Map style loaded');
     });
   };
 
   const handleTabChange = (value: string) => {
     console.log('Tab changed to:', value);
-    if (value === 'map' && map.current) {
-      console.log('Resizing map for tab switch');
-      // Resize map when switching back to map tab
+    if (value === 'map') {
       setTimeout(() => {
-        if (map.current) {
-          console.log('Map exists, resizing...');
+        if (map.current && mapContainer.current) {
+          console.log('Map container check:', mapContainer.current.offsetWidth, mapContainer.current.offsetHeight);
+          
+          // Force map to recognize container size change
+          map.current.getContainer().style.visibility = 'hidden';
           map.current.resize();
-          map.current.getCanvas().focus();
+          map.current.getContainer().style.visibility = 'visible';
+          
+          // Trigger a re-render
+          map.current.triggerRepaint();
+          
+          console.log('Map resized and repainted');
+        } else if (mapboxToken && mapContainer.current && !map.current) {
+          console.log('Map not found, reinitializing...');
+          initializeMap();
         }
-      }, 200); // Increased timeout to ensure DOM is ready
+      }, 300); // Longer timeout to ensure DOM is fully rendered
     }
   };
 
   // Update map style when theme changes
   useEffect(() => {
     if (map.current && mapboxToken) {
+      console.log('Theme changed, updating map style:', theme);
       const mapStyle = theme === 'dark' 
         ? 'mapbox://styles/mapbox/dark-v11' 
         : 'mapbox://styles/mapbox/light-v11';
@@ -383,6 +398,7 @@ export function LocationsTab() {
       
       // Re-add markers and connections after style loads
       map.current.once('styledata', () => {
+        console.log('Map style loaded, re-adding markers');
         addMarkersToMap();
         addNetworkMarkersToMap();
       });
