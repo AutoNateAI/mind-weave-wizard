@@ -320,14 +320,20 @@ export function LocationsTab() {
 
   // Initialize map when token is available and when tab becomes active
   useEffect(() => {
+    console.log('Map initialization effect triggered', { mapboxToken: !!mapboxToken, mapContainer: !!mapContainer.current, mapExists: !!map.current });
     if (mapboxToken && mapContainer.current && !map.current) {
+      console.log('Initializing map...');
       initializeMap();
     }
   }, [mapboxToken, theme]);
 
   const initializeMap = () => {
-    if (!mapboxToken || !mapContainer.current) return;
+    if (!mapboxToken || !mapContainer.current) {
+      console.log('Cannot initialize map - missing token or container');
+      return;
+    }
     
+    console.log('Creating new map instance');
     mapboxgl.accessToken = mapboxToken;
     
     const mapStyle = theme === 'dark' 
@@ -345,20 +351,24 @@ export function LocationsTab() {
 
     // Add markers after map is loaded
     map.current.on('load', () => {
+      console.log('Map loaded, adding markers');
       addMarkersToMap();
       addNetworkMarkersToMap();
     });
   };
 
   const handleTabChange = (value: string) => {
+    console.log('Tab changed to:', value);
     if (value === 'map' && map.current) {
+      console.log('Resizing map for tab switch');
       // Resize map when switching back to map tab
       setTimeout(() => {
         if (map.current) {
+          console.log('Map exists, resizing...');
           map.current.resize();
           map.current.getCanvas().focus();
         }
-      }, 100);
+      }, 200); // Increased timeout to ensure DOM is ready
     }
   };
 
@@ -612,28 +622,6 @@ export function LocationsTab() {
           Add Location
         </Button>
       </div>
-
-      {/* Full Width Map */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Interactive Map
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div 
-            ref={mapContainer} 
-            className="w-full rounded-lg border"
-            style={{ height: '100vh' }}
-          />
-          {!mapboxToken && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
-              <p className="text-gray-600">Loading map...</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Add Location Form Modal */}
       <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
