@@ -348,7 +348,8 @@ export function LocationsTab() {
       container: mapContainer.current,
       style: mapStyle,
       center: mapState.center,
-      zoom: mapState.zoom
+      zoom: mapState.zoom,
+      trackResize: true
     });
 
     map.current.addControl(new mapboxgl.NavigationControl());
