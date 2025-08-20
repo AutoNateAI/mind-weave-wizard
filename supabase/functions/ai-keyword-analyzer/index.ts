@@ -103,11 +103,8 @@ Return JSON only: { "keywords": ["keyword1", "keyword2"], "sentiment": 0.5, "ind
     console.error('AI Analysis error:', error);
     console.error('Text being analyzed:', text.substring(0, 200) + '...');
     
-    // Return enhanced fallback analysis
-    const words = text.toLowerCase().split(/\s+/).filter(word => 
-      word.length > 2 && 
-      !['the', 'and', 'for', 'with', 'that', 'this', 'are', 'was', 'will', 'have', 'has'].includes(word)
-    );
+    // Return enhanced fallback analysis (include common words like 'at', 'the', 'and')
+    const words = (text.toLowerCase().match(/\b[\p{L}\p{N}']+\b/gu) ?? []).filter(w => w.length > 1);
     
     return {
       keywords: [...new Set(words)].slice(0, 10),
@@ -133,6 +130,11 @@ async function processProfile(profile: any) {
 
   if (!profileText.trim()) {
     console.log('No text content for profile:', profile.id);
+    // Mark as analyzed to avoid infinite retries
+    await supabase
+      .from('linkedin_profiles')
+      .update({ analyzed: true, reanalyze_requested: false, last_analyzed_at: new Date().toISOString() })
+      .eq('id', profile.id);
     return;
   }
 
@@ -213,6 +215,12 @@ async function processProfile(profile: any) {
       console.error('Error inserting keyword:', error);
     }
   }
+
+  // Mark profile as analyzed and clear reanalyze flag
+  await supabase
+    .from('linkedin_profiles')
+    .update({ analyzed: true, reanalyze_requested: false, last_analyzed_at: new Date().toISOString() })
+    .eq('id', profile.id);
 }
 
 async function processPost(post: any) {
@@ -226,6 +234,10 @@ async function processPost(post: any) {
 
   if (!postText.trim()) {
     console.log('No text content for post:', post.id);
+    await supabase
+      .from('linkedin_posts')
+      .update({ analyzed: true, reanalyze_requested: false, last_analyzed_at: new Date().toISOString() })
+      .eq('id', post.id);
     return;
   }
 
@@ -282,6 +294,12 @@ async function processPost(post: any) {
       console.error('Error inserting post keyword:', error);
     }
   }
+
+  // Mark post as analyzed and clear reanalyze flag
+  await supabase
+    .from('linkedin_posts')
+    .update({ analyzed: true, reanalyze_requested: false, last_analyzed_at: new Date().toISOString() })
+    .eq('id', post.id);
 }
 
 async function generateHeatmapData() {
@@ -390,6 +408,7 @@ serve(async (req) => {
       const { data: profiles } = await supabase
         .from('linkedin_profiles')
         .select('*')
+        .or('reanalyze_requested.eq.true,analyzed.eq.false,analyzed.is.null')
         .limit(batch_size);
       
       if (profiles) {
@@ -405,6 +424,7 @@ serve(async (req) => {
       const { data: posts } = await supabase
         .from('linkedin_posts')
         .select('*')
+        .or('reanalyze_requested.eq.true,analyzed.eq.false,analyzed.is.null')
         .limit(batch_size);
       
       if (posts) {
@@ -423,6 +443,7 @@ serve(async (req) => {
       const { data: profiles } = await supabase
         .from('linkedin_profiles')
         .select('*')
+        .or('reanalyze_requested.eq.true,analyzed.eq.false,analyzed.is.null')
         .limit(batch_size);
       
       if (profiles) {
@@ -434,6 +455,7 @@ serve(async (req) => {
       const { data: posts } = await supabase
         .from('linkedin_posts')
         .select('*')
+        .or('reanalyze_requested.eq.true,analyzed.eq.false,analyzed.is.null')
         .limit(Math.floor(batch_size / 2));
       
       if (posts) {

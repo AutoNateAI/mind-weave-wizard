@@ -654,6 +654,7 @@ export type Database = {
       }
       linkedin_posts: {
         Row: {
+          analyzed: boolean | null
           author_full_name: string | null
           author_headline: string | null
           author_profile_id: string | null
@@ -664,6 +665,7 @@ export type Database = {
           id: string
           images: Json | null
           is_repost: boolean | null
+          last_analyzed_at: string | null
           linkedin_post_urn: string | null
           num_comments: number | null
           num_likes: number | null
@@ -674,12 +676,14 @@ export type Database = {
           posted_at_timestamp: number | null
           raw_data: Json | null
           reactions: Json | null
+          reanalyze_requested: boolean | null
           text_content: string | null
           time_since_posted: string | null
           updated_at: string | null
           upload_batch_id: string | null
         }
         Insert: {
+          analyzed?: boolean | null
           author_full_name?: string | null
           author_headline?: string | null
           author_profile_id?: string | null
@@ -690,6 +694,7 @@ export type Database = {
           id?: string
           images?: Json | null
           is_repost?: boolean | null
+          last_analyzed_at?: string | null
           linkedin_post_urn?: string | null
           num_comments?: number | null
           num_likes?: number | null
@@ -700,12 +705,14 @@ export type Database = {
           posted_at_timestamp?: number | null
           raw_data?: Json | null
           reactions?: Json | null
+          reanalyze_requested?: boolean | null
           text_content?: string | null
           time_since_posted?: string | null
           updated_at?: string | null
           upload_batch_id?: string | null
         }
         Update: {
+          analyzed?: boolean | null
           author_full_name?: string | null
           author_headline?: string | null
           author_profile_id?: string | null
@@ -716,6 +723,7 @@ export type Database = {
           id?: string
           images?: Json | null
           is_repost?: boolean | null
+          last_analyzed_at?: string | null
           linkedin_post_urn?: string | null
           num_comments?: number | null
           num_likes?: number | null
@@ -726,6 +734,7 @@ export type Database = {
           posted_at_timestamp?: number | null
           raw_data?: Json | null
           reactions?: Json | null
+          reanalyze_requested?: boolean | null
           text_content?: string | null
           time_since_posted?: string | null
           updated_at?: string | null
@@ -735,6 +744,7 @@ export type Database = {
       }
       linkedin_profiles: {
         Row: {
+          analyzed: boolean | null
           certifications: Json | null
           company_linkedin_url: string | null
           company_name: string | null
@@ -749,6 +759,7 @@ export type Database = {
           id: string
           industry_name: string | null
           languages: Json | null
+          last_analyzed_at: string | null
           last_name: string | null
           linkedin_profile_id: string | null
           location: string | null
@@ -758,12 +769,14 @@ export type Database = {
           profile_url: string | null
           public_id: string | null
           raw_data: Json | null
+          reanalyze_requested: boolean | null
           skills: Json | null
           summary: string | null
           updated_at: string | null
           upload_batch_id: string | null
         }
         Insert: {
+          analyzed?: boolean | null
           certifications?: Json | null
           company_linkedin_url?: string | null
           company_name?: string | null
@@ -778,6 +791,7 @@ export type Database = {
           id?: string
           industry_name?: string | null
           languages?: Json | null
+          last_analyzed_at?: string | null
           last_name?: string | null
           linkedin_profile_id?: string | null
           location?: string | null
@@ -787,12 +801,14 @@ export type Database = {
           profile_url?: string | null
           public_id?: string | null
           raw_data?: Json | null
+          reanalyze_requested?: boolean | null
           skills?: Json | null
           summary?: string | null
           updated_at?: string | null
           upload_batch_id?: string | null
         }
         Update: {
+          analyzed?: boolean | null
           certifications?: Json | null
           company_linkedin_url?: string | null
           company_name?: string | null
@@ -807,6 +823,7 @@ export type Database = {
           id?: string
           industry_name?: string | null
           languages?: Json | null
+          last_analyzed_at?: string | null
           last_name?: string | null
           linkedin_profile_id?: string | null
           location?: string | null
@@ -816,6 +833,7 @@ export type Database = {
           profile_url?: string | null
           public_id?: string | null
           raw_data?: Json | null
+          reanalyze_requested?: boolean | null
           skills?: Json | null
           summary?: string | null
           updated_at?: string | null
