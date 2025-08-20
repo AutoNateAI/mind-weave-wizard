@@ -380,27 +380,19 @@ export function LocationsTab() {
       console.log('Stored map state:', { center: [currentCenter.lng, currentCenter.lat], zoom: currentZoom });
     }
     
-    // Restore map when switching back
+    // Completely recreate map when switching back
     if (value === 'map') {
       setTimeout(() => {
-        if (map.current && mapContainer.current) {
-          console.log('Restoring map with state:', mapState);
-          
-          // Force container visibility and resize
-          const container = map.current.getContainer();
-          container.style.visibility = 'visible';
-          map.current.resize();
-          
-          // Restore previous position
-          map.current.setCenter(mapState.center);
-          map.current.setZoom(mapState.zoom);
-          
-          // Force repaint
-          map.current.triggerRepaint();
-          
-          console.log('Map restored successfully');
-        } else if (mapboxToken && mapContainer.current) {
-          console.log('No existing map, creating new one...');
+        // Destroy existing map if it exists
+        if (map.current) {
+          console.log('Destroying existing map instance');
+          map.current.remove();
+          map.current = null;
+        }
+        
+        // Create fresh map instance
+        if (mapboxToken && mapContainer.current) {
+          console.log('Creating fresh map with stored state:', mapState);
           initializeMap();
         }
       }, 100);
@@ -1483,7 +1475,7 @@ export function LocationsTab() {
             
             <div 
               ref={mapContainer} 
-              className="w-full h-[80vh] rounded-lg border overflow-hidden" 
+              className="w-full h-[80vh] rounded-lg border overflow-hidden bg-muted/10" 
             />
             {!mapboxToken && (
               <div className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg">
