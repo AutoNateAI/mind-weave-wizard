@@ -12,11 +12,13 @@ import { useToast } from '@/components/ui/use-toast';
 interface HeatmapControlsProps {
   activeLayer: string;
   onLayerChange: (layer: string) => void;
+  compact?: boolean;
 }
 
 export const HeatmapControls: React.FC<HeatmapControlsProps> = ({
   activeLayer,
-  onLayerChange
+  onLayerChange,
+  compact = false
 }) => {
   const { 
     loading, 
@@ -66,9 +68,13 @@ export const HeatmapControls: React.FC<HeatmapControlsProps> = ({
   };
 
   return (
-    <div className="space-y-6 p-4 bg-card rounded-lg border">
+    <div className={compact ? "space-y-4" : "space-y-6 p-4 bg-card rounded-lg border"}>
+      {!compact && (
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Heat Map Controls</h3>
+        </div>
+      )}
       <div>
-        <h3 className="text-lg font-semibold mb-4">Heat Map Controls</h3>
         
         {/* Layer Selection */}
         <div className="space-y-2 mb-4">

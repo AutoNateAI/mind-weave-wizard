@@ -684,10 +684,10 @@ export function LocationsTab() {
         </DialogContent>
       </Dialog>
 
-      {/* Floating Controls Button */}
+      {/* Floating Controls Button - Legacy */}
       {companiesData.length > 0 && (
         <Button
-          onClick={() => setShowNetworkModal(true)}
+          onClick={() => setShowControlsModal(true)}
           className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 z-50"
           size="icon"
         >
@@ -696,8 +696,8 @@ export function LocationsTab() {
       )}
 
       {/* Controls Modal with Tabs */}
-      <Dialog open={showNetworkModal} onOpenChange={setShowNetworkModal}>
-        <DialogContent className="max-w-2xl max-h-[80vh]">
+      <Dialog open={showControlsModal} onOpenChange={setShowControlsModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
@@ -742,7 +742,7 @@ export function LocationsTab() {
             </button>
           </div>
 
-          <div className="mt-4 overflow-y-auto">
+          <div className="mt-4 overflow-y-auto max-h-[60vh] pr-2">
             {activeControlsTab === 'locations' ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -838,6 +838,7 @@ export function LocationsTab() {
                 <HeatmapControls 
                   activeLayer={activeHeatmapLayer}
                   onLayerChange={setActiveHeatmapLayer}
+                  compact={true}
                 />
               </div>
             ) : (
@@ -1437,19 +1438,29 @@ export function LocationsTab() {
         </TabsList>
         
         <TabsContent value="map" className="mt-4">
-          <Card className="relative">
+          <div className="relative">
+            {/* Floating Controls Button */}
+            <Button
+              onClick={() => setShowControlsModal(true)}
+              className="absolute top-4 right-4 z-10 shadow-lg hover:shadow-xl transition-all duration-200"
+              size="sm"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Map Controls
+            </Button>
+            
             <div 
               ref={mapContainer} 
               className="w-full h-[80vh] rounded-lg border overflow-hidden" 
             />
             {!mapboxToken && (
-              <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+              <div className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg">
                 <div className="text-center">
                   <p className="text-muted-foreground">Loading map...</p>
                 </div>
               </div>
             )}
-          </Card>
+          </div>
         </TabsContent>
         
         <TabsContent value="graph" className="mt-4">
