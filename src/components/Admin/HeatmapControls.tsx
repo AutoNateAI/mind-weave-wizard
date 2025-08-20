@@ -30,23 +30,35 @@ export const HeatmapControls: React.FC<HeatmapControlsProps> = ({
   } = useHeatmapData();
   const { toast } = useToast();
   const [selectedKeyword, setSelectedKeyword] = React.useState('');
+  const [loadingAction, setLoadingAction] = React.useState<string | null>(null);
   
   const topKeywords = getTopKeywords();
 
   const handleAnalysis = async (action: 'process_profiles' | 'process_posts' | 'generate_heatmap' | 'full_analysis') => {
-    const result = await triggerAnalysis(action);
+    if (loadingAction) return;
     
-    if (result.success) {
-      toast({
-        title: "Analysis Complete",
-        description: `${action.replace('_', ' ')} completed successfully`,
-      });
-    } else {
+    setLoadingAction(action);
+    try {
+      const result = await triggerAnalysis(action);
+      
+      if (result.success) {
+        toast({
+          title: "Analysis Complete",
+          description: `${action.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} completed successfully`,
+        });
+        // Refresh data after successful analysis
+        await refreshData();
+      } else {
+        throw new Error(result.error || 'Analysis failed');
+      }
+    } catch (error) {
       toast({
         title: "Analysis Failed",
-        description: "There was an error running the analysis",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
         variant: "destructive",
       });
+    } finally {
+      setLoadingAction(null);
     }
   };
 
@@ -100,36 +112,36 @@ export const HeatmapControls: React.FC<HeatmapControlsProps> = ({
               variant="outline"
               size="sm"
               onClick={() => handleAnalysis('process_profiles')}
-              disabled={loading}
+              disabled={loadingAction !== null}
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+              {loadingAction === 'process_profiles' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
               Profiles
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => handleAnalysis('process_posts')}
-              disabled={loading}
+              disabled={loadingAction !== null}
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+              {loadingAction === 'process_posts' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
               Posts
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => handleAnalysis('generate_heatmap')}
-              disabled={loading}
+              disabled={loadingAction !== null}
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              {loadingAction === 'generate_heatmap' ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
               Generate
             </Button>
             <Button
               variant="secondary"
               size="sm"
               onClick={() => handleAnalysis('full_analysis')}
-              disabled={loading}
+              disabled={loadingAction !== null}
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+              {loadingAction === 'full_analysis' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
               Full Analysis
             </Button>
           </div>

@@ -56,31 +56,61 @@ Return JSON only: { "keywords": ["keyword1", "keyword2"], "sentiment": 0.5, "ind
       body: JSON.stringify({
         model: 'gpt-5-mini-2025-08-07',
         messages: [
-          { role: 'system', content: 'You are an expert LinkedIn content analyzer. Always return valid JSON.' },
+          { role: 'system', content: 'You are an expert LinkedIn content analyzer. Always return valid JSON in the exact format requested.' },
           { role: 'user', content: prompt }
         ],
         max_completion_tokens: 500,
       }),
     });
 
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+    }
+
     const data = await response.json();
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('Invalid OpenAI response structure');
+    }
+    
     const content = data.choices[0].message.content;
     
-    // Parse JSON response
-    const analysis = JSON.parse(content.replace(/```json|```/g, '').trim());
+    if (!content) {
+      throw new Error('Empty content from OpenAI');
+    }
     
-    return {
-      keywords: analysis.keywords || [],
-      sentiment: analysis.sentiment || 0,
-      industries: analysis.industries || [],
-      skills: analysis.skills || [],
-      themes: analysis.themes || []
-    };
+    console.log('OpenAI raw response:', content);
+    
+    // Clean and parse JSON response
+    let cleanedContent = content.replace(/```json|```/g, '').trim();
+    
+    // Handle case where AI returns just the JSON object
+    if (cleanedContent.startsWith('{') && cleanedContent.endsWith('}')) {
+      const analysis = JSON.parse(cleanedContent);
+      
+      return {
+        keywords: Array.isArray(analysis.keywords) ? analysis.keywords.slice(0, 10) : [],
+        sentiment: typeof analysis.sentiment === 'number' ? analysis.sentiment : 0,
+        industries: Array.isArray(analysis.industries) ? analysis.industries : [],
+        skills: Array.isArray(analysis.skills) ? analysis.skills : [],
+        themes: Array.isArray(analysis.themes) ? analysis.themes : []
+      };
+    } else {
+      throw new Error('Invalid JSON format from OpenAI');
+    }
+    
   } catch (error) {
     console.error('AI Analysis error:', error);
-    // Return basic fallback analysis
+    console.error('Text being analyzed:', text.substring(0, 200) + '...');
+    
+    // Return enhanced fallback analysis
+    const words = text.toLowerCase().split(/\s+/).filter(word => 
+      word.length > 2 && 
+      !['the', 'and', 'for', 'with', 'that', 'this', 'are', 'was', 'will', 'have', 'has'].includes(word)
+    );
+    
     return {
-      keywords: text.split(' ').slice(0, 5),
+      keywords: [...new Set(words)].slice(0, 10),
       sentiment: 0,
       industries: [],
       skills: [],
@@ -111,8 +141,8 @@ async function processProfile(profile: any) {
   // Extract location coordinates
   let latitude = null, longitude = null, locationName = null;
   
+  // Try to match by company_name first
   if (profile.company_name) {
-    // Try to get location from targeted_locations table
     const { data: location } = await supabase
       .from('targeted_locations')
       .select('latitude, longitude, company_name, city')
@@ -126,7 +156,34 @@ async function processProfile(profile: any) {
     }
   }
 
-  // If no location found, use profile geo_location_name
+  // If no match, try to match by headline/occupation containing company name
+  if (!latitude && (profile.headline || profile.occupation)) {
+    const text = `${profile.headline || ''} ${profile.occupation || ''}`.toLowerCase();
+    
+    // Get all targeted locations to match against
+    const { data: locations } = await supabase
+      .from('targeted_locations')
+      .select('latitude, longitude, company_name, city');
+    
+    if (locations) {
+      for (const location of locations) {
+        const companyName = location.company_name.toLowerCase();
+        // Check if the profile text mentions the company
+        if (text.includes(companyName) || 
+            (companyName.includes('par hawaii') && text.includes('par')) ||
+            (companyName.includes('hawaiian') && text.includes('hawaiian')) ||
+            (companyName.includes('matson') && text.includes('matson')) ||
+            (companyName.includes('bank') && text.includes('bank'))) {
+          latitude = location.latitude;
+          longitude = location.longitude;
+          locationName = location.city || location.company_name;
+          break;
+        }
+      }
+    }
+  }
+
+  // If still no location found, use profile geo_location_name
   if (!latitude && profile.geo_location_name) {
     locationName = profile.geo_location_name;
     // For now, we'll leave lat/lng null - could enhance with geocoding API later
