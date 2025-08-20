@@ -221,23 +221,36 @@ async function processProfile(profile: any) {
     locationName = profile.geo_location_name;
   }
 
-  // Store keywords in keywords_analytics table
+  // Store keywords in keywords_analytics table (check for duplicates first)
   for (const keyword of analysis.keywords) {
-    const { error } = await supabase
+    // Check if this keyword already exists for this profile
+    const { data: existingKeyword } = await supabase
       .from('keywords_analytics')
-      .insert({
-        keyword: keyword.toLowerCase(),
-        source_type: 'profile',
-        source_id: profile.id,
-        location_latitude: latitude,
-        location_longitude: longitude,
-        location_name: locationName,
-        sentiment_score: analysis.sentiment,
-        industry_tags: analysis.industries
-      });
-    
-    if (error) {
-      console.error('Error inserting keyword:', error);
+      .select('id')
+      .eq('keyword', keyword.toLowerCase())
+      .eq('source_type', 'profile')
+      .eq('source_id', profile.id)
+      .maybeSingle();
+
+    if (!existingKeyword) {
+      const { error } = await supabase
+        .from('keywords_analytics')
+        .insert({
+          keyword: keyword.toLowerCase(),
+          source_type: 'profile',
+          source_id: profile.id,
+          location_latitude: latitude,
+          location_longitude: longitude,
+          location_name: locationName,
+          sentiment_score: analysis.sentiment,
+          industry_tags: analysis.industries
+        });
+      
+      if (error) {
+        console.error('Error inserting keyword:', error);
+      }
+    } else {
+      console.log(`Keyword "${keyword}" already exists for profile ${profile.id}, skipping...`);
     }
   }
 
@@ -300,23 +313,36 @@ async function processPost(post: any) {
   // Calculate engagement score
   const engagementScore = (post.num_likes || 0) + (post.num_comments || 0) + (post.num_shares || 0);
 
-  // Store keywords with engagement data
+  // Store keywords with engagement data (check for duplicates first)  
   for (const keyword of analysis.keywords) {
-    const { error } = await supabase
+    // Check if this keyword already exists for this post
+    const { data: existingKeyword } = await supabase
       .from('keywords_analytics')
-      .insert({
-        keyword: keyword.toLowerCase(),
-        source_type: 'post',
-        source_id: post.id,
-        location_latitude: latitude,
-        location_longitude: longitude,
-        location_name: locationName,
-        sentiment_score: analysis.sentiment,
-        industry_tags: analysis.industries
-      });
-    
-    if (error) {
-      console.error('Error inserting post keyword:', error);
+      .select('id')
+      .eq('keyword', keyword.toLowerCase())
+      .eq('source_type', 'post')
+      .eq('source_id', post.id)
+      .maybeSingle();
+
+    if (!existingKeyword) {
+      const { error } = await supabase
+        .from('keywords_analytics')
+        .insert({
+          keyword: keyword.toLowerCase(),
+          source_type: 'post',
+          source_id: post.id,
+          location_latitude: latitude,
+          location_longitude: longitude,
+          location_name: locationName,
+          sentiment_score: analysis.sentiment,
+          industry_tags: analysis.industries
+        });
+      
+      if (error) {
+        console.error('Error inserting post keyword:', error);
+      }
+    } else {
+      console.log(`Keyword "${keyword}" already exists for post ${post.id}, skipping...`);
     }
   }
 

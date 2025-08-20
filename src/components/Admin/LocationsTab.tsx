@@ -94,6 +94,7 @@ export function LocationsTab() {
     picture_url: ''
   });
   const [activeControlsTab, setActiveControlsTab] = useState<'network' | 'locations' | 'heatmap'>('locations');
+  const { heatmapData: heatmapAnalyticsData, getHeatmapLayers } = useHeatmapData();
   const [activeHeatmapLayer, setActiveHeatmapLayer] = useState<string>('none');
   const [showControlsModal, setShowControlsModal] = useState(false);
   const [showAddEmployee, setShowAddEmployee] = useState(false);
@@ -304,6 +305,213 @@ export function LocationsTab() {
     }
   };
 
+  // Add heatmap layers to the map
+  const addHeatmapLayers = () => {
+    if (!map.current) return;
+    
+    const layers = getHeatmapLayers();
+    
+    // Remove existing heatmap layers
+    ['heatmap-density', 'heatmap-engagement', 'heatmap-sentiment'].forEach(layerId => {
+      if (map.current?.getLayer(layerId)) {
+        map.current.removeLayer(layerId);
+      }
+      if (map.current?.getSource(layerId)) {
+        map.current.removeSource(layerId);
+      }
+    });
+    
+    // Add density layer
+    if (activeHeatmapLayer === 'density' && layers.density.length > 0) {
+      map.current.addSource('heatmap-density', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: layers.density.map(point => ({
+            type: 'Feature',
+            properties: { 
+              weight: point.weight,
+              keyword: point.keyword,
+              details: point.details
+            },
+            geometry: {
+              type: 'Point',
+              coordinates: point.coordinates
+            }
+          }))
+        }
+      });
+
+      map.current.addLayer({
+        id: 'heatmap-density',
+        type: 'heatmap',
+        source: 'heatmap-density',
+        maxzoom: 15,
+        paint: {
+          'heatmap-weight': ['get', 'weight'],
+          'heatmap-intensity': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            0, 1,
+            15, 3
+          ],
+          'heatmap-color': [
+            'interpolate',
+            ['linear'],
+            ['heatmap-density'],
+            0, 'rgba(33,102,172,0)',
+            0.2, 'rgb(103,169,207)',
+            0.4, 'rgb(209,229,240)',
+            0.6, 'rgb(253,219,199)',
+            0.8, 'rgb(239,138,98)',
+            1, 'rgb(178,24,43)'
+          ],
+          'heatmap-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            0, 2,
+            15, 20
+          ]
+        }
+      });
+    }
+
+    // Add engagement layer
+    if (activeHeatmapLayer === 'engagement' && layers.engagement.length > 0) {
+      map.current.addSource('heatmap-engagement', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: layers.engagement.map(point => ({
+            type: 'Feature',
+            properties: { 
+              weight: point.weight,
+              keyword: point.keyword,
+              details: point.details
+            },
+            geometry: {
+              type: 'Point',
+              coordinates: point.coordinates
+            }
+          }))
+        }
+      });
+
+      map.current.addLayer({
+        id: 'heatmap-engagement',
+        type: 'heatmap',
+        source: 'heatmap-engagement',
+        maxzoom: 15,
+        paint: {
+          'heatmap-weight': ['get', 'weight'],
+          'heatmap-intensity': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            0, 1,
+            15, 3
+          ],
+          'heatmap-color': [
+            'interpolate',
+            ['linear'],
+            ['heatmap-density'],
+            0, 'rgba(0,255,0,0)',
+            0.2, 'rgb(124,252,0)',
+            0.4, 'rgb(173,255,47)',
+            0.6, 'rgb(255,255,0)',
+            0.8, 'rgb(255,165,0)',
+            1, 'rgb(255,69,0)'
+          ],
+          'heatmap-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            0, 2,
+            15, 20
+          ]
+        }
+      });
+    }
+
+    // Add sentiment layer
+    if (activeHeatmapLayer === 'sentiment' && layers.sentiment.length > 0) {
+      map.current.addSource('heatmap-sentiment', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: layers.sentiment.map(point => ({
+            type: 'Feature',
+            properties: { 
+              weight: point.weight,
+              sentiment: point.sentiment,
+              keyword: point.keyword,
+              details: point.details
+            },
+            geometry: {
+              type: 'Point',
+              coordinates: point.coordinates
+            }
+          }))
+        }
+      });
+
+      map.current.addLayer({
+        id: 'heatmap-sentiment',
+        type: 'heatmap',
+        source: 'heatmap-sentiment',
+        maxzoom: 15,
+        paint: {
+          'heatmap-weight': ['get', 'weight'],
+          'heatmap-intensity': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            0, 1,
+            15, 3
+          ],
+          'heatmap-color': [
+            'case',
+            ['>', ['get', 'sentiment'], 0],
+            // Positive sentiment - green to blue
+            [
+              'interpolate',
+              ['linear'],
+              ['heatmap-density'],
+              0, 'rgba(0,255,255,0)',
+              0.5, 'rgb(0,255,127)',
+              1, 'rgb(0,100,255)'
+            ],
+            // Negative sentiment - red to orange  
+            [
+              'interpolate',
+              ['linear'],
+              ['heatmap-density'],
+              0, 'rgba(255,0,0,0)',
+              0.5, 'rgb(255,69,0)',
+              1, 'rgb(139,0,0)'
+            ]
+          ],
+          'heatmap-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            0, 2,
+            15, 20
+          ]
+        }
+      });
+    }
+  };
+
+  // Update heatmap when layer changes or data updates
+  useEffect(() => {
+    if (map.current && heatmapAnalyticsData.length > 0) {
+      addHeatmapLayers();
+    }
+  }, [activeHeatmapLayer, heatmapAnalyticsData]);
+
   const toggleCompanyVisibility = (companyId: string) => {
     setVisibleCompanies(prev => {
       const newSet = new Set(prev);
@@ -361,6 +569,7 @@ export function LocationsTab() {
       console.log('Map loaded successfully with style:', mapStyle);
       addMarkersToMap();
       addNetworkMarkersToMap();
+      addHeatmapLayers(); // Add heatmap layers when map loads
     });
 
     // Handle style load events
