@@ -171,18 +171,35 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
 
       // Group comments by thread and create thread objects
       const threads = (data || []).map(rootComment => {
+        const post = (rootComment as any).reddit_posts;
+        
+        // Generate thread-specific entry points combining post and comment analysis
+        const threadEntryPoints = [
+          ...(Array.isArray(post.entry_points) ? post.entry_points : []),
+          'Respond to specific comment perspective',
+          'Build on thread discussion',
+          'Address thread sentiment patterns',
+          'Connect thread themes to critical thinking'
+        ];
+
         const thread: RedditCommentThread = {
           root_comment: {
             ...rootComment,
             keywords: Array.isArray(rootComment.keywords) ? rootComment.keywords : [],
-            topics: Array.isArray(rootComment.topics) ? rootComment.topics : []
+            topics: Array.isArray(rootComment.topics) ? rootComment.topics : [],
+            suggestion: {
+              priority: 4,
+              reason: 'Analyzed thread with engagement potential',
+              approach: 'Thoughtful response to comment discussion',
+              key_points: Array.isArray(rootComment.topics) ? rootComment.topics.map(String) : []
+            }
           },
           thread_comments: [], // We'll load these when needed
           post: {
-            ...(rootComment as any).reddit_posts,
-            keywords: Array.isArray((rootComment as any).reddit_posts.keywords) ? (rootComment as any).reddit_posts.keywords : [],
-            topics: Array.isArray((rootComment as any).reddit_posts.topics) ? (rootComment as any).reddit_posts.topics : [],
-            entry_points: Array.isArray((rootComment as any).reddit_posts.entry_points) ? (rootComment as any).reddit_posts.entry_points : []
+            ...post,
+            keywords: Array.isArray(post.keywords) ? post.keywords : [],
+            topics: Array.isArray(post.topics) ? post.topics : [],
+            entry_points: threadEntryPoints
           },
           analyzed_at: rootComment.analyzed_at,
           ai_summary: rootComment.ai_summary,
@@ -313,6 +330,45 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
       setComments(commentsWithSuggestions);
     } catch (error: any) {
       console.error('Error generating comment suggestions:', error);
+    }
+  };
+
+  const loadThreadComments = async (thread: RedditCommentThread) => {
+    setLoadingComments(true);
+    try {
+      const { data: commentsData, error } = await supabase
+        .from('reddit_comments')
+        .select('*')
+        .eq('reddit_post_id', thread.post.reddit_post_id)
+        .order('created_utc', { ascending: true });
+
+      if (error) throw error;
+
+      // Filter out AutoModerator comments and process
+      const processedComments = (commentsData || [])
+        .filter(comment => comment.author !== 'AutoModerator')
+        .map(comment => ({
+          ...comment,
+          keywords: Array.isArray(comment.keywords) ? comment.keywords : [],
+          topics: Array.isArray(comment.topics) ? comment.topics : [],
+          suggestion: comment.analyzed_at ? {
+            priority: comment.score > 5 ? 4 : 3,
+            reason: 'Analyzed comment in selected thread',
+            approach: 'Respond thoughtfully to build on thread discussion',
+            key_points: Array.isArray(comment.topics) ? comment.topics.map(String) : []
+          } : undefined
+        }));
+
+      setComments(processedComments);
+    } catch (error: any) {
+      console.error('Error loading thread comments:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to load thread comments",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingComments(false);
     }
   };
 
@@ -564,13 +620,14 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
                           selectedThread?.root_comment.id === thread.root_comment.id ? 'border-primary bg-accent' : 'hover:bg-accent/50'
                         }`}
                         onClick={() => {
-                          setSelectedThread(thread);
-                          setSelectedPost(null);
-                          setSelectedComment(null);
-                          setSelectedEntryPoint('');
-                          setGeneratedResponse('');
-                          setFinalResponse('');
-                          setComments([]);
+                         setSelectedThread(thread);
+                           setSelectedPost(null);
+                           setSelectedComment(null);
+                           setSelectedEntryPoint('');
+                           setGeneratedResponse('');
+                           setFinalResponse('');
+                           setComments([]);
+                           loadThreadComments(thread);
                         }}
                       >
                         <div className="space-y-1">
@@ -580,18 +637,21 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
                           <p className="text-xs text-muted-foreground line-clamp-1">
                             u/{thread.root_comment.author}: {thread.root_comment.content}
                           </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="secondary" className="text-xs">r/{thread.post.subreddit_name}</Badge>
-                            <Badge variant="outline" className="text-xs">
-                              <Bot className="h-3 w-3 mr-1" />
-                              Thread Analyzed
-                            </Badge>
-                            {thread.sentiment_label && (
-                              <Badge className={`text-xs ${getSentimentColor(thread.sentiment_score || 0)}`}>
-                                {thread.sentiment_label}
-                              </Badge>
-                            )}
-                          </div>
+                           <div className="flex items-center gap-2 mt-1">
+                             <Badge variant="secondary" className="text-xs">r/{thread.post.subreddit_name}</Badge>
+                             <Badge variant="outline" className="text-xs">
+                               <Bot className="h-3 w-3 mr-1" />
+                               Thread Analyzed
+                             </Badge>
+                             <span className="text-xs text-muted-foreground">
+                               {thread.post.entry_points?.length || 0} entry points
+                             </span>
+                             {thread.sentiment_label && (
+                               <Badge className={`text-xs ${getSentimentColor(thread.sentiment_score || 0)}`}>
+                                 {thread.sentiment_label}
+                               </Badge>
+                             )}
+                           </div>
                         </div>
                       </div>
                     ))}
@@ -601,13 +661,15 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
             )}
 
             {/* Comments with AI Suggestions */}
-            {selectedPost && comments.length > 0 && (
+            {(selectedPost || selectedThread) && comments.length > 0 && (
               <div className="space-y-2">
-                <Label>AI-Suggested Comments to Respond To</Label>
+                <Label>
+                  {selectedThread ? 'Thread Comments to Respond To' : 'AI-Suggested Comments to Respond To'}
+                </Label>
                 <ScrollArea className="h-[300px] border rounded p-2">
                   <div className="space-y-2">
                     {comments
-                      .filter(c => c.suggestion && c.suggestion.priority >= 3)
+                      .filter(c => selectedThread ? true : (c.suggestion && c.suggestion.priority >= 3))
                       .sort((a, b) => (b.suggestion?.priority || 0) - (a.suggestion?.priority || 0))
                       .map((comment) => (
                         <div
@@ -621,30 +683,55 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
                             setFinalResponse('');
                           }}
                         >
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Badge variant="secondary" className="text-xs">
-                                  Priority: {comment.suggestion?.priority}/5
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">u/{comment.author}</span>
-                                <span className="flex items-center gap-1 text-xs">
-                                  <ThumbsUp className="h-3 w-3" />
-                                  {comment.score}
-                                </span>
-                              </div>
-                            </div>
-                            
-                            <p className="text-sm line-clamp-2">{comment.content}</p>
-                            
-                            {comment.suggestion && (
-                              <div className="text-xs bg-muted p-2 rounded">
-                                <p className="font-medium">AI Suggestion:</p>
-                                <p className="text-muted-foreground">{comment.suggestion.reason}</p>
-                                <p className="mt-1"><strong>Approach:</strong> {comment.suggestion.approach}</p>
-                              </div>
-                            )}
-                          </div>
+                           <div className="space-y-2">
+                             <div className="flex items-center justify-between">
+                               <div className="flex items-center gap-2">
+                                 {comment.suggestion && (
+                                   <Badge variant="secondary" className="text-xs">
+                                     Priority: {comment.suggestion?.priority}/5
+                                   </Badge>
+                                 )}
+                                 <span className="text-xs text-muted-foreground">u/{comment.author}</span>
+                                 <span className="flex items-center gap-1 text-xs">
+                                   <ThumbsUp className="h-3 w-3" />
+                                   {comment.score}
+                                 </span>
+                                 {comment.analyzed_at && (
+                                   <Badge variant="outline" className="text-xs">
+                                     <Bot className="h-3 w-3 mr-1" />
+                                     Analyzed
+                                   </Badge>
+                                 )}
+                                 {comment.depth > 0 && (
+                                   <Badge variant="outline" className="text-xs">
+                                     Depth: {comment.depth}
+                                   </Badge>
+                                 )}
+                               </div>
+                             </div>
+                             
+                             <p className="text-sm line-clamp-2">{comment.content}</p>
+                             
+                             {comment.suggestion && (
+                               <div className="text-xs bg-muted p-2 rounded">
+                                 <p className="font-medium">AI Suggestion:</p>
+                                 <p className="text-muted-foreground">{comment.suggestion.reason}</p>
+                                 <p className="mt-1"><strong>Approach:</strong> {comment.suggestion.approach}</p>
+                               </div>
+                             )}
+
+                             {selectedThread && comment.analyzed_at && (
+                               <div className="text-xs bg-accent p-2 rounded">
+                                 <p className="font-medium">Thread Comment Analysis:</p>
+                                 {comment.sentiment_label && (
+                                   <p><strong>Sentiment:</strong> {comment.sentiment_label}</p>
+                                 )}
+                                 {comment.topics && comment.topics.length > 0 && (
+                                   <p><strong>Topics:</strong> {comment.topics.join(', ')}</p>
+                                 )}
+                               </div>
+                             )}
+                           </div>
                         </div>
                       ))}
                   </div>
