@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { MessageSquare, Bot, Send, Edit3, ExternalLink, Lightbulb } from 'lucide-react';
+import { MessageSquare, Bot, Send, Edit3, ExternalLink, Lightbulb, ThumbsUp, User } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -20,23 +20,56 @@ interface RedditPost {
   author: string;
   score: number;
   num_comments: number;
+  created_utc: string;
   permalink: string;
   ai_summary: string;
   keywords: any[];
   topics: any[];
+  sentiment_score: number;
+  sentiment_label: string;
   entry_points: any[];
   analyzed_at: string;
 }
 
+interface RedditComment {
+  id: string;
+  reddit_comment_id: string;
+  reddit_post_id: string;
+  author: string;
+  content: string;
+  score: number;
+  created_utc: string;
+  depth: number;
+  permalink: string;
+  is_submitter: boolean;
+  ai_summary?: string;
+  keywords?: any[];
+  topics?: any[];
+  sentiment_score?: number;
+  sentiment_label?: string;
+  analyzed_at?: string;
+  suggestion?: {
+    priority: number;
+    reason: string;
+    approach: string;
+    key_points: string[];
+  };
+}
+
 interface MyComment {
   id: string;
-  post_id: string;
   reddit_post_id: string;
+  reddit_parent_id?: string;
+  entry_point_used?: string;
   generated_response: string;
-  final_response: string;
-  entry_point_used: string;
+  final_response?: string;
   status: string;
   created_at: string;
+  submitted_at?: string;
+  reddit_comment_id?: string;
+  submission_response?: string;
+  post?: RedditPost;
+  target_comment?: RedditComment;
 }
 
 interface ResponseGeneratorProps {
@@ -59,11 +92,14 @@ Our approach: Help people develop structured thinking while being genuinely supp
 export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
   const [analyzedPosts, setAnalyzedPosts] = useState<RedditPost[]>([]);
   const [selectedPost, setSelectedPost] = useState<RedditPost | null>(null);
+  const [selectedComment, setSelectedComment] = useState<RedditComment | null>(null);
+  const [comments, setComments] = useState<RedditComment[]>([]);
   const [selectedEntryPoint, setSelectedEntryPoint] = useState('');
   const [generatedResponse, setGeneratedResponse] = useState('');
   const [finalResponse, setFinalResponse] = useState('');
   const [myComments, setMyComments] = useState<MyComment[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingComments, setLoadingComments] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
@@ -117,31 +153,140 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
     }
   };
 
-  const generateResponse = async () => {
-    if (!selectedPost || !selectedEntryPoint) return;
+  const loadComments = async (post: RedditPost) => {
+    setLoadingComments(true);
+    try {
+      const { data: commentsData, error } = await supabase
+        .from('reddit_comments')
+        .select('*')
+        .eq('reddit_post_id', post.reddit_post_id)
+        .order('created_utc', { ascending: true });
+
+      if (error) throw error;
+
+      const processedComments = (commentsData || []).map(comment => ({
+        ...comment,
+        keywords: Array.isArray(comment.keywords) ? comment.keywords : [],
+        topics: Array.isArray(comment.topics) ? comment.topics : []
+      }));
+
+      setComments(processedComments);
+      
+      // Generate AI suggestions for best comments to respond to
+      if (processedComments.length > 0) {
+        generateCommentSuggestions(post, processedComments);
+      }
+    } catch (error: any) {
+      console.error('Error loading comments:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to load comments",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  const generateCommentSuggestions = async (post: RedditPost, commentsList: RedditComment[]) => {
+    try {
+      // Get top comments (by score) that are analyzed
+      const topComments = commentsList
+        .filter(c => c.analyzed_at && c.score > 1)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5);
+
+      if (topComments.length === 0) return;
+
+      const prompt = `
+        Based on this Reddit post and its top comments, suggest which comments would be best to respond to from a critical thinking perspective.
+        
+        Post: "${post.title}"
+        Content: "${post.content || 'No content'}"
+        Entry Points: ${post.entry_points?.join(', ') || 'None'}
+        
+        Comments:
+        ${topComments.map((c, i) => `
+        ${i + 1}. u/${c.author} (Score: ${c.score}): "${c.content}"
+        ${c.ai_summary ? `Summary: ${c.ai_summary}` : ''}
+        ${c.sentiment_label ? `Sentiment: ${c.sentiment_label}` : ''}
+        `).join('\n')}
+        
+        For each comment, provide:
+        1. Priority (1-5, where 5 is highest)
+        2. Reason why this comment is a good opportunity for critical thinking engagement
+        3. Suggested angle/approach
+        4. Key points to address
+        
+        Return as JSON array with format:
+        [{
+          "comment_index": 1,
+          "priority": 5,
+          "reason": "...",
+          "approach": "...",
+          "key_points": ["...", "..."]
+        }]
+      `;
+
+      const { data, error } = await supabase.functions.invoke('reddit-analyzer', {
+        body: { 
+          action: 'generate_comment_suggestions',
+          data: { prompt }
+        }
+      });
+
+      if (error) throw error;
+      
+      // Store suggestions with comments for UI display
+      const suggestions = JSON.parse(data.suggestions || '[]');
+      const commentsWithSuggestions = commentsList.map(comment => {
+        const suggestion = suggestions.find((s: any) => 
+          topComments[s.comment_index - 1]?.reddit_comment_id === comment.reddit_comment_id
+        );
+        return { ...comment, suggestion };
+      });
+      
+      setComments(commentsWithSuggestions);
+    } catch (error: any) {
+      console.error('Error generating comment suggestions:', error);
+    }
+  };
+
+  const generateResponse = async (targetComment?: RedditComment) => {
+    if (!selectedPost || !selectedEntryPoint) {
+      toast({
+        title: "Missing Information",
+        description: "Please select a post and entry point",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setGenerating(true);
     try {
+      const contextData = {
+        postContent: selectedPost.content || '',
+        postTitle: selectedPost.title,
+        commentContent: targetComment?.content || '',
+        entryPoint: selectedEntryPoint,
+        curriculumContext: CURRICULUM_CONTEXT
+      };
+
       const { data, error } = await supabase.functions.invoke('reddit-analyzer', {
         body: { 
           action: 'generate_response',
-          data: {
-            postContent: selectedPost.content,
-            postTitle: selectedPost.title,
-            entryPoint: selectedEntryPoint,
-            curriculum: CURRICULUM_CONTEXT
-          }
+          data: contextData
         }
       });
 
       if (error) throw error;
 
-      setGeneratedResponse(data.generatedResponse);
-      setFinalResponse(data.generatedResponse);
+      setGeneratedResponse(data.response);
+      setFinalResponse(data.response);
       
       toast({
         title: "Success",
-        description: "Response generated successfully",
+        description: targetComment ? "Comment response generated" : "Post response generated",
       });
     } catch (error: any) {
       console.error('Error generating response:', error);
@@ -155,15 +300,15 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
     }
   };
 
-  const saveComment = async () => {
+  const saveComment = async (targetComment?: RedditComment) => {
     if (!selectedPost || !finalResponse || !selectedEntryPoint) return;
 
     try {
       const { error } = await supabase
         .from('reddit_my_comments')
         .insert({
-          post_id: selectedPost.id,
           reddit_post_id: selectedPost.reddit_post_id,
+          reddit_parent_id: targetComment ? `t1_${targetComment.reddit_comment_id}` : `t3_${selectedPost.reddit_post_id}`,
           generated_response: generatedResponse,
           final_response: finalResponse,
           entry_point_used: selectedEntryPoint,
@@ -176,6 +321,7 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
       
       // Clear the form
       setSelectedPost(null);
+      setSelectedComment(null);
       setSelectedEntryPoint('');
       setGeneratedResponse('');
       setFinalResponse('');
@@ -210,8 +356,8 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
         body: { 
           action: 'submit_comment',
           data: {
-            thingId: `t3_${comment.reddit_post_id}`, // Reddit format for post ID
-            text: comment.final_response
+            thingId: comment.reddit_parent_id || `t3_${comment.reddit_post_id}`,
+            text: comment.final_response || comment.generated_response
           }
         }
       });
@@ -275,6 +421,12 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
     }
   };
 
+  const getSentimentColor = (score: number) => {
+    if (score > 0.1) return 'bg-green-100 text-green-800';
+    if (score < -0.1) return 'bg-red-100 text-red-800';
+    return 'bg-gray-100 text-gray-800';
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -303,9 +455,12 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
                       }`}
                       onClick={() => {
                         setSelectedPost(post);
+                        setSelectedComment(null);
                         setSelectedEntryPoint('');
                         setGeneratedResponse('');
                         setFinalResponse('');
+                        setComments([]);
+                        loadComments(post);
                       }}
                     >
                       <h4 className="text-sm font-medium line-clamp-2">{post.title}</h4>
@@ -320,6 +475,58 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
                 </div>
               </ScrollArea>
             </div>
+
+            {/* Comments with AI Suggestions */}
+            {selectedPost && comments.length > 0 && (
+              <div className="space-y-2">
+                <Label>AI-Suggested Comments to Respond To</Label>
+                <ScrollArea className="h-[300px] border rounded p-2">
+                  <div className="space-y-2">
+                    {comments
+                      .filter(c => c.suggestion && c.suggestion.priority >= 3)
+                      .sort((a, b) => (b.suggestion?.priority || 0) - (a.suggestion?.priority || 0))
+                      .map((comment) => (
+                        <div
+                          key={comment.id}
+                          className={`p-3 border rounded cursor-pointer transition-colors ${
+                            selectedComment?.id === comment.id ? 'border-primary bg-accent' : 'hover:bg-accent/50'
+                          }`}
+                          onClick={() => {
+                            setSelectedComment(comment);
+                            setGeneratedResponse('');
+                            setFinalResponse('');
+                          }}
+                        >
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="secondary" className="text-xs">
+                                  Priority: {comment.suggestion?.priority}/5
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">u/{comment.author}</span>
+                                <span className="flex items-center gap-1 text-xs">
+                                  <ThumbsUp className="h-3 w-3" />
+                                  {comment.score}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <p className="text-sm line-clamp-2">{comment.content}</p>
+                            
+                            {comment.suggestion && (
+                              <div className="text-xs bg-muted p-2 rounded">
+                                <p className="font-medium">AI Suggestion:</p>
+                                <p className="text-muted-foreground">{comment.suggestion.reason}</p>
+                                <p className="mt-1"><strong>Approach:</strong> {comment.suggestion.approach}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
 
             {/* Entry Point Selection */}
             {selectedPost && (
@@ -342,12 +549,12 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
 
             {/* Generate Button */}
             <Button
-              onClick={generateResponse}
+              onClick={() => generateResponse(selectedComment || undefined)}
               disabled={!selectedPost || !selectedEntryPoint || generating}
               className="w-full"
             >
               <Bot className="h-4 w-4 mr-2" />
-              {generating ? 'Generating...' : 'Generate Response'}
+              {generating ? 'Generating...' : selectedComment ? 'Generate Comment Response' : 'Generate Post Response'}
             </Button>
 
             {/* Generated Response */}
@@ -361,7 +568,7 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
                   placeholder="Edit the generated response..."
                 />
                 <div className="flex gap-2">
-                  <Button onClick={saveComment} disabled={!finalResponse}>
+                  <Button onClick={() => saveComment(selectedComment || undefined)} disabled={!finalResponse}>
                     Save as Draft
                   </Button>
                   <Button
@@ -391,7 +598,9 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
             <ScrollArea className="h-[600px]">
               <div className="space-y-4">
                 {myComments.map((comment) => {
-                  const post = analyzedPosts.find(p => p.id === comment.post_id);
+                  const post = analyzedPosts.find(p => p.reddit_post_id === comment.reddit_post_id);
+                  const isCommentReply = comment.reddit_parent_id?.startsWith('t1_');
+                  
                   return (
                     <div key={comment.id} className="p-4 border rounded-lg">
                       {/* Comment Header */}
@@ -410,6 +619,12 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
                             >
                               {comment.status}
                             </Badge>
+                            {isCommentReply && (
+                              <Badge variant="outline" className="text-xs">
+                                <User className="h-3 w-3 mr-1" />
+                                Reply to Comment
+                              </Badge>
+                            )}
                           </div>
                         </div>
                         {post && (
@@ -436,7 +651,7 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
                       {/* Comment Text */}
                       <div className="mb-3">
                         <Textarea
-                          value={comment.final_response}
+                          value={comment.final_response || comment.generated_response}
                           onChange={(e) => updateComment(comment.id, e.target.value)}
                           className="text-sm"
                           disabled={comment.status === 'submitted'}

@@ -31,6 +31,25 @@ interface RedditPost {
   analyzed_at: string;
 }
 
+interface RedditComment {
+  id: string;
+  reddit_comment_id: string;
+  reddit_post_id: string;
+  author: string;
+  content: string;
+  score: number;
+  created_utc: string;
+  depth: number;
+  permalink: string;
+  is_submitter: boolean;
+  ai_summary?: string;
+  keywords?: any[];
+  topics?: any[];
+  sentiment_score?: number;
+  sentiment_label?: string;
+  analyzed_at?: string;
+}
+
 interface PostAnalyzerProps {
   isConnected: boolean;
 }
@@ -38,8 +57,11 @@ interface PostAnalyzerProps {
 export function PostAnalyzer({ isConnected }: PostAnalyzerProps) {
   const [posts, setPosts] = useState<RedditPost[]>([]);
   const [selectedPost, setSelectedPost] = useState<RedditPost | null>(null);
+  const [comments, setComments] = useState<RedditComment[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingComments, setLoadingComments] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [analyzingComments, setAnalyzingComments] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubreddit, setSelectedSubreddit] = useState('all');
   const [subreddits, setSubreddits] = useState<string[]>([]);
@@ -102,6 +124,62 @@ export function PostAnalyzer({ isConnected }: PostAnalyzerProps) {
     }
   };
 
+  const loadComments = async (post: RedditPost) => {
+    if (!isConnected) {
+      toast({
+        title: "Not Connected",
+        description: "Reddit API not connected. Check your credentials.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoadingComments(true);
+    try {
+      // First fetch comments from Reddit API
+      const { data: fetchData, error: fetchError } = await supabase.functions.invoke('reddit-api', {
+        body: { 
+          action: 'fetch_post_comments',
+          data: {
+            subreddit: post.subreddit_name,
+            postId: post.reddit_post_id
+          }
+        }
+      });
+
+      if (fetchError) throw fetchError;
+
+      // Then load from database
+      const { data: commentsData, error: commentsError } = await supabase
+        .from('reddit_comments')
+        .select('*')
+        .eq('reddit_post_id', post.reddit_post_id)
+        .order('created_utc', { ascending: true });
+
+      if (commentsError) throw commentsError;
+
+      setComments((commentsData || []).map(comment => ({
+        ...comment,
+        keywords: Array.isArray(comment.keywords) ? comment.keywords : [],
+        topics: Array.isArray(comment.topics) ? comment.topics : []
+      })));
+
+      toast({
+        title: "Success",
+        description: `Loaded ${commentsData?.length || 0} comments`,
+      });
+    } catch (error: any) {
+      console.error('Error loading comments:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to load comments",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
   const analyzePost = async (post: RedditPost) => {
     setAnalyzing(true);
     try {
@@ -148,6 +226,66 @@ export function PostAnalyzer({ isConnected }: PostAnalyzerProps) {
       });
     } finally {
       setAnalyzing(false);
+    }
+  };
+
+  const analyzeComments = async (post: RedditPost) => {
+    if (comments.length === 0) {
+      toast({
+        title: "No Comments",
+        description: "Load comments first before analyzing",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAnalyzingComments(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('reddit-analyzer', {
+        body: { 
+          action: 'analyze_comments',
+          data: {
+            postId: post.reddit_post_id,
+            comments: comments.map(c => ({
+              id: c.reddit_comment_id,
+              content: c.content,
+              author: c.author,
+              score: c.score
+            }))
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      // Refresh comments data
+      const { data: updatedComments, error: fetchError } = await supabase
+        .from('reddit_comments')
+        .select('*')
+        .eq('reddit_post_id', post.reddit_post_id)
+        .order('created_utc', { ascending: true });
+
+      if (fetchError) throw fetchError;
+
+      setComments((updatedComments || []).map(comment => ({
+        ...comment,
+        keywords: Array.isArray(comment.keywords) ? comment.keywords : [],
+        topics: Array.isArray(comment.topics) ? comment.topics : []
+      })));
+      
+      toast({
+        title: "Success",
+        description: "Comment analysis completed",
+      });
+    } catch (error: any) {
+      console.error('Error analyzing comments:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to analyze comments",
+        variant: "destructive",
+      });
+    } finally {
+      setAnalyzingComments(false);
     }
   };
 
@@ -223,7 +361,10 @@ export function PostAnalyzer({ isConnected }: PostAnalyzerProps) {
                     className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                       selectedPost?.id === post.id ? 'border-primary bg-accent' : 'hover:bg-accent/50'
                     }`}
-                    onClick={() => setSelectedPost(post)}
+                     onClick={() => {
+                       setSelectedPost(post);
+                       setComments([]);
+                     }}
                   >
                     <div className="space-y-2">
                       <div className="flex items-start justify-between">
@@ -389,6 +530,102 @@ export function PostAnalyzer({ isConnected }: PostAnalyzerProps) {
                     </Button>
                   </div>
                 )}
+
+                {/* Comments Section */}
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <Label className="text-sm font-medium">Comment Threads ({comments.length})</Label>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => loadComments(selectedPost)}
+                        disabled={loadingComments || !isConnected}
+                      >
+                        {loadingComments ? 'Loading...' : 'Load Comments'}
+                      </Button>
+                      {comments.length > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => analyzeComments(selectedPost)}
+                          disabled={analyzingComments}
+                        >
+                          {analyzingComments ? 'Analyzing...' : 'Analyze Comments'}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {comments.length > 0 ? (
+                    <ScrollArea className="h-[300px]">
+                      <div className="space-y-3">
+                        {comments.map((comment) => (
+                          <div
+                            key={comment.id}
+                            className="p-3 border rounded-lg bg-muted/30"
+                            style={{ marginLeft: `${comment.depth * 12}px` }}
+                          >
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">u/{comment.author}</span>
+                                  {comment.is_submitter && (
+                                    <Badge variant="secondary" className="text-xs">OP</Badge>
+                                  )}
+                                  <span className="flex items-center gap-1">
+                                    <ThumbsUp className="h-3 w-3" />
+                                    {comment.score}
+                                  </span>
+                                </div>
+                                {comment.analyzed_at && (
+                                  <Badge variant="outline" className="text-xs">
+                                    <Bot className="h-3 w-3 mr-1" />
+                                    Analyzed
+                                  </Badge>
+                                )}
+                              </div>
+                              
+                              <p className="text-sm">{comment.content}</p>
+                              
+                              {comment.analyzed_at && (
+                                <div className="space-y-2 pt-2 border-t">
+                                  {comment.ai_summary && (
+                                    <p className="text-xs text-muted-foreground italic">
+                                      Summary: {comment.ai_summary}
+                                    </p>
+                                  )}
+                                  
+                                  <div className="flex gap-2">
+                                    {comment.keywords && comment.keywords.length > 0 && (
+                                      <div className="flex flex-wrap gap-1">
+                                        {comment.keywords.slice(0, 3).map((keyword, idx) => (
+                                          <Badge key={idx} variant="outline" className="text-xs">
+                                            {keyword}
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    )}
+                                    
+                                    {comment.sentiment_label && (
+                                      <Badge className={`text-xs ${getSentimentColor(comment.sentiment_score || 0)}`}>
+                                        {comment.sentiment_label}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  ) : (
+                    <div className="text-center py-4 text-muted-foreground text-sm">
+                      {!isConnected ? 'Connect to Reddit API to load comments' : 'No comments loaded yet'}
+                    </div>
+                  )}
+                </div>
 
                 {/* Re-analyze button */}
                 {selectedPost.analyzed_at && (

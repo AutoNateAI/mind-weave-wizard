@@ -30,6 +30,8 @@ serve(async (req) => {
         return await analyzeComments(data);
       case 'generate_response':
         return await generateResponse(data);
+      case 'generate_comment_suggestions':
+        return await generateCommentSuggestions(data);
       case 'fetch_subreddit_posts':
         return await fetchSubredditPosts(data);
       default:
@@ -211,9 +213,55 @@ Generate a response that promotes critical thinking while being genuinely helpfu
   const generatedResponse = aiResponse.choices[0].message.content;
 
   return new Response(
-    JSON.stringify({ success: true, generatedResponse }),
+    JSON.stringify({ success: true, response: generatedResponse }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
+}
+
+async function generateCommentSuggestions(data: any) {
+  const { prompt } = data;
+
+  try {
+    const response = await fetch(`https://api.openai.com/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-5-mini-2025-08-07',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert at analyzing Reddit comments and identifying optimal opportunities for meaningful critical thinking engagement. Return valid JSON only.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_completion_tokens: 2000,
+      }),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      console.error('OpenAI API error:', result);
+      throw new Error(`OpenAI API error: ${result.error?.message || 'Unknown error'}`);
+    }
+
+    const suggestions = result.choices[0].message.content;
+    
+    return new Response(
+      JSON.stringify({ success: true, suggestions }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Error generating comment suggestions:', error);
+    throw error;
+  }
 }
 
 async function fetchSubredditPosts(data: any) {
