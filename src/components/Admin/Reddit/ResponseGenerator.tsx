@@ -156,22 +156,36 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
 
   const loadAnalyzedThreads = async () => {
     try {
-      const { data, error } = await supabase
+      // First get analyzed root comments
+      const { data: comments, error: commentsError } = await supabase
         .from('reddit_comments')
-        .select(`
-          *,
-          reddit_posts!inner(*)
-        `)
-        .eq('depth', 0) // Only root comments
+        .select('*')
+        .eq('depth', 0)
         .not('analyzed_at', 'is', null)
         .order('analyzed_at', { ascending: false })
         .limit(20);
 
-      if (error) throw error;
+      if (commentsError) throw commentsError;
 
-      // Group comments by thread and create thread objects
-      const threads = (data || []).map(rootComment => {
-        const post = (rootComment as any).reddit_posts;
+      if (!comments || comments.length === 0) {
+        setAnalyzedThreads([]);
+        return;
+      }
+
+      // Get the corresponding posts
+      const postIds = [...new Set(comments.map(c => c.reddit_post_id))];
+      const { data: posts, error: postsError } = await supabase
+        .from('reddit_posts')
+        .select('*')
+        .in('reddit_post_id', postIds);
+
+      if (postsError) throw postsError;
+
+      // Create thread objects by combining comments with their posts
+      const threads = comments.map(rootComment => {
+        const post = posts?.find(p => p.reddit_post_id === rootComment.reddit_post_id);
+        
+        if (!post) return null; // Skip if post not found
         
         // Generate thread-specific entry points combining post and comment analysis
         const threadEntryPoints = [
@@ -209,7 +223,7 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
           sentiment_label: rootComment.sentiment_label
         };
         return thread;
-      });
+      }).filter(Boolean) as RedditCommentThread[]; // Remove null entries
 
       setAnalyzedThreads(threads);
     } catch (error) {
