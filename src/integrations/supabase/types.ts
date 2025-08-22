@@ -1056,6 +1056,340 @@ export type Database = {
         }
         Relationships: []
       }
+      reddit_analytics: {
+        Row: {
+          additional_data: Json | null
+          content_type: string
+          created_at: string
+          id: string
+          metric_name: string
+          metric_type: string
+          metric_value: number
+          subreddit_id: string | null
+          subreddit_name: string
+          time_period: string
+        }
+        Insert: {
+          additional_data?: Json | null
+          content_type: string
+          created_at?: string
+          id?: string
+          metric_name: string
+          metric_type: string
+          metric_value: number
+          subreddit_id?: string | null
+          subreddit_name: string
+          time_period: string
+        }
+        Update: {
+          additional_data?: Json | null
+          content_type?: string
+          created_at?: string
+          id?: string
+          metric_name?: string
+          metric_type?: string
+          metric_value?: number
+          subreddit_id?: string | null
+          subreddit_name?: string
+          time_period?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reddit_analytics_subreddit_id_fkey"
+            columns: ["subreddit_id"]
+            isOneToOne: false
+            referencedRelation: "reddit_subreddits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reddit_comments: {
+        Row: {
+          ai_summary: string | null
+          analyzed_at: string | null
+          author: string | null
+          content: string
+          created_at: string
+          created_utc: string | null
+          depth: number | null
+          id: string
+          is_submitter: boolean | null
+          keywords: Json | null
+          parent_comment_id: string | null
+          permalink: string | null
+          post_id: string | null
+          reddit_comment_id: string
+          reddit_post_id: string
+          score: number | null
+          sentiment_label: string | null
+          sentiment_score: number | null
+          topics: Json | null
+          updated_at: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          analyzed_at?: string | null
+          author?: string | null
+          content: string
+          created_at?: string
+          created_utc?: string | null
+          depth?: number | null
+          id?: string
+          is_submitter?: boolean | null
+          keywords?: Json | null
+          parent_comment_id?: string | null
+          permalink?: string | null
+          post_id?: string | null
+          reddit_comment_id: string
+          reddit_post_id: string
+          score?: number | null
+          sentiment_label?: string | null
+          sentiment_score?: number | null
+          topics?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          ai_summary?: string | null
+          analyzed_at?: string | null
+          author?: string | null
+          content?: string
+          created_at?: string
+          created_utc?: string | null
+          depth?: number | null
+          id?: string
+          is_submitter?: boolean | null
+          keywords?: Json | null
+          parent_comment_id?: string | null
+          permalink?: string | null
+          post_id?: string | null
+          reddit_comment_id?: string
+          reddit_post_id?: string
+          score?: number | null
+          sentiment_label?: string | null
+          sentiment_score?: number | null
+          topics?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reddit_comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "reddit_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reddit_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "reddit_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reddit_my_comments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          entry_point_used: string | null
+          final_response: string | null
+          generated_response: string
+          id: string
+          parent_comment_id: string | null
+          post_id: string | null
+          reddit_comment_id: string | null
+          reddit_parent_id: string | null
+          reddit_post_id: string
+          status: string | null
+          submission_response: string | null
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          entry_point_used?: string | null
+          final_response?: string | null
+          generated_response: string
+          id?: string
+          parent_comment_id?: string | null
+          post_id?: string | null
+          reddit_comment_id?: string | null
+          reddit_parent_id?: string | null
+          reddit_post_id: string
+          status?: string | null
+          submission_response?: string | null
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          entry_point_used?: string | null
+          final_response?: string | null
+          generated_response?: string
+          id?: string
+          parent_comment_id?: string | null
+          post_id?: string | null
+          reddit_comment_id?: string | null
+          reddit_parent_id?: string | null
+          reddit_post_id?: string
+          status?: string | null
+          submission_response?: string | null
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reddit_my_comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "reddit_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reddit_my_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "reddit_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reddit_posts: {
+        Row: {
+          ai_summary: string | null
+          analyzed_at: string | null
+          author: string | null
+          content: string | null
+          created_at: string
+          created_utc: string | null
+          entry_points: Json | null
+          id: string
+          is_monitored: boolean | null
+          is_self: boolean | null
+          keywords: Json | null
+          num_comments: number | null
+          permalink: string | null
+          post_type: string | null
+          reddit_post_id: string
+          score: number | null
+          sentiment_label: string | null
+          sentiment_score: number | null
+          subreddit_id: string | null
+          subreddit_name: string
+          title: string
+          topics: Json | null
+          updated_at: string
+          upvote_ratio: number | null
+          url: string | null
+        }
+        Insert: {
+          ai_summary?: string | null
+          analyzed_at?: string | null
+          author?: string | null
+          content?: string | null
+          created_at?: string
+          created_utc?: string | null
+          entry_points?: Json | null
+          id?: string
+          is_monitored?: boolean | null
+          is_self?: boolean | null
+          keywords?: Json | null
+          num_comments?: number | null
+          permalink?: string | null
+          post_type?: string | null
+          reddit_post_id: string
+          score?: number | null
+          sentiment_label?: string | null
+          sentiment_score?: number | null
+          subreddit_id?: string | null
+          subreddit_name: string
+          title: string
+          topics?: Json | null
+          updated_at?: string
+          upvote_ratio?: number | null
+          url?: string | null
+        }
+        Update: {
+          ai_summary?: string | null
+          analyzed_at?: string | null
+          author?: string | null
+          content?: string | null
+          created_at?: string
+          created_utc?: string | null
+          entry_points?: Json | null
+          id?: string
+          is_monitored?: boolean | null
+          is_self?: boolean | null
+          keywords?: Json | null
+          num_comments?: number | null
+          permalink?: string | null
+          post_type?: string | null
+          reddit_post_id?: string
+          score?: number | null
+          sentiment_label?: string | null
+          sentiment_score?: number | null
+          subreddit_id?: string | null
+          subreddit_name?: string
+          title?: string
+          topics?: Json | null
+          updated_at?: string
+          upvote_ratio?: number | null
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reddit_posts_subreddit_id_fkey"
+            columns: ["subreddit_id"]
+            isOneToOne: false
+            referencedRelation: "reddit_subreddits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reddit_subreddits: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          display_name: string | null
+          id: string
+          is_active: boolean | null
+          last_scraped_at: string | null
+          subreddit_name: string
+          subscribers: number | null
+          tracking_keywords: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          display_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_scraped_at?: string | null
+          subreddit_name: string
+          subscribers?: number | null
+          tracking_keywords?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          display_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_scraped_at?: string | null
+          subreddit_name?: string
+          subscribers?: number | null
+          tracking_keywords?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reflection_questions: {
         Row: {
           created_at: string
