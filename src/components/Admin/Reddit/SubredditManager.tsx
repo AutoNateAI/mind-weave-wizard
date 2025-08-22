@@ -6,9 +6,23 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, Users, Eye, EyeOff, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, Users, Eye, EyeOff, RotateCcw, Edit } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface Subreddit {
   id: string;
@@ -31,6 +45,9 @@ export function SubredditManager({ isConnected }: SubredditManagerProps) {
   const [loading, setLoading] = useState(false);
   const [newSubreddit, setNewSubreddit] = useState('');
   const [keywords, setKeywords] = useState('');
+  const [editingSubreddit, setEditingSubreddit] = useState<Subreddit | null>(null);
+  const [editKeywords, setEditKeywords] = useState('');
+  const [sortOptions, setSortOptions] = useState<{ [key: string]: string }>({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -147,6 +164,33 @@ export function SubredditManager({ isConnected }: SubredditManagerProps) {
     }
   };
 
+  const updateSubreddit = async (id: string, newKeywords: string[]) => {
+    try {
+      const { error } = await supabase
+        .from('reddit_subreddits')
+        .update({ tracking_keywords: newKeywords })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      loadSubreddits();
+      setEditingSubreddit(null);
+      setEditKeywords('');
+      
+      toast({
+        title: "Success",
+        description: "Subreddit keywords updated successfully",
+      });
+    } catch (error: any) {
+      console.error('Error updating subreddit:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update subreddit",
+        variant: "destructive",
+      });
+    }
+  };
+
   const fetchPosts = async (subreddit: Subreddit) => {
     if (!isConnected) {
       toast({
@@ -157,12 +201,18 @@ export function SubredditManager({ isConnected }: SubredditManagerProps) {
       return;
     }
 
+    const sortType = sortOptions[subreddit.id] || 'hot';
     setLoading(true);
+    
     try {
       const { data, error } = await supabase.functions.invoke('reddit-api', {
         body: { 
           action: 'fetch_subreddit_posts',
-          data: { subreddit: subreddit.subreddit_name, limit: 25 }
+          data: { 
+            subreddit: subreddit.subreddit_name, 
+            limit: 25,
+            sort: sortType
+          }
         }
       });
 
@@ -178,7 +228,7 @@ export function SubredditManager({ isConnected }: SubredditManagerProps) {
       
       toast({
         title: "Success",
-        description: `Fetched ${data.posts?.length || 0} posts from r/${subreddit.subreddit_name}`,
+        description: `Fetched ${data.posts?.length || 0} ${sortType} posts from r/${subreddit.subreddit_name}. Check the Analyzer tab to review them.`,
       });
     } catch (error: any) {
       console.error('Error fetching posts:', error);
@@ -291,6 +341,21 @@ export function SubredditManager({ isConnected }: SubredditManagerProps) {
                   </div>
                   
                   <div className="flex items-center gap-2">
+                    <Select
+                      value={sortOptions[subreddit.id] || 'hot'}
+                      onValueChange={(value) => setSortOptions(prev => ({ ...prev, [subreddit.id]: value }))}
+                    >
+                      <SelectTrigger className="w-20 h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="hot">Hot</SelectItem>
+                        <SelectItem value="new">New</SelectItem>
+                        <SelectItem value="top">Top</SelectItem>
+                        <SelectItem value="rising">Rising</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
                     <Button
                       variant="outline"
                       size="sm"
@@ -300,6 +365,57 @@ export function SubredditManager({ isConnected }: SubredditManagerProps) {
                       <RotateCcw className="h-4 w-4 mr-2" />
                       Fetch Posts
                     </Button>
+                    
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditingSubreddit(subreddit);
+                            setEditKeywords(subreddit.tracking_keywords.join(', '));
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Edit r/{subreddit.subreddit_name}</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="edit-keywords">Tracking Keywords (comma-separated)</Label>
+                            <Input
+                              id="edit-keywords"
+                              placeholder="e.g., critical thinking, logic, reasoning"
+                              value={editKeywords}
+                              onChange={(e) => setEditKeywords(e.target.value)}
+                            />
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setEditingSubreddit(null);
+                                setEditKeywords('');
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                const keywordArray = editKeywords.split(',').map(k => k.trim()).filter(k => k);
+                                updateSubreddit(subreddit.id, keywordArray);
+                              }}
+                            >
+                              Save Changes
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                    
                     <Button
                       variant="ghost"
                       size="sm"
