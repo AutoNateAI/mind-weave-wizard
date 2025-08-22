@@ -30,6 +30,7 @@ import { SessionSlideView } from "@/components/Admin/SessionSlideView";
 import { CoursePublishing } from "@/components/Admin/CoursePublishing";
 import { LocationsTab } from "@/components/Admin/LocationsTab";
 import { SocialMediaTab } from "@/components/Admin/SocialMediaTab";
+import { RedditTab } from "@/components/Admin/RedditTab";
 import { ContentCreationTab } from "@/components/Admin/ContentCreationTab";
 import { AIPromptManagerTab } from "@/components/Admin/AIPromptManagerTab";
 import { SessionGameView } from "@/components/Admin/SessionGameView";
