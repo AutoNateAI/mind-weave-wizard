@@ -28,6 +28,8 @@ serve(async (req) => {
         return await analyzePost(data);
       case 'analyze_comments':
         return await analyzeComments(data);
+      case 'analyze_comment_thread':
+        return await analyzeCommentThread(data);
       case 'generate_response':
         return await generateResponse(data);
       case 'generate_comment_suggestions':
@@ -96,6 +98,68 @@ Return as JSON with keys: summary, topics, keywords, sentiment_score, sentiment_
     .eq('id', postId);
 
   if (error) throw error;
+
+  return new Response(
+    JSON.stringify({ success: true, analysis }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+async function analyzeCommentThread(data: any) {
+  const { postId, postTitle, postContent, threadComments } = data;
+  
+  const prompt = `Analyze this Reddit comment thread and provide:
+1. Overall thread summary (2-3 sentences)
+2. Key themes discussed (array of strings)
+3. Important keywords (array of strings, 5-10 words)
+4. Overall sentiment of the thread (-1 to 1 scale and label)
+5. Critical thinking opportunities within this thread (array of insights)
+
+Post: "${postTitle}"
+${postContent ? `Content: "${postContent}"` : ''}
+
+Thread Comments:
+${threadComments.map((c: any, i: number) => `${i + 1}. u/${c.author} (depth ${c.depth}): "${c.content}"`).join('\n')}
+
+Return as JSON with keys: summary, topics, keywords, sentiment_score, sentiment_label, insights`;
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4.1-2025-04-14',
+      messages: [
+        { role: 'system', content: 'You are an expert at analyzing comment threads and identifying opportunities for critical thinking engagement.' },
+        { role: 'user', content: prompt }
+      ],
+      max_tokens: 1000,
+      temperature: 0.3,
+    }),
+  });
+
+  const aiResponse = await response.json();
+  const analysis = JSON.parse(aiResponse.choices[0].message.content);
+
+  // Update the root comment with thread analysis
+  const rootComment = threadComments.find((c: any) => c.depth === 0);
+  if (rootComment) {
+    const { error } = await supabase
+      .from('reddit_comments')
+      .update({
+        ai_summary: analysis.summary,
+        topics: analysis.topics,
+        keywords: analysis.keywords,
+        sentiment_score: analysis.sentiment_score,
+        sentiment_label: analysis.sentiment_label,
+        analyzed_at: new Date().toISOString()
+      })
+      .eq('reddit_comment_id', rootComment.id);
+
+    if (error) throw error;
+  }
 
   return new Response(
     JSON.stringify({ success: true, analysis }),

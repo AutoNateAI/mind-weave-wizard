@@ -56,6 +56,18 @@ interface RedditComment {
   };
 }
 
+interface RedditCommentThread {
+  root_comment: RedditComment;
+  thread_comments: RedditComment[];
+  post: RedditPost;
+  analyzed_at?: string;
+  ai_summary?: string;
+  keywords?: any[];
+  topics?: any[];
+  sentiment_score?: number;
+  sentiment_label?: string;
+}
+
 interface MyComment {
   id: string;
   reddit_post_id: string;
@@ -91,8 +103,10 @@ Our approach: Help people develop structured thinking while being genuinely supp
 
 export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
   const [analyzedPosts, setAnalyzedPosts] = useState<RedditPost[]>([]);
+  const [analyzedThreads, setAnalyzedThreads] = useState<RedditCommentThread[]>([]);
   const [selectedPost, setSelectedPost] = useState<RedditPost | null>(null);
   const [selectedComment, setSelectedComment] = useState<RedditComment | null>(null);
+  const [selectedThread, setSelectedThread] = useState<RedditCommentThread | null>(null);
   const [comments, setComments] = useState<RedditComment[]>([]);
   const [selectedEntryPoint, setSelectedEntryPoint] = useState('');
   const [generatedResponse, setGeneratedResponse] = useState('');
@@ -106,6 +120,7 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
 
   useEffect(() => {
     loadAnalyzedPosts();
+    loadAnalyzedThreads();
     loadMyComments();
   }, []);
 
@@ -139,6 +154,52 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
     }
   };
 
+  const loadAnalyzedThreads = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('reddit_comments')
+        .select(`
+          *,
+          reddit_posts!inner(*)
+        `)
+        .eq('depth', 0) // Only root comments
+        .not('analyzed_at', 'is', null)
+        .order('analyzed_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+
+      // Group comments by thread and create thread objects
+      const threads = (data || []).map(rootComment => {
+        const thread: RedditCommentThread = {
+          root_comment: {
+            ...rootComment,
+            keywords: Array.isArray(rootComment.keywords) ? rootComment.keywords : [],
+            topics: Array.isArray(rootComment.topics) ? rootComment.topics : []
+          },
+          thread_comments: [], // We'll load these when needed
+          post: {
+            ...(rootComment as any).reddit_posts,
+            keywords: Array.isArray((rootComment as any).reddit_posts.keywords) ? (rootComment as any).reddit_posts.keywords : [],
+            topics: Array.isArray((rootComment as any).reddit_posts.topics) ? (rootComment as any).reddit_posts.topics : [],
+            entry_points: Array.isArray((rootComment as any).reddit_posts.entry_points) ? (rootComment as any).reddit_posts.entry_points : []
+          },
+          analyzed_at: rootComment.analyzed_at,
+          ai_summary: rootComment.ai_summary,
+          keywords: Array.isArray(rootComment.keywords) ? rootComment.keywords : [],
+          topics: Array.isArray(rootComment.topics) ? rootComment.topics : [],
+          sentiment_score: rootComment.sentiment_score,
+          sentiment_label: rootComment.sentiment_label
+        };
+        return thread;
+      });
+
+      setAnalyzedThreads(threads);
+    } catch (error) {
+      console.error('Error loading analyzed threads:', error);
+    }
+  };
+
   const loadMyComments = async () => {
     try {
       const { data, error } = await supabase
@@ -164,11 +225,14 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
 
       if (error) throw error;
 
-      const processedComments = (commentsData || []).map(comment => ({
-        ...comment,
-        keywords: Array.isArray(comment.keywords) ? comment.keywords : [],
-        topics: Array.isArray(comment.topics) ? comment.topics : []
-      }));
+      // Filter out AutoModerator comments
+      const processedComments = (commentsData || [])
+        .filter(comment => comment.author !== 'AutoModerator')
+        .map(comment => ({
+          ...comment,
+          keywords: Array.isArray(comment.keywords) ? comment.keywords : [],
+          topics: Array.isArray(comment.topics) ? comment.topics : []
+        }));
 
       setComments(processedComments);
       
@@ -190,9 +254,9 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
 
   const generateCommentSuggestions = async (post: RedditPost, commentsList: RedditComment[]) => {
     try {
-      // Get top comments (by score) that are analyzed
+      // Get top comments (by score) that are analyzed and not AutoModerator
       const topComments = commentsList
-        .filter(c => c.analyzed_at && c.score > 1)
+        .filter(c => c.analyzed_at && c.score > 1 && c.author !== 'AutoModerator')
         .sort((a, b) => b.score - a.score)
         .slice(0, 5);
 
@@ -253,10 +317,10 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
   };
 
   const generateResponse = async (targetComment?: RedditComment) => {
-    if (!selectedPost || !selectedEntryPoint) {
+    if ((!selectedPost && !selectedThread) || !selectedEntryPoint) {
       toast({
         title: "Missing Information",
-        description: "Please select a post and entry point",
+        description: "Please select a post/thread and entry point",
         variant: "destructive",
       });
       return;
@@ -265,9 +329,11 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
     setGenerating(true);
     try {
       const contextData = {
-        postContent: selectedPost.content || '',
-        postTitle: selectedPost.title,
+        postContent: selectedPost?.content || selectedThread?.post.content || '',
+        postTitle: selectedPost?.title || selectedThread?.post.title || '',
         commentContent: targetComment?.content || '',
+        threadSummary: selectedThread?.ai_summary || '',
+        threadKeywords: selectedThread?.keywords || [],
         entryPoint: selectedEntryPoint,
         curriculumContext: CURRICULUM_CONTEXT
       };
@@ -286,7 +352,9 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
       
       toast({
         title: "Success",
-        description: targetComment ? "Comment response generated" : "Post response generated",
+        description: targetComment ? "Comment response generated" : 
+                     selectedThread ? "Thread response generated" : 
+                     "Post response generated",
       });
     } catch (error: any) {
       console.error('Error generating response:', error);
@@ -301,14 +369,19 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
   };
 
   const saveComment = async (targetComment?: RedditComment) => {
-    if (!selectedPost || !finalResponse || !selectedEntryPoint) return;
+    if ((!selectedPost && !selectedThread) || !finalResponse || !selectedEntryPoint) return;
 
     try {
+      const postId = selectedPost?.reddit_post_id || selectedThread?.post.reddit_post_id;
+      const parentId = targetComment ? `t1_${targetComment.reddit_comment_id}` : 
+                       selectedThread ? `t1_${selectedThread.root_comment.reddit_comment_id}` :
+                       `t3_${postId}`;
+
       const { error } = await supabase
         .from('reddit_my_comments')
         .insert({
-          reddit_post_id: selectedPost.reddit_post_id,
-          reddit_parent_id: targetComment ? `t1_${targetComment.reddit_comment_id}` : `t3_${selectedPost.reddit_post_id}`,
+          reddit_post_id: postId,
+          reddit_parent_id: parentId,
           generated_response: generatedResponse,
           final_response: finalResponse,
           entry_point_used: selectedEntryPoint,
@@ -321,6 +394,7 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
       
       // Clear the form
       setSelectedPost(null);
+      setSelectedThread(null);
       setSelectedComment(null);
       setSelectedEntryPoint('');
       setGeneratedResponse('');
@@ -456,6 +530,7 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
                       onClick={() => {
                         setSelectedPost(post);
                         setSelectedComment(null);
+                        setSelectedThread(null);
                         setSelectedEntryPoint('');
                         setGeneratedResponse('');
                         setFinalResponse('');
@@ -475,6 +550,55 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
                 </div>
               </ScrollArea>
             </div>
+
+            {/* Analyzed Comment Threads */}
+            {analyzedThreads.length > 0 && (
+              <div className="space-y-2">
+                <Label>Analyzed Comment Threads</Label>
+                <ScrollArea className="h-[200px] border rounded p-2">
+                  <div className="space-y-2">
+                    {analyzedThreads.map((thread) => (
+                      <div
+                        key={thread.root_comment.id}
+                        className={`p-2 border rounded cursor-pointer transition-colors ${
+                          selectedThread?.root_comment.id === thread.root_comment.id ? 'border-primary bg-accent' : 'hover:bg-accent/50'
+                        }`}
+                        onClick={() => {
+                          setSelectedThread(thread);
+                          setSelectedPost(null);
+                          setSelectedComment(null);
+                          setSelectedEntryPoint('');
+                          setGeneratedResponse('');
+                          setFinalResponse('');
+                          setComments([]);
+                        }}
+                      >
+                        <div className="space-y-1">
+                          <h4 className="text-sm font-medium line-clamp-2">
+                            Thread: {thread.post.title}
+                          </h4>
+                          <p className="text-xs text-muted-foreground line-clamp-1">
+                            u/{thread.root_comment.author}: {thread.root_comment.content}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="secondary" className="text-xs">r/{thread.post.subreddit_name}</Badge>
+                            <Badge variant="outline" className="text-xs">
+                              <Bot className="h-3 w-3 mr-1" />
+                              Thread Analyzed
+                            </Badge>
+                            {thread.sentiment_label && (
+                              <Badge className={`text-xs ${getSentimentColor(thread.sentiment_score || 0)}`}>
+                                {thread.sentiment_label}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
 
             {/* Comments with AI Suggestions */}
             {selectedPost && comments.length > 0 && (
@@ -529,7 +653,7 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
             )}
 
             {/* Entry Point Selection */}
-            {selectedPost && (
+            {(selectedPost || selectedThread) && (
               <div className="space-y-2">
                 <Label>Choose Entry Point</Label>
                 <Select value={selectedEntryPoint} onValueChange={setSelectedEntryPoint}>
@@ -537,7 +661,7 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
                     <SelectValue placeholder="Select a critical thinking angle" />
                   </SelectTrigger>
                   <SelectContent>
-                    {selectedPost.entry_points.map((point, idx) => (
+                    {(selectedPost?.entry_points || selectedThread?.post.entry_points || []).map((point, idx) => (
                       <SelectItem key={idx} value={point}>
                         {point}
                       </SelectItem>
@@ -550,11 +674,14 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
             {/* Generate Button */}
             <Button
               onClick={() => generateResponse(selectedComment || undefined)}
-              disabled={!selectedPost || !selectedEntryPoint || generating}
+              disabled={(!selectedPost && !selectedThread) || !selectedEntryPoint || generating}
               className="w-full"
             >
               <Bot className="h-4 w-4 mr-2" />
-              {generating ? 'Generating...' : selectedComment ? 'Generate Comment Response' : 'Generate Post Response'}
+              {generating ? 'Generating...' : 
+                selectedComment ? 'Generate Comment Response' :
+                selectedThread ? 'Generate Thread Response' : 
+                'Generate Post Response'}
             </Button>
 
             {/* Generated Response */}

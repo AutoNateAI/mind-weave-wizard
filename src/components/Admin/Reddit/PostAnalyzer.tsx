@@ -61,7 +61,7 @@ export function PostAnalyzer({ isConnected }: PostAnalyzerProps) {
   const [loading, setLoading] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
-  const [analyzingComments, setAnalyzingComments] = useState(false);
+  const [analyzingThreads, setAnalyzingThreads] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubreddit, setSelectedSubreddit] = useState('all');
   const [subreddits, setSubreddits] = useState<string[]>([]);
@@ -158,11 +158,14 @@ export function PostAnalyzer({ isConnected }: PostAnalyzerProps) {
 
       if (commentsError) throw commentsError;
 
-      setComments((commentsData || []).map(comment => ({
-        ...comment,
-        keywords: Array.isArray(comment.keywords) ? comment.keywords : [],
-        topics: Array.isArray(comment.topics) ? comment.topics : []
-      })));
+      // Filter out AutoModerator comments and process
+      setComments((commentsData || [])
+        .filter(comment => comment.author !== 'AutoModerator')
+        .map(comment => ({
+          ...comment,
+          keywords: Array.isArray(comment.keywords) ? comment.keywords : [],
+          topics: Array.isArray(comment.topics) ? comment.topics : []
+        })));
 
       toast({
         title: "Success",
@@ -229,28 +232,29 @@ export function PostAnalyzer({ isConnected }: PostAnalyzerProps) {
     }
   };
 
-  const analyzeComments = async (post: RedditPost) => {
-    if (comments.length === 0) {
-      toast({
-        title: "No Comments",
-        description: "Load comments first before analyzing",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setAnalyzingComments(true);
+  const analyzeCommentThread = async (post: RedditPost, rootComment: RedditComment) => {
+    setAnalyzingThreads(prev => new Set(prev).add(rootComment.id));
+    
     try {
+      // Get all comments in this thread (root comment + replies)
+      const threadComments = comments.filter(c => 
+        c.id === rootComment.id || 
+        (c.depth > rootComment.depth && c.created_utc > rootComment.created_utc)
+      );
+
       const { data, error } = await supabase.functions.invoke('reddit-analyzer', {
         body: { 
-          action: 'analyze_comments',
+          action: 'analyze_comment_thread',
           data: {
             postId: post.reddit_post_id,
-            comments: comments.map(c => ({
+            postTitle: post.title,
+            postContent: post.content,
+            threadComments: threadComments.map(c => ({
               id: c.reddit_comment_id,
               content: c.content,
               author: c.author,
-              score: c.score
+              score: c.score,
+              depth: c.depth
             }))
           }
         }
@@ -275,17 +279,21 @@ export function PostAnalyzer({ isConnected }: PostAnalyzerProps) {
       
       toast({
         title: "Success",
-        description: "Comment analysis completed",
+        description: "Comment thread analysis completed",
       });
     } catch (error: any) {
-      console.error('Error analyzing comments:', error);
+      console.error('Error analyzing comment thread:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to analyze comments",
+        description: error.message || "Failed to analyze comment thread",
         variant: "destructive",
       });
     } finally {
-      setAnalyzingComments(false);
+      setAnalyzingThreads(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(rootComment.id);
+        return newSet;
+      });
     }
   };
 
@@ -535,89 +543,140 @@ export function PostAnalyzer({ isConnected }: PostAnalyzerProps) {
                 <div className="border-t pt-4">
                   <div className="flex items-center justify-between mb-4">
                     <Label className="text-sm font-medium">Comment Threads ({comments.length})</Label>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => loadComments(selectedPost)}
-                        disabled={loadingComments || !isConnected}
-                      >
-                        {loadingComments ? 'Loading...' : 'Load Comments'}
-                      </Button>
-                      {comments.length > 0 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => analyzeComments(selectedPost)}
-                          disabled={analyzingComments}
-                        >
-                          {analyzingComments ? 'Analyzing...' : 'Analyze Comments'}
-                        </Button>
-                      )}
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => loadComments(selectedPost)}
+                      disabled={loadingComments || !isConnected}
+                    >
+                      {loadingComments ? 'Loading...' : 'Load Comments'}
+                    </Button>
                   </div>
 
                   {comments.length > 0 ? (
-                    <ScrollArea className="h-[300px]">
-                      <div className="space-y-3">
-                        {comments.map((comment) => (
-                          <div
-                            key={comment.id}
-                            className="p-3 border rounded-lg bg-muted/30"
-                            style={{ marginLeft: `${comment.depth * 12}px` }}
-                          >
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between text-xs">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium">u/{comment.author}</span>
-                                  {comment.is_submitter && (
-                                    <Badge variant="secondary" className="text-xs">OP</Badge>
-                                  )}
-                                  <span className="flex items-center gap-1">
-                                    <ThumbsUp className="h-3 w-3" />
-                                    {comment.score}
-                                  </span>
-                                </div>
-                                {comment.analyzed_at && (
-                                  <Badge variant="outline" className="text-xs">
-                                    <Bot className="h-3 w-3 mr-1" />
-                                    Analyzed
-                                  </Badge>
-                                )}
-                              </div>
-                              
-                              <p className="text-sm">{comment.content}</p>
-                              
-                              {comment.analyzed_at && (
-                                <div className="space-y-2 pt-2 border-t">
-                                  {comment.ai_summary && (
-                                    <p className="text-xs text-muted-foreground italic">
-                                      Summary: {comment.ai_summary}
-                                    </p>
-                                  )}
-                                  
-                                  <div className="flex gap-2">
-                                    {comment.keywords && comment.keywords.length > 0 && (
-                                      <div className="flex flex-wrap gap-1">
-                                        {comment.keywords.slice(0, 3).map((keyword, idx) => (
-                                          <Badge key={idx} variant="outline" className="text-xs">
-                                            {keyword}
-                                          </Badge>
-                                        ))}
+                    <ScrollArea className="h-[400px]">
+                      <div className="space-y-4">
+                        {comments
+                          .filter(comment => comment.depth === 0) // Only show top-level comments
+                          .map((rootComment) => {
+                            const threadComments = comments.filter(c => 
+                              c.id === rootComment.id || 
+                              (c.depth > rootComment.depth && c.created_utc > rootComment.created_utc)
+                            );
+                            const isAnalyzingThread = analyzingThreads.has(rootComment.id);
+                            
+                            return (
+                              <div key={rootComment.id} className="border rounded-lg bg-muted/20">
+                                {/* Root Comment */}
+                                <div className="p-3 border-b">
+                                  <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2 text-xs">
+                                        <span className="font-medium">u/{rootComment.author}</span>
+                                        {rootComment.is_submitter && (
+                                          <Badge variant="secondary" className="text-xs">OP</Badge>
+                                        )}
+                                        <span className="flex items-center gap-1">
+                                          <ThumbsUp className="h-3 w-3" />
+                                          {rootComment.score}
+                                        </span>
+                                        <span className="text-muted-foreground">
+                                          {threadComments.length > 1 && `${threadComments.length - 1} replies`}
+                                        </span>
                                       </div>
-                                    )}
+                                      <div className="flex items-center gap-2">
+                                        {rootComment.analyzed_at && (
+                                          <Badge variant="outline" className="text-xs">
+                                            <Bot className="h-3 w-3 mr-1" />
+                                            Analyzed
+                                          </Badge>
+                                        )}
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => analyzeCommentThread(selectedPost, rootComment)}
+                                          disabled={isAnalyzingThread}
+                                        >
+                                          {isAnalyzingThread ? 'Analyzing...' : 'Analyze Thread'}
+                                        </Button>
+                                      </div>
+                                    </div>
                                     
-                                    {comment.sentiment_label && (
-                                      <Badge className={`text-xs ${getSentimentColor(comment.sentiment_score || 0)}`}>
-                                        {comment.sentiment_label}
-                                      </Badge>
+                                    <p className="text-sm">{rootComment.content}</p>
+                                    
+                                    {rootComment.analyzed_at && (
+                                      <div className="space-y-2 pt-2 border-t">
+                                        {rootComment.ai_summary && (
+                                          <p className="text-xs text-muted-foreground italic">
+                                            Summary: {rootComment.ai_summary}
+                                          </p>
+                                        )}
+                                        
+                                        <div className="flex gap-2">
+                                          {rootComment.keywords && rootComment.keywords.length > 0 && (
+                                            <div className="flex flex-wrap gap-1">
+                                              {rootComment.keywords.slice(0, 3).map((keyword, idx) => (
+                                                <Badge key={idx} variant="outline" className="text-xs">
+                                                  {keyword}
+                                                </Badge>
+                                              ))}
+                                            </div>
+                                          )}
+                                          
+                                          {rootComment.sentiment_label && (
+                                            <Badge className={`text-xs ${getSentimentColor(rootComment.sentiment_score || 0)}`}>
+                                              {rootComment.sentiment_label}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </div>
                                     )}
                                   </div>
                                 </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+                                
+                                {/* Replies */}
+                                {threadComments.length > 1 && (
+                                  <div className="p-2 space-y-2">
+                                    {threadComments
+                                      .filter(c => c.id !== rootComment.id)
+                                      .slice(0, 3) // Show first 3 replies
+                                      .map((reply) => (
+                                        <div
+                                          key={reply.id}
+                                          className="p-2 bg-background rounded border"
+                                          style={{ marginLeft: `${(reply.depth - 1) * 8}px` }}
+                                        >
+                                          <div className="space-y-1">
+                                            <div className="flex items-center gap-2 text-xs">
+                                              <span className="font-medium">u/{reply.author}</span>
+                                              {reply.is_submitter && (
+                                                <Badge variant="secondary" className="text-xs">OP</Badge>
+                                              )}
+                                              <span className="flex items-center gap-1">
+                                                <ThumbsUp className="h-3 w-3" />
+                                                {reply.score}
+                                              </span>
+                                              {reply.analyzed_at && (
+                                                <Badge variant="outline" className="text-xs">
+                                                  <Bot className="h-3 w-3 mr-1" />
+                                                  Analyzed
+                                                </Badge>
+                                              )}
+                                            </div>
+                                            <p className="text-xs">{reply.content}</p>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    {threadComments.length > 4 && (
+                                      <p className="text-xs text-muted-foreground ml-2">
+                                        ... and {threadComments.length - 4} more replies
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                       </div>
                     </ScrollArea>
                   ) : (
