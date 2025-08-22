@@ -185,6 +185,10 @@ export default function AdminDashboard() {
                   <Bot className="w-4 h-4" />
                   AI Prompts
                 </TabsTrigger>
+                <TabsTrigger value="reddit" className="gap-2 whitespace-nowrap flex-shrink-0">
+                  <MessageSquare className="w-4 h-4" />
+                  Reddit
+                </TabsTrigger>
                 <TabsTrigger value="structure" className="gap-2 whitespace-nowrap flex-shrink-0">
                   <BookOpen className="w-4 h-4" />
                   Course Structure
@@ -486,6 +490,10 @@ export default function AdminDashboard() {
                   Manage student accounts, progress tracking, and analytics.
                 </p>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="reddit">
+              <RedditTab />
             </TabsContent>
           </Tabs>
         </div>
