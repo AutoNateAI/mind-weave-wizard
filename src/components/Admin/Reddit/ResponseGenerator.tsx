@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MessageSquare, Bot, Send, Edit3, ExternalLink, Lightbulb, ThumbsUp, User } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface RedditPost {
   id: string;
@@ -586,228 +587,348 @@ export function ResponseGenerator({ isConnected }: ResponseGeneratorProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Post Selection */}
-            <div className="space-y-2">
-              <Label>Select Analyzed Post</Label>
-              <ScrollArea className="h-[200px] border rounded p-2">
+            <Tabs defaultValue="posts" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="posts" className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Post Responses
+                </TabsTrigger>
+                <TabsTrigger value="comments" className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Comment Responses
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Post Response Tab */}
+              <TabsContent value="posts" className="space-y-4">
+                {/* Post Selection */}
                 <div className="space-y-2">
-                  {analyzedPosts.map((post) => (
-                    <div
-                      key={post.id}
-                      className={`p-2 border rounded cursor-pointer transition-colors ${
-                        selectedPost?.id === post.id ? 'border-primary bg-accent' : 'hover:bg-accent/50'
-                      }`}
-                      onClick={() => {
-                        setSelectedPost(post);
-                        setSelectedComment(null);
-                        setSelectedThread(null);
-                        setSelectedEntryPoint('');
-                        setGeneratedResponse('');
-                        setFinalResponse('');
-                        setComments([]);
-                        loadComments(post);
-                      }}
-                    >
-                      <h4 className="text-sm font-medium line-clamp-2">{post.title}</h4>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary" className="text-xs">r/{post.subreddit_name}</Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {post.entry_points.length} entry points
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </div>
-
-            {/* Analyzed Comment Threads */}
-            {analyzedThreads.length > 0 && (
-              <div className="space-y-2">
-                <Label>Analyzed Comment Threads</Label>
-                <ScrollArea className="h-[200px] border rounded p-2">
-                  <div className="space-y-2">
-                    {analyzedThreads.map((thread) => (
-                      <div
-                        key={thread.root_comment.id}
-                        className={`p-2 border rounded cursor-pointer transition-colors ${
-                          selectedThread?.root_comment.id === thread.root_comment.id ? 'border-primary bg-accent' : 'hover:bg-accent/50'
-                        }`}
-                        onClick={() => {
-                         setSelectedThread(thread);
-                           setSelectedPost(null);
-                           setSelectedComment(null);
-                           setSelectedEntryPoint('');
-                           setGeneratedResponse('');
-                           setFinalResponse('');
-                           setComments([]);
-                           loadThreadComments(thread);
-                        }}
-                      >
-                        <div className="space-y-1">
-                          <h4 className="text-sm font-medium line-clamp-2">
-                            Thread: {thread.post.title}
-                          </h4>
-                          <p className="text-xs text-muted-foreground line-clamp-1">
-                            u/{thread.root_comment.author}: {thread.root_comment.content}
-                          </p>
-                           <div className="flex items-center gap-2 mt-1">
-                             <Badge variant="secondary" className="text-xs">r/{thread.post.subreddit_name}</Badge>
-                             <Badge variant="outline" className="text-xs">
-                               <Bot className="h-3 w-3 mr-1" />
-                               Thread Analyzed
-                             </Badge>
-                             <span className="text-xs text-muted-foreground">
-                               {thread.post.entry_points?.length || 0} entry points
-                             </span>
-                             {thread.sentiment_label && (
-                               <Badge className={`text-xs ${getSentimentColor(thread.sentiment_score || 0)}`}>
-                                 {thread.sentiment_label}
-                               </Badge>
-                             )}
-                           </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </div>
-            )}
-
-            {/* Comments with AI Suggestions */}
-            {(selectedPost || selectedThread) && comments.length > 0 && (
-              <div className="space-y-2">
-                <Label>
-                  {selectedThread ? 'Thread Comments to Respond To' : 'AI-Suggested Comments to Respond To'}
-                </Label>
-                <ScrollArea className="h-[300px] border rounded p-2">
-                  <div className="space-y-2">
-                    {comments
-                      .filter(c => selectedThread ? true : (c.suggestion && c.suggestion.priority >= 3))
-                      .sort((a, b) => (b.suggestion?.priority || 0) - (a.suggestion?.priority || 0))
-                      .map((comment) => (
+                  <Label>Select Analyzed Post</Label>
+                  <ScrollArea className="h-[200px] border rounded p-2">
+                    <div className="space-y-2">
+                      {analyzedPosts.map((post) => (
                         <div
-                          key={comment.id}
-                          className={`p-3 border rounded cursor-pointer transition-colors ${
-                            selectedComment?.id === comment.id ? 'border-primary bg-accent' : 'hover:bg-accent/50'
+                          key={post.id}
+                          className={`p-2 border rounded cursor-pointer transition-colors ${
+                            selectedPost?.id === post.id ? 'border-primary bg-accent' : 'hover:bg-accent/50'
                           }`}
                           onClick={() => {
-                            setSelectedComment(comment);
+                            setSelectedPost(post);
+                            setSelectedComment(null);
+                            setSelectedThread(null);
+                            setSelectedEntryPoint('');
                             setGeneratedResponse('');
                             setFinalResponse('');
+                            setComments([]);
+                            loadComments(post);
                           }}
                         >
-                           <div className="space-y-2">
-                             <div className="flex items-center justify-between">
-                               <div className="flex items-center gap-2">
-                                 {comment.suggestion && (
-                                   <Badge variant="secondary" className="text-xs">
-                                     Priority: {comment.suggestion?.priority}/5
-                                   </Badge>
-                                 )}
-                                 <span className="text-xs text-muted-foreground">u/{comment.author}</span>
-                                 <span className="flex items-center gap-1 text-xs">
-                                   <ThumbsUp className="h-3 w-3" />
-                                   {comment.score}
-                                 </span>
-                                 {comment.analyzed_at && (
-                                   <Badge variant="outline" className="text-xs">
-                                     <Bot className="h-3 w-3 mr-1" />
-                                     Analyzed
-                                   </Badge>
-                                 )}
-                                 {comment.depth > 0 && (
-                                   <Badge variant="outline" className="text-xs">
-                                     Depth: {comment.depth}
-                                   </Badge>
-                                 )}
-                               </div>
-                             </div>
-                             
-                             <p className="text-sm line-clamp-2">{comment.content}</p>
-                             
-                             {comment.suggestion && (
-                               <div className="text-xs bg-muted p-2 rounded">
-                                 <p className="font-medium">AI Suggestion:</p>
-                                 <p className="text-muted-foreground">{comment.suggestion.reason}</p>
-                                 <p className="mt-1"><strong>Approach:</strong> {comment.suggestion.approach}</p>
-                               </div>
-                             )}
-
-                             {selectedThread && comment.analyzed_at && (
-                               <div className="text-xs bg-accent p-2 rounded">
-                                 <p className="font-medium">Thread Comment Analysis:</p>
-                                 {comment.sentiment_label && (
-                                   <p><strong>Sentiment:</strong> {comment.sentiment_label}</p>
-                                 )}
-                                 {comment.topics && comment.topics.length > 0 && (
-                                   <p><strong>Topics:</strong> {comment.topics.join(', ')}</p>
-                                 )}
-                               </div>
-                             )}
-                           </div>
+                          <h4 className="text-sm font-medium line-clamp-2">{post.title}</h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="secondary" className="text-xs">r/{post.subreddit_name}</Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {post.entry_points.length} entry points
+                            </span>
+                          </div>
                         </div>
                       ))}
-                  </div>
-                </ScrollArea>
-              </div>
-            )}
-
-            {/* Entry Point Selection */}
-            {(selectedPost || selectedThread) && (
-              <div className="space-y-2">
-                <Label>Choose Entry Point</Label>
-                <Select value={selectedEntryPoint} onValueChange={setSelectedEntryPoint}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a critical thinking angle" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(selectedPost?.entry_points || selectedThread?.post.entry_points || []).map((point, idx) => (
-                      <SelectItem key={idx} value={point}>
-                        {point}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Generate Button */}
-            <Button
-              onClick={() => generateResponse(selectedComment || undefined)}
-              disabled={(!selectedPost && !selectedThread) || !selectedEntryPoint || generating}
-              className="w-full"
-            >
-              <Bot className="h-4 w-4 mr-2" />
-              {generating ? 'Generating...' : 
-                selectedComment ? 'Generate Comment Response' :
-                selectedThread ? 'Generate Thread Response' : 
-                'Generate Post Response'}
-            </Button>
-
-            {/* Generated Response */}
-            {generatedResponse && (
-              <div className="space-y-2">
-                <Label>Generated Response</Label>
-                <Textarea
-                  value={finalResponse}
-                  onChange={(e) => setFinalResponse(e.target.value)}
-                  className="min-h-[150px]"
-                  placeholder="Edit the generated response..."
-                />
-                <div className="flex gap-2">
-                  <Button onClick={() => saveComment(selectedComment || undefined)} disabled={!finalResponse}>
-                    Save as Draft
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setFinalResponse(generatedResponse)}
-                  >
-                    Reset to Generated
-                  </Button>
+                    </div>
+                  </ScrollArea>
                 </div>
-              </div>
-            )}
+
+                {/* Comments with AI Suggestions for Selected Post */}
+                {selectedPost && comments.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>AI-Suggested Comments to Respond To</Label>
+                    <ScrollArea className="h-[250px] border rounded p-2">
+                      <div className="space-y-2">
+                        {comments
+                          .filter(c => c.suggestion && c.suggestion.priority >= 3)
+                          .sort((a, b) => (b.suggestion?.priority || 0) - (a.suggestion?.priority || 0))
+                          .map((comment) => (
+                            <div
+                              key={comment.id}
+                              className={`p-3 border rounded cursor-pointer transition-colors ${
+                                selectedComment?.id === comment.id ? 'border-primary bg-accent' : 'hover:bg-accent/50'
+                              }`}
+                              onClick={() => {
+                                setSelectedComment(comment);
+                                setGeneratedResponse('');
+                                setFinalResponse('');
+                              }}
+                            >
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="secondary" className="text-xs">
+                                      Priority: {comment.suggestion?.priority}/5
+                                    </Badge>
+                                    <span className="text-xs text-muted-foreground">u/{comment.author}</span>
+                                    <span className="flex items-center gap-1 text-xs">
+                                      <ThumbsUp className="h-3 w-3" />
+                                      {comment.score}
+                                    </span>
+                                  </div>
+                                </div>
+                                
+                                <p className="text-sm line-clamp-2">{comment.content}</p>
+                                
+                                {comment.suggestion && (
+                                  <div className="text-xs bg-muted p-2 rounded">
+                                    <p className="font-medium">AI Suggestion:</p>
+                                    <p className="text-muted-foreground">{comment.suggestion.reason}</p>
+                                    <p className="mt-1"><strong>Approach:</strong> {comment.suggestion.approach}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                )}
+
+                {/* Entry Point Selection for Posts */}
+                {selectedPost && (
+                  <div className="space-y-2">
+                    <Label>Choose Entry Point</Label>
+                    <Select value={selectedEntryPoint} onValueChange={setSelectedEntryPoint}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a critical thinking angle" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {selectedPost.entry_points.map((point, idx) => (
+                          <SelectItem key={idx} value={point}>
+                            {point}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Generate Button for Posts */}
+                <Button
+                  onClick={() => generateResponse(selectedComment || undefined)}
+                  disabled={!selectedPost || !selectedEntryPoint || generating}
+                  className="w-full"
+                >
+                  <Bot className="h-4 w-4 mr-2" />
+                  {generating ? 'Generating...' : 
+                    selectedComment ? 'Generate Comment Response' : 'Generate Post Response'}
+                </Button>
+
+                {/* Generated Response for Posts */}
+                {generatedResponse && selectedPost && (
+                  <div className="space-y-2">
+                    <Label>Generated Response</Label>
+                    <Textarea
+                      value={finalResponse}
+                      onChange={(e) => setFinalResponse(e.target.value)}
+                      className="min-h-[150px]"
+                      placeholder="Edit the generated response..."
+                    />
+                    <div className="flex gap-2">
+                      <Button onClick={() => saveComment(selectedComment || undefined)} disabled={!finalResponse}>
+                        Save as Draft
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setFinalResponse(generatedResponse)}
+                      >
+                        Reset to Generated
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Comment Response Tab */}
+              <TabsContent value="comments" className="space-y-4">
+                {/* Analyzed Comment Threads */}
+                {analyzedThreads.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Analyzed Comment Threads</Label>
+                    <ScrollArea className="h-[200px] border rounded p-2">
+                      <div className="space-y-2">
+                        {analyzedThreads.map((thread) => (
+                          <div
+                            key={thread.root_comment.id}
+                            className={`p-2 border rounded cursor-pointer transition-colors ${
+                              selectedThread?.root_comment.id === thread.root_comment.id ? 'border-primary bg-accent' : 'hover:bg-accent/50'
+                            }`}
+                            onClick={() => {
+                              setSelectedThread(thread);
+                              setSelectedPost(null);
+                              setSelectedComment(null);
+                              setSelectedEntryPoint('');
+                              setGeneratedResponse('');
+                              setFinalResponse('');
+                              setComments([]);
+                              loadThreadComments(thread);
+                            }}
+                          >
+                            <div className="space-y-1">
+                              <h4 className="text-sm font-medium line-clamp-2">
+                                Thread: {thread.post.title}
+                              </h4>
+                              <p className="text-xs text-muted-foreground line-clamp-1">
+                                u/{thread.root_comment.author}: {thread.root_comment.content}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="secondary" className="text-xs">r/{thread.post.subreddit_name}</Badge>
+                                <Badge variant="outline" className="text-xs">
+                                  <Bot className="h-3 w-3 mr-1" />
+                                  Thread Analyzed
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {thread.post.entry_points?.length || 0} entry points
+                                </span>
+                                {thread.sentiment_label && (
+                                  <Badge className={`text-xs ${getSentimentColor(thread.sentiment_score || 0)}`}>
+                                    {thread.sentiment_label}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                )}
+
+                {/* Thread Comments to Respond To */}
+                {selectedThread && comments.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Thread Comments to Respond To</Label>
+                    <ScrollArea className="h-[250px] border rounded p-2">
+                      <div className="space-y-2">
+                        {comments
+                          .sort((a, b) => (b.suggestion?.priority || 0) - (a.suggestion?.priority || 0))
+                          .map((comment) => (
+                            <div
+                              key={comment.id}
+                              className={`p-3 border rounded cursor-pointer transition-colors ${
+                                selectedComment?.id === comment.id ? 'border-primary bg-accent' : 'hover:bg-accent/50'
+                              }`}
+                              onClick={() => {
+                                setSelectedComment(comment);
+                                setGeneratedResponse('');
+                                setFinalResponse('');
+                              }}
+                            >
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    {comment.suggestion && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        Priority: {comment.suggestion?.priority}/5
+                                      </Badge>
+                                    )}
+                                    <span className="text-xs text-muted-foreground">u/{comment.author}</span>
+                                    <span className="flex items-center gap-1 text-xs">
+                                      <ThumbsUp className="h-3 w-3" />
+                                      {comment.score}
+                                    </span>
+                                    {comment.analyzed_at && (
+                                      <Badge variant="outline" className="text-xs">
+                                        <Bot className="h-3 w-3 mr-1" />
+                                        Analyzed
+                                      </Badge>
+                                    )}
+                                    {comment.depth > 0 && (
+                                      <Badge variant="outline" className="text-xs">
+                                        Depth: {comment.depth}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                <p className="text-sm line-clamp-2">{comment.content}</p>
+                                
+                                {comment.suggestion && (
+                                  <div className="text-xs bg-muted p-2 rounded">
+                                    <p className="font-medium">AI Suggestion:</p>
+                                    <p className="text-muted-foreground">{comment.suggestion.reason}</p>
+                                    <p className="mt-1"><strong>Approach:</strong> {comment.suggestion.approach}</p>
+                                  </div>
+                                )}
+
+                                {comment.analyzed_at && (
+                                  <div className="text-xs bg-accent p-2 rounded">
+                                    <p className="font-medium">Thread Comment Analysis:</p>
+                                    {comment.sentiment_label && (
+                                      <p><strong>Sentiment:</strong> {comment.sentiment_label}</p>
+                                    )}
+                                    {comment.topics && comment.topics.length > 0 && (
+                                      <p><strong>Topics:</strong> {comment.topics.join(', ')}</p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                )}
+
+                {/* Entry Point Selection for Threads */}
+                {selectedThread && (
+                  <div className="space-y-2">
+                    <Label>Choose Entry Point</Label>
+                    <Select value={selectedEntryPoint} onValueChange={setSelectedEntryPoint}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a critical thinking angle" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {selectedThread.post.entry_points.map((point, idx) => (
+                          <SelectItem key={idx} value={point}>
+                            {point}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Generate Button for Comments/Threads */}
+                <Button
+                  onClick={() => generateResponse(selectedComment || undefined)}
+                  disabled={!selectedThread || !selectedEntryPoint || generating}
+                  className="w-full"
+                >
+                  <Bot className="h-4 w-4 mr-2" />
+                  {generating ? 'Generating...' : 
+                    selectedComment ? 'Generate Comment Response' : 'Generate Thread Response'}
+                </Button>
+
+                {/* Generated Response for Comments/Threads */}
+                {generatedResponse && selectedThread && (
+                  <div className="space-y-2">
+                    <Label>Generated Response</Label>
+                    <Textarea
+                      value={finalResponse}
+                      onChange={(e) => setFinalResponse(e.target.value)}
+                      className="min-h-[150px]"
+                      placeholder="Edit the generated response..."
+                    />
+                    <div className="flex gap-2">
+                      <Button onClick={() => saveComment(selectedComment || undefined)} disabled={!finalResponse}>
+                        Save as Draft
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setFinalResponse(generatedResponse)}
+                      >
+                        Reset to Generated
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
