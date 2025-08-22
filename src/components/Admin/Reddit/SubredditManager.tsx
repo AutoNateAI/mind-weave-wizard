@@ -43,6 +43,7 @@ interface SubredditManagerProps {
 export function SubredditManager({ isConnected }: SubredditManagerProps) {
   const [subreddits, setSubreddits] = useState<Subreddit[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetchingSubreddits, setFetchingSubreddits] = useState<Set<string>>(new Set());
   const [newSubreddit, setNewSubreddit] = useState('');
   const [keywords, setKeywords] = useState('');
   const [editingSubreddit, setEditingSubreddit] = useState<Subreddit | null>(null);
@@ -202,9 +203,13 @@ export function SubredditManager({ isConnected }: SubredditManagerProps) {
     }
 
     const sortType = sortOptions[subreddit.id] || 'hot';
-    setLoading(true);
+    
+    // Add this subreddit to fetching set
+    setFetchingSubreddits(prev => new Set(prev.add(subreddit.id)));
     
     try {
+      console.log(`Fetching ${sortType} posts from r/${subreddit.subreddit_name}`);
+      
       const { data, error } = await supabase.functions.invoke('reddit-api', {
         body: { 
           action: 'fetch_subreddit_posts',
@@ -216,7 +221,14 @@ export function SubredditManager({ isConnected }: SubredditManagerProps) {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Unknown error occurred');
+      }
 
       // Update last_scraped_at
       await supabase
@@ -238,7 +250,12 @@ export function SubredditManager({ isConnected }: SubredditManagerProps) {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      // Remove this subreddit from fetching set
+      setFetchingSubreddits(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(subreddit.id);
+        return newSet;
+      });
     }
   };
 
@@ -360,11 +377,11 @@ export function SubredditManager({ isConnected }: SubredditManagerProps) {
                       variant="outline"
                       size="sm"
                       onClick={() => fetchPosts(subreddit)}
-                      disabled={loading || !isConnected}
+                      disabled={fetchingSubreddits.has(subreddit.id) || !isConnected}
                       className="w-full sm:w-auto"
                     >
-                      <RotateCcw className="h-4 w-4 mr-2" />
-                      Fetch Posts
+                      <RotateCcw className={`h-4 w-4 mr-2 ${fetchingSubreddits.has(subreddit.id) ? 'animate-spin' : ''}`} />
+                      {fetchingSubreddits.has(subreddit.id) ? 'Fetching...' : 'Fetch Posts'}
                     </Button>
                     
                     <div className="flex gap-2">
