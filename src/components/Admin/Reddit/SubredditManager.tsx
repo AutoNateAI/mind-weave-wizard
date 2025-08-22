@@ -313,10 +313,10 @@ export function SubredditManager({ isConnected }: SubredditManagerProps) {
               {subreddits.map((subreddit) => (
                 <div
                   key={subreddit.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
+                  className="flex flex-col lg:flex-row lg:items-center justify-between p-4 border rounded-lg gap-4"
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <h4 className="font-semibold">r/{subreddit.subreddit_name}</h4>
                       <Badge variant={subreddit.is_active ? "default" : "secondary"}>
                         {subreddit.is_active ? "Active" : "Inactive"}
@@ -340,15 +340,15 @@ export function SubredditManager({ isConnected }: SubredditManagerProps) {
                     )}
                   </div>
                   
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 lg:flex-shrink-0">
                     <Select
                       value={sortOptions[subreddit.id] || 'hot'}
                       onValueChange={(value) => setSortOptions(prev => ({ ...prev, [subreddit.id]: value }))}
                     >
-                      <SelectTrigger className="w-20 h-8">
+                      <SelectTrigger className="w-full sm:w-20 h-8">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background border shadow-md z-50">
                         <SelectItem value="hot">Hot</SelectItem>
                         <SelectItem value="new">New</SelectItem>
                         <SelectItem value="top">Top</SelectItem>
@@ -361,79 +361,82 @@ export function SubredditManager({ isConnected }: SubredditManagerProps) {
                       size="sm"
                       onClick={() => fetchPosts(subreddit)}
                       disabled={loading || !isConnected}
+                      className="w-full sm:w-auto"
                     >
                       <RotateCcw className="h-4 w-4 mr-2" />
                       Fetch Posts
                     </Button>
                     
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setEditingSubreddit(subreddit);
-                            setEditKeywords(subreddit.tracking_keywords.join(', '));
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Edit r/{subreddit.subreddit_name}</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="edit-keywords">Tracking Keywords (comma-separated)</Label>
-                            <Input
-                              id="edit-keywords"
-                              placeholder="e.g., critical thinking, logic, reasoning"
-                              value={editKeywords}
-                              onChange={(e) => setEditKeywords(e.target.value)}
-                            />
+                    <div className="flex gap-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setEditingSubreddit(subreddit);
+                              setEditKeywords(subreddit.tracking_keywords.join(', '));
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="bg-background border shadow-lg">
+                          <DialogHeader>
+                            <DialogTitle>Edit r/{subreddit.subreddit_name}</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <Label htmlFor="edit-keywords">Tracking Keywords (comma-separated)</Label>
+                              <Input
+                                id="edit-keywords"
+                                placeholder="e.g., critical thinking, logic, reasoning"
+                                value={editKeywords}
+                                onChange={(e) => setEditKeywords(e.target.value)}
+                              />
+                            </div>
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingSubreddit(null);
+                                  setEditKeywords('');
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                onClick={() => {
+                                  const keywordArray = editKeywords.split(',').map(k => k.trim()).filter(k => k);
+                                  updateSubreddit(subreddit.id, keywordArray);
+                                }}
+                              >
+                                Save Changes
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              onClick={() => {
-                                setEditingSubreddit(null);
-                                setEditKeywords('');
-                              }}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              onClick={() => {
-                                const keywordArray = editKeywords.split(',').map(k => k.trim()).filter(k => k);
-                                updateSubreddit(subreddit.id, keywordArray);
-                              }}
-                            >
-                              Save Changes
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                    
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleSubreddit(subreddit.id, subreddit.is_active)}
-                    >
-                      {subreddit.is_active ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeSubreddit(subreddit.id, subreddit.subreddit_name)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                        </DialogContent>
+                      </Dialog>
+                      
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleSubreddit(subreddit.id, subreddit.is_active)}
+                      >
+                        {subreddit.is_active ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeSubreddit(subreddit.id, subreddit.subreddit_name)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}

@@ -90,9 +90,9 @@ async function getRedditAccessToken(): Promise<{ accessToken: string; mode: 'use
 }
 
 async function fetchSubredditPosts(accessToken: string, data: any) {
-  const { subreddit, limit = 25, after = null } = data;
+  const { subreddit, limit = 25, after = null, sort = 'hot' } = data;
   
-  let url = `https://oauth.reddit.com/r/${subreddit}/hot?limit=${limit}`;
+  let url = `https://oauth.reddit.com/r/${subreddit}/${sort}?limit=${limit}`;
   if (after) url += `&after=${after}`;
 
   const response = await fetch(url, {
@@ -109,7 +109,7 @@ async function fetchSubredditPosts(accessToken: string, data: any) {
   const result = await response.json();
   const posts = result.data.children.map((child: any) => child.data);
 
-  // Store posts in database
+  // Store posts in database with sort type
   for (const post of posts) {
     const { error } = await supabase
       .from('reddit_posts')
@@ -127,6 +127,9 @@ async function fetchSubredditPosts(accessToken: string, data: any) {
         permalink: `https://reddit.com${post.permalink}`,
         post_type: post.is_self ? 'text' : 'link',
         is_self: post.is_self,
+        // Add fetch metadata
+        topics: [sort], // Store sort type as a topic for now
+        keywords: [`fetch_type:${sort}`, `scraped_at:${new Date().toISOString().split('T')[0]}`]
       }, {
         onConflict: 'reddit_post_id',
         ignoreDuplicates: false
@@ -141,7 +144,8 @@ async function fetchSubredditPosts(accessToken: string, data: any) {
     JSON.stringify({ 
       success: true, 
       posts,
-      after: result.data.after 
+      after: result.data.after,
+      sort_type: sort
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
