@@ -28,8 +28,8 @@ serve(async (req) => {
     const { action, data } = await req.json();
     console.log('Reddit API action:', action);
 
-    // Get Reddit access token first
-    const accessToken = await getRedditAccessToken();
+    // Get Reddit access token first (supports user or app-only modes)
+    const { accessToken, mode } = await getRedditAccessToken();
     
     switch (action) {
       case 'fetch_subreddit_posts':
@@ -37,9 +37,9 @@ serve(async (req) => {
       case 'fetch_post_comments':
         return await fetchPostComments(accessToken, data);
       case 'submit_comment':
-        return await submitComment(accessToken, data);
+        return await submitComment(accessToken, data, mode);
       case 'test_connection':
-        return await testConnection(accessToken);
+        return await testConnection(accessToken, mode);
       default:
         throw new Error(`Unknown action: ${action}`);
     }
@@ -52,25 +52,41 @@ serve(async (req) => {
   }
 });
 
-async function getRedditAccessToken() {
-  const auth = btoa(`${REDDIT_CLIENT_ID}:${REDDIT_CLIENT_SECRET}`);
-  
-  const response = await fetch('https://www.reddit.com/api/v1/access_token', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Basic ${auth}`,
-      'User-Agent': REDDIT_USER_AGENT,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: `grant_type=password&username=${REDDIT_USERNAME}&password=${REDDIT_PASSWORD}`,
-  });
-
-  if (!response.ok) {
-    throw new Error(`Reddit auth failed: ${response.status}`);
+async function getRedditAccessToken(): Promise<{ accessToken: string; mode: 'user' | 'app' }> {
+  if (!REDDIT_CLIENT_ID || !REDDIT_CLIENT_SECRET) {
+    throw new Error('Missing REDDIT_CLIENT_ID or REDDIT_CLIENT_SECRET');
   }
 
-  const data = await response.json();
-  return data.access_token;
+  const auth = btoa(`${REDDIT_CLIENT_ID}:${REDDIT_CLIENT_SECRET}`);
+  const headers = {
+    'Authorization': `Basic ${auth}`,
+    'User-Agent': REDDIT_USER_AGENT,
+    'Content-Type': 'application/x-www-form-urlencoded',
+  };
+
+  // If username/password are provided, use password grant (user-auth mode)
+  if (REDDIT_USERNAME && REDDIT_PASSWORD) {
+    const resp = await fetch('https://www.reddit.com/api/v1/access_token', {
+      method: 'POST',
+      headers,
+      body: `grant_type=password&username=${REDDIT_USERNAME}&password=${REDDIT_PASSWORD}`,
+    });
+
+    if (!resp.ok) throw new Error(`Reddit auth failed: ${resp.status}`);
+    const data = await resp.json();
+    return { accessToken: data.access_token, mode: 'user' };
+  }
+
+  // Fallback to app-only client credentials (read-only capabilities)
+  const resp = await fetch('https://www.reddit.com/api/v1/access_token', {
+    method: 'POST',
+    headers,
+    body: 'grant_type=client_credentials&scope=read',
+  });
+
+  if (!resp.ok) throw new Error(`Reddit auth failed: ${resp.status}`);
+  const data = await resp.json();
+  return { accessToken: data.access_token, mode: 'app' };
 }
 
 async function fetchSubredditPosts(accessToken: string, data: any) {
@@ -196,7 +212,14 @@ async function fetchPostComments(accessToken: string, data: any) {
   );
 }
 
-async function submitComment(accessToken: string, data: any) {
+async function submitComment(accessToken: string, data: any, mode: 'user' | 'app' = 'user') {
+  if (mode !== 'user') {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Commenting requires user-auth mode. Add REDDIT_USERNAME and REDDIT_PASSWORD to Supabase secrets.' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   const { thingId, text } = data; // thingId is Reddit's format for post/comment IDs (t3_postid or t1_commentid)
   
   const response = await fetch('https://oauth.reddit.com/api/comment', {
@@ -225,30 +248,50 @@ async function submitComment(accessToken: string, data: any) {
   );
 }
 
-async function testConnection(accessToken: string) {
-  const response = await fetch('https://oauth.reddit.com/api/v1/me', {
+async function testConnection(accessToken: string, mode: 'user' | 'app' = 'user') {
+  if (mode === 'user') {
+    const response = await fetch('https://oauth.reddit.com/api/v1/me', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'User-Agent': REDDIT_USER_AGENT,
+      },
+    });
+  
+    if (!response.ok) {
+      throw new Error(`Reddit connection test failed: ${response.status}`);
+    }
+  
+    const user = await response.json();
+  
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        mode,
+        user: {
+          name: user.name,
+          id: user.id,
+          comment_karma: user.comment_karma,
+          link_karma: user.link_karma
+        }
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // App-only mode: verify by fetching a public resource
+  const resp = await fetch('https://oauth.reddit.com/r/popular/hot?limit=1', {
     headers: {
       'Authorization': `Bearer ${accessToken}`,
       'User-Agent': REDDIT_USER_AGENT,
     },
   });
 
-  if (!response.ok) {
-    throw new Error(`Reddit connection test failed: ${response.status}`);
+  if (!resp.ok) {
+    throw new Error(`Reddit connection test (app-only) failed: ${resp.status}`);
   }
 
-  const user = await response.json();
-
   return new Response(
-    JSON.stringify({ 
-      success: true, 
-      user: {
-        name: user.name,
-        id: user.id,
-        comment_karma: user.comment_karma,
-        link_karma: user.link_karma
-      }
-    }),
+    JSON.stringify({ success: true, mode: 'app' }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
 }
