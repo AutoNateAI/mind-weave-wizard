@@ -27,6 +27,15 @@ serve(async (req) => {
   try {
     const { action, data } = await req.json();
     console.log('Reddit API action:', action);
+    
+    // Debug: Log available environment variables (without values for security)
+    console.log('Environment check:', {
+      hasClientId: !!REDDIT_CLIENT_ID,
+      hasClientSecret: !!REDDIT_CLIENT_SECRET,
+      hasUsername: !!REDDIT_USERNAME,
+      hasPassword: !!REDDIT_PASSWORD,
+      hasUserAgent: !!REDDIT_USER_AGENT
+    });
 
     // Get Reddit access token first (supports user or app-only modes)
     const { accessToken, mode } = await getRedditAccessToken();
@@ -46,14 +55,24 @@ serve(async (req) => {
   } catch (error) {
     console.error('Reddit API error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        success: false,
+        timestamp: new Date().toISOString()
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
 
 async function getRedditAccessToken(): Promise<{ accessToken: string; mode: 'user' | 'app' }> {
+  console.log('Checking Reddit credentials...');
+  
   if (!REDDIT_CLIENT_ID || !REDDIT_CLIENT_SECRET) {
+    console.error('Missing Reddit credentials:', {
+      hasClientId: !!REDDIT_CLIENT_ID,
+      hasClientSecret: !!REDDIT_CLIENT_SECRET
+    });
     throw new Error('Missing REDDIT_CLIENT_ID or REDDIT_CLIENT_SECRET');
   }
 
