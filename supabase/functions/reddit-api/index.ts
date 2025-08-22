@@ -85,10 +85,11 @@ async function getRedditAccessToken(): Promise<{ accessToken: string; mode: 'use
 
   // If username/password are provided, use password grant (user-auth mode)
   if (REDDIT_USERNAME && REDDIT_PASSWORD) {
+    const scopeStr = encodeURIComponent('identity read submit history mysubreddits');
     const resp = await fetch('https://www.reddit.com/api/v1/access_token', {
       method: 'POST',
       headers,
-      body: `grant_type=password&username=${REDDIT_USERNAME}&password=${REDDIT_PASSWORD}`,
+      body: `grant_type=password&username=${REDDIT_USERNAME}&password=${REDDIT_PASSWORD}&scope=${scopeStr}`,
     });
 
     if (!resp.ok) throw new Error(`Reddit auth failed: ${resp.status}`);
