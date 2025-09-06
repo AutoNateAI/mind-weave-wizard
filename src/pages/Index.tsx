@@ -377,7 +377,10 @@ const Index = () => {
               className="hover-scale cyber-glow neon-border text-base sm:text-lg px-6 sm:px-8 py-6 sm:py-7 w-full sm:w-auto max-w-md mx-auto"
               onClick={scrollToBooking}
             >
-              <span className="font-semibold">Get Started - Book Your Consultation</span>
+              <span className="font-semibold">
+                <span className="sm:hidden">Get Started</span>
+                <span className="hidden sm:inline">Get Started - Book Your Consultation</span>
+              </span>
             </Button>
           </div>
         </div>
@@ -766,7 +769,10 @@ const Index = () => {
                   onClick={scrollToBooking}
                 >
                   <Phone className="mr-2 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                  <span className="text-center">Book Your Free Discovery Call Now</span>
+                  <span className="text-center">
+                    <span className="sm:hidden">Book Free Call</span>
+                    <span className="hidden sm:inline">Book Your Free Discovery Call Now</span>
+                  </span>
                 </Button>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-4 px-2">
                   15-minute consultation to see if this program is right for your family
