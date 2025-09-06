@@ -1,5 +1,10 @@
 import { Link } from "react-router-dom";
 import hero from "@/assets/hero-cyberwizard.jpg";
+import sessionInterface from "@/assets/lms-session-interface.jpg";
+import lectureInterface from "@/assets/lms-lecture-interface.jpg";
+import analyticsDashboard from "@/assets/lms-analytics-dashboard.jpg";
+import graphEditor from "@/assets/lms-graph-editor.jpg";
+import reflectionInterface from "@/assets/lms-reflection-interface.jpg";
 import { Button } from "@/components/ui/button";
 import { PageMeta } from "@/components/UI/PageMeta";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -223,7 +228,7 @@ const Index = () => {
                           <li className="flex items-center"><Target className="mr-2 h-3 w-3" /> Pattern Recognition</li>
                           <li className="flex items-center"><Lightbulb className="mr-2 h-3 w-3" /> Strategic Reasoning</li>
                           <li className="flex items-center"><TrendingUp className="mr-2 h-3 w-3" /> Metacognition</li>
-                          <li className="flex items-center"><CheckCircle className="mr-2 h-3 w-3" /> Problem Solving</li>
+                          <li className="flex items-center"><CheckCircle className="mr-2 h-3 w-3" /> Problem Solution</li>
                         </ul>
                       </div>
                     </div>
@@ -231,6 +236,48 @@ const Index = () => {
                 </div>
               </GlassCard>
             ))}
+          </div>
+
+          {/* Session Interface Preview */}
+          <div className="mb-16">
+            <GlassCard className="p-8 border-primary/30">
+              <div className="grid lg:grid-cols-2 gap-8 items-center">
+                <div className="rounded-lg overflow-hidden shadow-2xl border border-primary/20">
+                  <img 
+                    src={sessionInterface} 
+                    alt="Session dashboard showing lecture tabs, progress indicators, and analytics"
+                    className="w-full h-auto"
+                  />
+                </div>
+                <div>
+                  <h3 className="text-3xl font-bold gradient-text mb-4">
+                    Organized Session Structure
+                  </h3>
+                  <p className="text-lg text-muted-foreground mb-6">
+                    Each session is carefully structured with 2 comprehensive lectures, 
+                    clear progress tracking, and immediate access to all learning materials.
+                  </p>
+                  <div className="space-y-3">
+                    <div className="flex items-center">
+                      <Calendar className="mr-3 h-5 w-5 text-primary" />
+                      <span>2 focused lectures per session with clear progression</span>
+                    </div>
+                    <div className="flex items-center">
+                      <TrendingUp className="mr-3 h-5 w-5 text-primary" />
+                      <span>Real-time progress tracking and completion status</span>
+                    </div>
+                    <div className="flex items-center">
+                      <BookOpen className="mr-3 h-5 w-5 text-primary" />
+                      <span>Instant access to slides, games, and reflections</span>
+                    </div>
+                    <div className="flex items-center">
+                      <BarChart3 className="mr-3 h-5 w-5 text-primary" />
+                      <span>Performance analytics and learning insights</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </GlassCard>
           </div>
 
           <div className="text-center">
@@ -256,6 +303,48 @@ const Index = () => {
               Every session includes multiple learning modalities and real-time analytics 
               to track your child's cognitive development.
             </p>
+          </div>
+
+          {/* Learning Interface Preview */}
+          <div className="mb-16">
+            <GlassCard className="p-8 border-primary/30">
+              <div className="grid lg:grid-cols-2 gap-8 items-center">
+                <div>
+                  <h3 className="text-3xl font-bold gradient-text mb-4">
+                    Interactive Learning Interface
+                  </h3>
+                  <p className="text-lg text-muted-foreground mb-6">
+                    Experience our cutting-edge learning platform with multiple content delivery methods 
+                    designed to engage different learning styles and maximize retention.
+                  </p>
+                  <div className="space-y-3">
+                    <div className="flex items-center">
+                      <BookOpen className="mr-3 h-5 w-5 text-primary" />
+                      <span>Interactive slide presentations with rich visuals</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Brain className="mr-3 h-5 w-5 text-primary" />
+                      <span>Dynamic concept mapping and graph visualization</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Gamepad2 className="mr-3 h-5 w-5 text-primary" />
+                      <span>Hands-on interactive games and simulations</span>
+                    </div>
+                    <div className="flex items-center">
+                      <MessageSquare className="mr-3 h-5 w-5 text-primary" />
+                      <span>Guided reflection and metacognitive exercises</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-lg overflow-hidden shadow-2xl border border-primary/20">
+                  <img 
+                    src={lectureInterface} 
+                    alt="Interactive lecture interface showing slides, concepts, games, and reflection tabs"
+                    className="w-full h-auto"
+                  />
+                </div>
+              </div>
+            </GlassCard>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
@@ -324,23 +413,12 @@ const Index = () => {
               </div>
               
               <div className="lg:w-1/2">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="glass p-4 text-center rounded-lg">
-                    <div className="text-2xl font-bold text-primary">94%</div>
-                    <div className="text-sm text-muted-foreground">Pattern Recognition</div>
-                  </div>
-                  <div className="glass p-4 text-center rounded-lg">
-                    <div className="text-2xl font-bold text-primary">87%</div>
-                    <div className="text-sm text-muted-foreground">Strategic Reasoning</div>
-                  </div>
-                  <div className="glass p-4 text-center rounded-lg">
-                    <div className="text-2xl font-bold text-primary">91%</div>
-                    <div className="text-sm text-muted-foreground">Metacognition</div>
-                  </div>
-                  <div className="glass p-4 text-center rounded-lg">
-                    <div className="text-2xl font-bold text-primary">89%</div>
-                    <div className="text-sm text-muted-foreground">Error Recovery</div>
-                  </div>
+                <div className="rounded-lg overflow-hidden shadow-2xl border border-primary/20">
+                  <img 
+                    src={analyticsDashboard} 
+                    alt="Analytics dashboard showing student progress, engagement metrics, and performance graphs"
+                    className="w-full h-auto"
+                  />
                 </div>
               </div>
             </div>
@@ -428,6 +506,89 @@ const Index = () => {
                   <span>Gain skills that dramatically improve academic performance</span>
                 </li>
               </ul>
+            </GlassCard>
+          </div>
+        </div>
+      </section>
+
+      {/* Interactive Tools Showcase */}
+      <section className="relative py-20 bg-gradient-to-b from-background/80 to-background">
+        <div className="container mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold gradient-text mb-4">
+              Advanced Learning Tools & Reflection
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Our platform includes sophisticated graph editors and guided reflection tools 
+              to deepen understanding and build metacognitive awareness.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-12 mb-16">
+            <GlassCard className="p-8 border-primary/30">
+              <div className="mb-8">
+                <div className="rounded-lg overflow-hidden shadow-2xl border border-primary/20">
+                  <img 
+                    src={graphEditor} 
+                    alt="Interactive graph editor for visualizing relationships and building mental models"
+                    className="w-full h-auto"
+                  />
+                </div>
+              </div>
+              <h3 className="text-2xl font-bold gradient-text mb-4">
+                Graph Editor & Visualization
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Students build and manipulate visual graphs to understand relationships, 
+                connections, and complex systems thinking.
+              </p>
+              <div className="space-y-2">
+                <div className="flex items-center">
+                  <Brain className="mr-3 h-4 w-4 text-primary" />
+                  <span className="text-sm">Visual mental model construction</span>
+                </div>
+                <div className="flex items-center">
+                  <Target className="mr-3 h-4 w-4 text-primary" />
+                  <span className="text-sm">Interactive relationship mapping</span>
+                </div>
+                <div className="flex items-center">
+                  <Lightbulb className="mr-3 h-4 w-4 text-primary" />
+                  <span className="text-sm">Systems thinking development</span>
+                </div>
+              </div>
+            </GlassCard>
+
+            <GlassCard className="p-8 border-primary/30">
+              <div className="mb-8">
+                <div className="rounded-lg overflow-hidden shadow-2xl border border-primary/20">
+                  <img 
+                    src={reflectionInterface} 
+                    alt="Guided reflection interface with thoughtful questions and progress tracking"
+                    className="w-full h-auto"
+                  />
+                </div>
+              </div>
+              <h3 className="text-2xl font-bold gradient-text mb-4">
+                Deep Reflection & Metacognition
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Carefully crafted reflection exercises help students think about their thinking 
+                and develop self-awareness of their reasoning processes.
+              </p>
+              <div className="space-y-2">
+                <div className="flex items-center">
+                  <MessageSquare className="mr-3 h-4 w-4 text-primary" />
+                  <span className="text-sm">Guided self-reflection questions</span>
+                </div>
+                <div className="flex items-center">
+                  <TrendingUp className="mr-3 h-4 w-4 text-primary" />
+                  <span className="text-sm">Progress tracking and insights</span>
+                </div>
+                <div className="flex items-center">
+                  <CheckCircle className="mr-3 h-4 w-4 text-primary" />
+                  <span className="text-sm">Metacognitive skill building</span>
+                </div>
+              </div>
             </GlassCard>
           </div>
         </div>
