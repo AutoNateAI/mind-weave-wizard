@@ -209,7 +209,7 @@ const Index = () => {
               className="hover-scale cyber-glow neon-border text-sm sm:text-lg px-4 sm:px-8 py-5 sm:py-7 w-full sm:w-auto max-w-sm sm:max-w-lg mx-auto flex items-center justify-center"
               onClick={scrollToBooking}
             >
-              <span className="font-semibold text-center leading-tight">Schedule Intro Call - See If This Is Right For Your Family</span>
+              <span className="font-semibold text-center leading-tight text-xs sm:text-lg">Schedule Intro Call - See If This Is Right For Your Family</span>
             </Button>
           </div>
         </div>
