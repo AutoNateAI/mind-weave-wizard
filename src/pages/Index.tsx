@@ -518,13 +518,16 @@ const Index = () => {
             </div>
           </GlassCard>
 
-          <div className="text-center mt-12">
+          <div className="text-center mt-12 px-4">
             <Button 
               size="lg" 
-              className="hover-scale cyber-glow neon-border"
+              className="hover-scale cyber-glow neon-border text-sm sm:text-lg px-4 sm:px-8 py-5 sm:py-7 w-full sm:w-auto max-w-sm sm:max-w-md mx-auto flex items-center justify-center"
               onClick={scrollToBooking}
             >
-              Reserve Your Family's Spot - Limited Availability
+              <span className="font-semibold text-center leading-tight">
+                <span className="sm:hidden">Reserve Your Spot</span>
+                <span className="hidden sm:inline">Reserve Your Family's Spot - Limited Availability</span>
+              </span>
             </Button>
           </div>
         </div>
