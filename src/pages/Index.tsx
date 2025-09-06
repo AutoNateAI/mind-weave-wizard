@@ -117,14 +117,14 @@ const Index = () => {
           pattern recognition, and strategic thinking through our revolutionary graph-based methodology.
         </p>
         
-        <div className="flex flex-col gap-4 mb-12 w-full max-w-md px-4 mx-auto">
+        <div className="flex flex-col gap-4 mb-12 w-full max-w-sm sm:max-w-md px-4 mx-auto">
           <Button 
             size="lg" 
-            className="hover-scale cyber-glow neon-border text-base sm:text-lg px-6 sm:px-8 py-6 sm:py-7 w-full text-center"
+            className="hover-scale cyber-glow neon-border text-sm sm:text-lg px-4 sm:px-8 py-5 sm:py-7 w-full flex items-center justify-center gap-2 sm:gap-3"
             onClick={scrollToBooking}
           >
-            <Phone className="mr-2 sm:mr-3 h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
-            <span className="font-semibold">Book Your Free 15-Minute Discovery Call</span>
+            <Phone className="h-4 w-4 sm:h-6 sm:w-6 flex-shrink-0" />
+            <span className="font-semibold leading-tight">Book Your Free 15-Minute Discovery Call</span>
           </Button>
         </div>
 
