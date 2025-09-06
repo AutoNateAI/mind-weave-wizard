@@ -869,7 +869,7 @@ const Index = () => {
               <Button 
                 size="lg" 
                 className="hover-scale cyber-glow neon-border text-sm sm:text-xl px-6 sm:px-16 py-6 sm:py-8 w-full sm:w-auto max-w-md"
-                onClick={() => window.open('https://calendly.com/your-calendar-link', '_blank')}
+                onClick={() => window.open('https://calendly.com/autonate-ai/15-min-discovery-call', '_blank')}
               >
                 <Phone className="mr-2 sm:mr-3 h-4 w-4 sm:h-6 sm:w-6 flex-shrink-0" />
                 <span>Claim Your Strategy Session Today</span>
