@@ -84,7 +84,7 @@ const Index = () => {
   };
 
   return (
-    <main className="min-h-screen relative">
+    <main className="min-h-screen relative overflow-x-hidden">
       <PageMeta 
         title="Transform Your Child's Critical Thinking Skills | Thinking Wizard" 
         description="5 comprehensive sessions designed for children and families to master logical reasoning, pattern recognition, and strategic thinking through graph-based learning."
@@ -102,61 +102,61 @@ const Index = () => {
       </div>
 
       {/* Hero Section */}
-      <section className="relative container mx-auto py-24 flex flex-col items-center text-center animate-fade-in">
+      <section className="relative container mx-auto px-4 py-24 flex flex-col items-center text-center animate-fade-in">
         <Badge variant="secondary" className="mb-6 cyber-glow">
           <Brain className="mr-2 h-4 w-4" />
           Graph-Based Learning System
         </Badge>
         
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight gradient-text mb-6">
+        <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight gradient-text mb-6 px-2">
           Transform Your Child's Critical Thinking Skills
         </h1>
         
-        <p className="text-xl md:text-2xl text-muted-foreground max-w-4xl mb-8 leading-relaxed">
+        <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-4xl mb-8 leading-relaxed px-4">
           5 comprehensive sessions designed for children and families to master logical reasoning, 
           pattern recognition, and strategic thinking through our revolutionary graph-based methodology.
         </p>
         
-        <div className="flex flex-col sm:flex-row gap-4 mb-12">
+        <div className="flex flex-col gap-4 mb-12 w-full max-w-md px-4">
           <Button 
             size="lg" 
-            className="hover-scale cyber-glow neon-border text-lg px-8 py-6"
+            className="hover-scale cyber-glow neon-border text-sm sm:text-lg px-4 sm:px-8 py-6 w-full"
             onClick={scrollToBooking}
           >
-            <Phone className="mr-2 h-5 w-5" />
-            Book Your Free 15-Minute Discovery Call
+            <Phone className="mr-2 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <span className="text-center">Book Your Free 15-Minute Discovery Call</span>
           </Button>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
+        <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground px-4">
           <div className="flex items-center">
-            <CheckCircle className="mr-2 h-4 w-4 text-primary" />
-            Ages 8-18+ Welcome
+            <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+            <span>Ages 8-18+ Welcome</span>
           </div>
           <div className="flex items-center">
-            <CheckCircle className="mr-2 h-4 w-4 text-primary" />
-            Parent-Child Learning
+            <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+            <span>Parent-Child Learning</span>
           </div>
           <div className="flex items-center">
-            <CheckCircle className="mr-2 h-4 w-4 text-primary" />
-            Advanced Analytics Included
+            <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+            <span>Advanced Analytics Included</span>
           </div>
         </div>
       </section>
 
       {/* Learning Options Section */}
       <section className="relative py-20 bg-gradient-to-b from-background/80 to-background">
-        <div className="container mx-auto">
+        <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold gradient-text mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold gradient-text mb-4 px-2">
               Flexible Learning That Fits Your Family
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto px-4">
               Choose the learning format that works best - solo sessions, group learning, or parent-child exploration.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
             <GlassCard className="text-center p-8 hover-scale">
               <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-primary/20 flex items-center justify-center">
                 <UserCheck className="h-8 w-8 text-primary" />
@@ -203,13 +203,13 @@ const Index = () => {
             </GlassCard>
           </div>
 
-          <div className="text-center">
+          <div className="text-center px-4">
             <Button 
               size="lg" 
-              className="hover-scale cyber-glow neon-border"
+              className="hover-scale cyber-glow neon-border text-sm sm:text-base px-4 sm:px-6 w-full sm:w-auto max-w-md"
               onClick={scrollToBooking}
             >
-              Schedule Intro Call - See If This Is Right For Your Family
+              <span className="text-center">Schedule Intro Call - See If This Is Right For Your Family</span>
             </Button>
           </div>
         </div>
@@ -217,12 +217,12 @@ const Index = () => {
 
       {/* Course Overview Section */}
       <section className="relative py-20">
-        <div className="container mx-auto">
+        <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold gradient-text mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold gradient-text mb-4 px-2">
               5-Session Critical Thinking Journey
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto px-4">
               Each 2.5-hour session builds upon the previous, creating a comprehensive transformation 
               in how your child approaches complex problems and logical reasoning.
             </p>
@@ -231,34 +231,34 @@ const Index = () => {
           {/* Carousel Container */}
           <div className="relative mb-16">
             {/* Navigation Buttons */}
-            <div className="flex justify-center gap-4 mb-8">
+            <div className="flex justify-center gap-2 sm:gap-4 mb-8 px-4">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={scrollPrev}
                 disabled={prevBtnDisabled}
-                className="hover-scale"
+                className="hover-scale text-xs sm:text-sm px-2 sm:px-4"
               >
-                <ArrowRight className="h-4 w-4 rotate-180" />
-                Previous
+                <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 rotate-180" />
+                <span className="hidden sm:inline ml-1">Previous</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={scrollNext}
                 disabled={nextBtnDisabled}
-                className="hover-scale"
+                className="hover-scale text-xs sm:text-sm px-2 sm:px-4"
               >
-                Next
-                <ArrowRight className="h-4 w-4" />
+                <span className="hidden sm:inline mr-1">Next</span>
+                <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </div>
 
             {/* Embla Carousel */}
-            <div className="overflow-hidden" ref={emblaRef}>
+            <div className="overflow-hidden px-2" ref={emblaRef}>
               <div className="flex">
                 {sessionData.map((session, index) => (
-                  <div key={session.number} className="flex-[0_0_90%] md:flex-[0_0_45%] lg:flex-[0_0_30%] min-w-0 pl-4">
+                  <div key={session.number} className="flex-[0_0_85%] sm:flex-[0_0_90%] md:flex-[0_0_45%] lg:flex-[0_0_30%] min-w-0 pl-2 sm:pl-4">
                     <GlassCard className="h-full hover-scale transition-all duration-300 border-primary/30">
                       {/* Large Image Header */}
                       <div className="relative h-48 overflow-hidden rounded-t-lg">
@@ -368,10 +368,10 @@ const Index = () => {
             </GlassCard>
           </div>
 
-          <div className="text-center">
+          <div className="text-center px-4">
             <Button 
               size="lg" 
-              className="hover-scale cyber-glow neon-border"
+              className="hover-scale cyber-glow neon-border text-sm sm:text-base px-4 sm:px-6 w-full sm:w-auto max-w-md"
               onClick={scrollToBooking}
             >
               Get Started - Book Your Consultation
@@ -382,12 +382,12 @@ const Index = () => {
 
       {/* Learning Experience Showcase */}
       <section className="relative py-20 bg-gradient-to-b from-background to-background/80">
-        <div className="container mx-auto">
+        <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold gradient-text mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold gradient-text mb-4 px-2">
               Complete Interactive Learning Experience
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto px-4">
               Every session includes multiple learning modalities and real-time analytics 
               to track your child's cognitive development.
             </p>
@@ -601,18 +601,18 @@ const Index = () => {
 
       {/* Interactive Tools Showcase */}
       <section className="relative py-20 bg-gradient-to-b from-background/80 to-background">
-        <div className="container mx-auto">
+        <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold gradient-text mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold gradient-text mb-4 px-2">
               Advanced Learning Tools & Reflection
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto px-4">
               Our platform includes sophisticated graph editors and guided reflection tools 
               to deepen understanding and build metacognitive awareness.
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-12 mb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 mb-16">
             <GlassCard className="p-8 border-primary/30">
               <div className="mb-8">
                 <div className="rounded-lg overflow-hidden shadow-2xl border border-primary/20">
@@ -684,25 +684,25 @@ const Index = () => {
 
       {/* Pricing Section */}
       <section className="relative py-20 bg-gradient-to-b from-background/80 to-background" id="pricing">
-        <div className="container mx-auto">
+        <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold gradient-text mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold gradient-text mb-4 px-2">
               Investment in Your Child's Future
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto px-4">
               Professional-grade critical thinking development with flexible payment options 
               and group discounts available.
             </p>
           </div>
 
-          <div className="max-w-4xl mx-auto">
-            <GlassCard className="p-8 border-primary/50 text-center">
+          <div className="max-w-4xl mx-auto px-4">
+            <GlassCard className="p-6 sm:p-8 border-primary/50 text-center">
               <div className="mb-8">
-                <div className="text-6xl font-bold gradient-text mb-4">$500</div>
-                <div className="text-xl text-muted-foreground">per session</div>
+                <div className="text-4xl sm:text-6xl font-bold gradient-text mb-4">$500</div>
+                <div className="text-lg sm:text-xl text-muted-foreground">per session</div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-8 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                 <div>
                   <h3 className="text-2xl font-bold mb-4">What's Included</h3>
                   <ul className="space-y-3 text-left">
@@ -756,16 +756,16 @@ const Index = () => {
                 </div>
               </div>
 
-              <div className="text-center">
+              <div className="text-center px-4">
                 <Button 
                   size="lg" 
-                  className="hover-scale cyber-glow neon-border text-lg px-12 py-6"
+                  className="hover-scale cyber-glow neon-border text-sm sm:text-lg px-6 sm:px-12 py-6 w-full sm:w-auto max-w-md"
                   onClick={scrollToBooking}
                 >
-                  <Phone className="mr-2 h-5 w-5" />
-                  Book Your Free Discovery Call Now
+                  <Phone className="mr-2 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                  <span className="text-center">Book Your Free Discovery Call Now</span>
                 </Button>
-                <p className="text-sm text-muted-foreground mt-4">
+                <p className="text-xs sm:text-sm text-muted-foreground mt-4 px-2">
                   15-minute consultation to see if this program is right for your family
                 </p>
               </div>
@@ -776,12 +776,12 @@ const Index = () => {
 
       {/* FAQ Section */}
       <section className="relative py-20">
-        <div className="container mx-auto">
+        <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold gradient-text mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold gradient-text mb-4 px-2">
               Frequently Asked Questions
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto px-4">
               Get answers to common questions about our program structure, 
               age appropriateness, and learning approach.
             </p>
@@ -838,64 +838,64 @@ const Index = () => {
 
       {/* Final CTA Section */}
       <section className="relative py-20 bg-gradient-to-b from-background to-background/60" id="booking-section">
-        <div className="container mx-auto text-center">
+        <div className="container mx-auto text-center px-4">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-5xl font-bold gradient-text mb-6">
+            <h2 className="text-3xl sm:text-5xl font-bold gradient-text mb-6 px-2">
               Ready to Transform Your Child's Thinking?
             </h2>
-            <p className="text-xl text-muted-foreground mb-12 leading-relaxed">
+            <p className="text-lg sm:text-xl text-muted-foreground mb-12 leading-relaxed px-4">
               Join families who are already seeing remarkable improvements in their children's 
               critical thinking, problem-solving, and academic performance. Limited spots available.
             </p>
             
-            <GlassCard className="p-8 border-primary/50 mb-12">
-              <div className="flex flex-col md:flex-row items-center justify-center gap-8 mb-8">
+            <GlassCard className="p-6 sm:p-8 border-primary/50 mb-12">
+              <div className="flex flex-col gap-4 sm:gap-8 mb-8">
                 <div className="text-center">
-                  <div className="text-4xl font-bold text-primary mb-2">15</div>
-                  <div className="text-muted-foreground">Minute Discovery Call</div>
+                  <div className="text-3xl sm:text-4xl font-bold text-primary mb-2">15</div>
+                  <div className="text-sm sm:text-base text-muted-foreground">Minute Discovery Call</div>
                 </div>
-                <ArrowRight className="h-8 w-8 text-primary rotate-90 md:rotate-0" />
+                <ArrowRight className="h-6 w-6 sm:h-8 sm:w-8 text-primary mx-auto rotate-90" />
                 <div className="text-center">
-                  <div className="text-4xl font-bold text-primary mb-2">5</div>
-                  <div className="text-muted-foreground">Transformative Sessions</div>
+                  <div className="text-3xl sm:text-4xl font-bold text-primary mb-2">5</div>
+                  <div className="text-sm sm:text-base text-muted-foreground">Transformative Sessions</div>
                 </div>
-                <ArrowRight className="h-8 w-8 text-primary rotate-90 md:rotate-0" />
+                <ArrowRight className="h-6 w-6 sm:h-8 sm:w-8 text-primary mx-auto rotate-90" />
                 <div className="text-center">
-                  <div className="text-4xl font-bold text-primary mb-2">∞</div>
-                  <div className="text-muted-foreground">Lifelong Skills</div>
+                  <div className="text-3xl sm:text-4xl font-bold text-primary mb-2">∞</div>
+                  <div className="text-sm sm:text-base text-muted-foreground">Lifelong Skills</div>
                 </div>
               </div>
               
               <Button 
                 size="lg" 
-                className="hover-scale cyber-glow neon-border text-xl px-16 py-8"
+                className="hover-scale cyber-glow neon-border text-sm sm:text-xl px-6 sm:px-16 py-6 sm:py-8 w-full sm:w-auto max-w-md"
                 onClick={() => window.open('https://calendly.com/your-calendar-link', '_blank')}
               >
-                <Phone className="mr-3 h-6 w-6" />
-                Claim Your Strategy Session Today
+                <Phone className="mr-2 sm:mr-3 h-4 w-4 sm:h-6 sm:w-6 flex-shrink-0" />
+                <span>Claim Your Strategy Session Today</span>
               </Button>
               
-              <p className="text-sm text-muted-foreground mt-6">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-6 px-2">
                 Free 15-minute consultation • No obligation • Limited availability
               </p>
             </GlassCard>
 
-            <div className="flex flex-wrap justify-center gap-8 text-sm text-muted-foreground">
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-8 text-xs sm:text-sm text-muted-foreground px-4">
               <div className="flex items-center">
-                <CheckCircle className="mr-2 h-4 w-4 text-primary" />
-                Professional Analytics Included
+                <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                <span>Professional Analytics Included</span>
               </div>
               <div className="flex items-center">
-                <CheckCircle className="mr-2 h-4 w-4 text-primary" />
-                Flexible Learning Formats
+                <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                <span>Flexible Learning Formats</span>
               </div>
               <div className="flex items-center">
-                <CheckCircle className="mr-2 h-4 w-4 text-primary" />
-                Ages 8-18+ Welcome
+                <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                <span>Ages 8-18+ Welcome</span>
               </div>
               <div className="flex items-center">
-                <CheckCircle className="mr-2 h-4 w-4 text-primary" />
-                Group Discounts Available
+                <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                <span>Group Discounts Available</span>
               </div>
             </div>
           </div>
