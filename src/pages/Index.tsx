@@ -4,12 +4,13 @@ import sessionInterface from "@/assets/lms-session-interface.jpg";
 import lectureInterface from "@/assets/lms-lecture-interface.jpg";
 import analyticsDashboard from "@/assets/lms-analytics-dashboard.jpg";
 import graphEditor from "@/assets/lms-graph-editor.jpg";
-import reflectionInterface from "@/assets/reflection-interface-enhanced.jpg";
+import reflectionInterface from "@/assets/deep-reflection-metacognition.jpg";
 import session1Image from "@/assets/session-1-graph-theory.jpg";
 import session2Image from "@/assets/session-2-mental-models.jpg";
 import session3Image from "@/assets/session-3-space-between.jpg";
 import session4Image from "@/assets/session-4-decomposition.jpg";
 import session5Image from "@/assets/session-5-mastery.jpg";
+import { sessionOverview } from "@/content/sessions";
 import useEmblaCarousel from 'embla-carousel-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
@@ -38,43 +39,12 @@ import {
   Phone
 } from "lucide-react";
 
-const sessionData = [
-  { 
-    number: 1, 
-    title: "Introduction to Graph Theory", 
-    theme: "Everything is connected", 
-    duration: "2.5 hours",
-    image: session1Image
-  },
-  { 
-    number: 2, 
-    title: "Mental Models & Mapping", 
-    theme: "You don't see with your eyes—you see with your models", 
-    duration: "2.5 hours",
-    image: session2Image
-  },
-  { 
-    number: 3, 
-    title: "The Space Between", 
-    theme: "The meaning isn't in the nodes—it's in the edges", 
-    duration: "2.5 hours",
-    image: session3Image
-  },
-  { 
-    number: 4, 
-    title: "Research Decomposition", 
-    theme: "Even the impossible becomes possible when you break it down right", 
-    duration: "2.5 hours",
-    image: session4Image
-  },
-  { 
-    number: 5, 
-    title: "Advanced Applications & Mastery", 
-    theme: "You are now the architect of your thinking", 
-    duration: "2.5 hours",
-    image: session5Image
-  }
-];
+const sessionImages = [session1Image, session2Image, session3Image, session4Image, session5Image];
+
+const sessionData = sessionOverview.map((session, index) => ({
+  ...session,
+  image: sessionImages[index]
+}));
 
 const Index = () => {
   const [emblaRef, emblaApi] = useEmblaCarousel({ 
@@ -340,8 +310,11 @@ const Index = () => {
                           <div>
                             <h4 className="font-semibold mb-2 text-sm">Key Skills:</h4>
                             <div className="flex flex-wrap gap-1">
-                              <Badge variant="outline" className="text-xs py-0 px-2">Pattern Recognition</Badge>
-                              <Badge variant="outline" className="text-xs py-0 px-2">Strategic Reasoning</Badge>
+                              {session.keySkills.map((skill, skillIndex) => (
+                                <Badge key={skillIndex} variant="outline" className="text-xs py-0 px-2">
+                                  {skill}
+                                </Badge>
+                              ))}
                             </div>
                           </div>
                         </div>
