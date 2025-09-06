@@ -10,6 +10,8 @@ import session2Image from "@/assets/session-2-mental-models.jpg";
 import session3Image from "@/assets/session-3-space-between.jpg";
 import session4Image from "@/assets/session-4-decomposition.jpg";
 import session5Image from "@/assets/session-5-mastery.jpg";
+import useEmblaCarousel from 'embla-carousel-react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { PageMeta } from "@/components/UI/PageMeta";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -75,6 +77,38 @@ const sessionData = [
 ];
 
 const Index = () => {
+  const [emblaRef, emblaApi] = useEmblaCarousel({ 
+    loop: true, 
+    align: 'start',
+    slidesToScroll: 1,
+    breakpoints: {
+      '(min-width: 768px)': { slidesToScroll: 2 }
+    }
+  });
+  const [prevBtnDisabled, setPrevBtnDisabled] = useState(true);
+  const [nextBtnDisabled, setNextBtnDisabled] = useState(true);
+
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev();
+  }, [emblaApi]);
+
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext();
+  }, [emblaApi]);
+
+  const onSelect = useCallback((emblaApi: any) => {
+    setPrevBtnDisabled(!emblaApi.canScrollPrev());
+    setNextBtnDisabled(!emblaApi.canScrollNext());
+  }, []);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+
+    onSelect(emblaApi);
+    emblaApi.on('reInit', onSelect);
+    emblaApi.on('select', onSelect);
+  }, [emblaApi, onSelect]);
+
   const scrollToBooking = () => {
     document.getElementById('booking-section')?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -224,66 +258,99 @@ const Index = () => {
             </p>
           </div>
 
-          <div className="grid gap-8 mb-16">
-            {sessionData.map((session, index) => (
-              <GlassCard key={session.number} className="p-8 hover-scale">
-                <div className="flex flex-col md:flex-row items-start gap-6">
-                  <div className="flex-shrink-0">
-                    <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary/50">
-                      <span className="text-2xl font-bold text-primary">{session.number}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-                      <h3 className="text-2xl font-bold mb-2 md:mb-0">{session.title}</h3>
-                      <Badge variant="outline" className="w-fit">
-                        <Clock className="mr-2 h-4 w-4" />
-                        {session.duration}
-                      </Badge>
-                    </div>
-                    
-                    <p className="text-lg text-primary font-medium mb-4 italic">
-                      "{session.theme}"
-                    </p>
-                    
-                    <div className="grid md:grid-cols-3 gap-4 items-center">
-                      <div className="md:col-span-2">
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div>
-                            <h4 className="font-semibold mb-2">Learning Components:</h4>
-                            <ul className="text-sm space-y-1 text-muted-foreground">
-                              <li className="flex items-center"><BookOpen className="mr-2 h-3 w-3" /> Interactive Slides</li>
-                              <li className="flex items-center"><Brain className="mr-2 h-3 w-3" /> Concept Flashcards</li>
-                              <li className="flex items-center"><Gamepad2 className="mr-2 h-3 w-3" /> Graph-Based Games</li>
-                              <li className="flex items-center"><MessageSquare className="mr-2 h-3 w-3" /> Reflection Exercises</li>
-                            </ul>
+          {/* Carousel Container */}
+          <div className="relative mb-16">
+            {/* Navigation Buttons */}
+            <div className="flex justify-center gap-4 mb-8">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={scrollPrev}
+                disabled={prevBtnDisabled}
+                className="hover-scale"
+              >
+                <ArrowRight className="h-4 w-4 rotate-180" />
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={scrollNext}
+                disabled={nextBtnDisabled}
+                className="hover-scale"
+              >
+                Next
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Embla Carousel */}
+            <div className="overflow-hidden" ref={emblaRef}>
+              <div className="flex">
+                {sessionData.map((session, index) => (
+                  <div key={session.number} className="flex-[0_0_90%] md:flex-[0_0_45%] lg:flex-[0_0_30%] min-w-0 pl-4">
+                    <GlassCard className="h-full hover-scale transition-all duration-300 border-primary/30">
+                      {/* Large Image Header */}
+                      <div className="relative h-48 overflow-hidden rounded-t-lg">
+                        <img 
+                          src={session.image} 
+                          alt={`Visual representation of ${session.title}`}
+                          className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                        />
+                        <div className="absolute top-4 left-4">
+                          <div className="w-12 h-12 rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center border-2 border-white/50">
+                            <span className="text-lg font-bold text-white">{session.number}</span>
                           </div>
+                        </div>
+                        <div className="absolute top-4 right-4">
+                          <Badge variant="secondary" className="bg-black/50 backdrop-blur-sm text-white border-white/20">
+                            <Clock className="mr-2 h-3 w-3" />
+                            {session.duration}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Card Content */}
+                      <div className="p-6">
+                        <h3 className="text-xl font-bold mb-3 leading-tight">{session.title}</h3>
+                        
+                        <p className="text-sm text-primary font-medium mb-4 italic leading-relaxed">
+                          "{session.theme}"
+                        </p>
+                        
+                        <div className="space-y-4">
                           <div>
-                            <h4 className="font-semibold mb-2">Skills Developed:</h4>
-                            <ul className="text-sm space-y-1 text-muted-foreground">
-                              <li className="flex items-center"><Target className="mr-2 h-3 w-3" /> Pattern Recognition</li>
-                              <li className="flex items-center"><Lightbulb className="mr-2 h-3 w-3" /> Strategic Reasoning</li>
-                              <li className="flex items-center"><TrendingUp className="mr-2 h-3 w-3" /> Metacognition</li>
-                              <li className="flex items-center"><CheckCircle className="mr-2 h-3 w-3" /> Problem Solution</li>
-                            </ul>
+                            <h4 className="font-semibold mb-2 text-sm">Learning Components:</h4>
+                            <div className="grid grid-cols-2 gap-1">
+                              <div className="flex items-center text-xs text-muted-foreground">
+                                <BookOpen className="mr-1 h-3 w-3" /> Slides
+                              </div>
+                              <div className="flex items-center text-xs text-muted-foreground">
+                                <Brain className="mr-1 h-3 w-3" /> Concepts
+                              </div>
+                              <div className="flex items-center text-xs text-muted-foreground">
+                                <Gamepad2 className="mr-1 h-3 w-3" /> Games
+                              </div>
+                              <div className="flex items-center text-xs text-muted-foreground">
+                                <MessageSquare className="mr-1 h-3 w-3" /> Reflection
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <h4 className="font-semibold mb-2 text-sm">Key Skills:</h4>
+                            <div className="flex flex-wrap gap-1">
+                              <Badge variant="outline" className="text-xs py-0 px-2">Pattern Recognition</Badge>
+                              <Badge variant="outline" className="text-xs py-0 px-2">Strategic Reasoning</Badge>
+                            </div>
                           </div>
                         </div>
                       </div>
-                      <div className="flex justify-center md:justify-end">
-                        <div className="w-32 h-24 rounded-lg overflow-hidden border border-primary/20 shadow-lg">
-                          <img 
-                            src={session.image} 
-                            alt={`Visual representation of ${session.title}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    </GlassCard>
                   </div>
-                </div>
-              </GlassCard>
-            ))}
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Session Interface Preview */}
