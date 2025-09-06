@@ -4,7 +4,12 @@ import sessionInterface from "@/assets/lms-session-interface.jpg";
 import lectureInterface from "@/assets/lms-lecture-interface.jpg";
 import analyticsDashboard from "@/assets/lms-analytics-dashboard.jpg";
 import graphEditor from "@/assets/lms-graph-editor.jpg";
-import reflectionInterface from "@/assets/lms-reflection-interface.jpg";
+import reflectionInterface from "@/assets/reflection-interface-enhanced.jpg";
+import session1Image from "@/assets/session-1-graph-theory.jpg";
+import session2Image from "@/assets/session-2-mental-models.jpg";
+import session3Image from "@/assets/session-3-space-between.jpg";
+import session4Image from "@/assets/session-4-decomposition.jpg";
+import session5Image from "@/assets/session-5-mastery.jpg";
 import { Button } from "@/components/ui/button";
 import { PageMeta } from "@/components/UI/PageMeta";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -32,11 +37,41 @@ import {
 } from "lucide-react";
 
 const sessionData = [
-  { number: 1, title: "Introduction to Graph Theory", theme: "Everything is connected", duration: "2.5 hours" },
-  { number: 2, title: "Mental Models & Mapping", theme: "You don't see with your eyes—you see with your models", duration: "2.5 hours" },
-  { number: 3, title: "The Space Between", theme: "The meaning isn't in the nodes—it's in the edges", duration: "2.5 hours" },
-  { number: 4, title: "Research Decomposition", theme: "Even the impossible becomes possible when you break it down right", duration: "2.5 hours" },
-  { number: 5, title: "Advanced Applications & Mastery", theme: "You are now the architect of your thinking", duration: "2.5 hours" }
+  { 
+    number: 1, 
+    title: "Introduction to Graph Theory", 
+    theme: "Everything is connected", 
+    duration: "2.5 hours",
+    image: session1Image
+  },
+  { 
+    number: 2, 
+    title: "Mental Models & Mapping", 
+    theme: "You don't see with your eyes—you see with your models", 
+    duration: "2.5 hours",
+    image: session2Image
+  },
+  { 
+    number: 3, 
+    title: "The Space Between", 
+    theme: "The meaning isn't in the nodes—it's in the edges", 
+    duration: "2.5 hours",
+    image: session3Image
+  },
+  { 
+    number: 4, 
+    title: "Research Decomposition", 
+    theme: "Even the impossible becomes possible when you break it down right", 
+    duration: "2.5 hours",
+    image: session4Image
+  },
+  { 
+    number: 5, 
+    title: "Advanced Applications & Mastery", 
+    theme: "You are now the architect of your thinking", 
+    duration: "2.5 hours",
+    image: session5Image
+  }
 ];
 
 const Index = () => {
@@ -212,24 +247,37 @@ const Index = () => {
                       "{session.theme}"
                     </p>
                     
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="font-semibold mb-2">Learning Components:</h4>
-                        <ul className="text-sm space-y-1 text-muted-foreground">
-                          <li className="flex items-center"><BookOpen className="mr-2 h-3 w-3" /> Interactive Slides</li>
-                          <li className="flex items-center"><Brain className="mr-2 h-3 w-3" /> Concept Flashcards</li>
-                          <li className="flex items-center"><Gamepad2 className="mr-2 h-3 w-3" /> Graph-Based Games</li>
-                          <li className="flex items-center"><MessageSquare className="mr-2 h-3 w-3" /> Reflection Exercises</li>
-                        </ul>
+                    <div className="grid md:grid-cols-3 gap-4 items-center">
+                      <div className="md:col-span-2">
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <h4 className="font-semibold mb-2">Learning Components:</h4>
+                            <ul className="text-sm space-y-1 text-muted-foreground">
+                              <li className="flex items-center"><BookOpen className="mr-2 h-3 w-3" /> Interactive Slides</li>
+                              <li className="flex items-center"><Brain className="mr-2 h-3 w-3" /> Concept Flashcards</li>
+                              <li className="flex items-center"><Gamepad2 className="mr-2 h-3 w-3" /> Graph-Based Games</li>
+                              <li className="flex items-center"><MessageSquare className="mr-2 h-3 w-3" /> Reflection Exercises</li>
+                            </ul>
+                          </div>
+                          <div>
+                            <h4 className="font-semibold mb-2">Skills Developed:</h4>
+                            <ul className="text-sm space-y-1 text-muted-foreground">
+                              <li className="flex items-center"><Target className="mr-2 h-3 w-3" /> Pattern Recognition</li>
+                              <li className="flex items-center"><Lightbulb className="mr-2 h-3 w-3" /> Strategic Reasoning</li>
+                              <li className="flex items-center"><TrendingUp className="mr-2 h-3 w-3" /> Metacognition</li>
+                              <li className="flex items-center"><CheckCircle className="mr-2 h-3 w-3" /> Problem Solution</li>
+                            </ul>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-semibold mb-2">Skills Developed:</h4>
-                        <ul className="text-sm space-y-1 text-muted-foreground">
-                          <li className="flex items-center"><Target className="mr-2 h-3 w-3" /> Pattern Recognition</li>
-                          <li className="flex items-center"><Lightbulb className="mr-2 h-3 w-3" /> Strategic Reasoning</li>
-                          <li className="flex items-center"><TrendingUp className="mr-2 h-3 w-3" /> Metacognition</li>
-                          <li className="flex items-center"><CheckCircle className="mr-2 h-3 w-3" /> Problem Solution</li>
-                        </ul>
+                      <div className="flex justify-center md:justify-end">
+                        <div className="w-32 h-24 rounded-lg overflow-hidden border border-primary/20 shadow-lg">
+                          <img 
+                            src={session.image} 
+                            alt={`Visual representation of ${session.title}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
