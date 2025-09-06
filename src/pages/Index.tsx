@@ -82,12 +82,6 @@ const Index = () => {
             <Phone className="mr-2 h-5 w-5" />
             Book Your Free 15-Minute Discovery Call
           </Button>
-          <Button variant="outline" size="lg" asChild className="hover-scale light-glow text-lg px-8 py-6">
-            <Link to="/dashboard">
-              <PlayCircle className="mr-2 h-5 w-5" />
-              Try Demo
-            </Link>
-          </Button>
         </div>
 
         <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">

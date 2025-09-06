@@ -64,11 +64,6 @@ export const sessions: SessionContent[] = [
         title: "Directed vs undirected graphs, weighted relationships",
         content: `Edges can have direction (A → B) and weight (strength).\n\nWe'll use these to model influence, importance, and flow. Network examples include social media connections, brain neural maps, and decision trees.`,
       },
-      {
-        id: "s1-l3",
-        title: "Why this matters: Graphs mirror how intelligence operates",
-        content: `Intelligence traverses relationships. Seeing edges clearly = clearer thinking.\n\nYou'll map your interests, decisions, and systems to understand how everything in your life connects and influences everything else.`,
-      },
     ],
     reflections: [
       "Where in my life have I been focusing on dots, not the connections?",
@@ -76,18 +71,56 @@ export const sessions: SessionContent[] = [
       "Build dashboard of your inner mental web—what patterns do you notice?",
     ],
   },
-  ...Array.from({ length: 4 }).map((_, i) => ({
-    number: i + 2,
-    theme: "Coming soon",
+  {
+    number: 2,
+    theme: "You don't see with your eyes—you see with your models.",
     lectures: [
-      { id: `s${i + 2}-l1`, title: "Lecture 1", content: "Content forthcoming." },
-      { id: `s${i + 2}-l2`, title: "Lecture 2", content: "Content forthcoming." },
-      { id: `s${i + 2}-l3`, title: "Lecture 3", content: "Content forthcoming." },
+      { id: "s2-l1", title: "What is a mental model? Mental models as lenses", content: "Content forthcoming." },
+      { id: "s2-l2", title: "Building relational mental models using graphs", content: "Content forthcoming." },
     ],
     reflections: [
-      "Reflection A (coming soon)",
-      "Reflection B (coming soon)",
-      "Reflection C (coming soon)",
+      "What model have I unknowingly been using... and is it outdated?",
+      "What tension exists between my goals and my habits?",
+      "What's unresolved that I now have the structure to resolve?",
     ],
-  })),
+  },
+  {
+    number: 3,
+    theme: "The meaning isn't in the nodes—it's in the edges.",
+    lectures: [
+      { id: "s3-l1", title: "Implicit vs explicit relationships", content: "Content forthcoming." },
+      { id: "s3-l2", title: "Gaps in understanding, inference jumps, bridging concepts", content: "Content forthcoming." },
+    ],
+    reflections: [
+      "What tension exists in the space between my goals and my habits?",
+      "Magic often lies in metaphor—what surprising bridges can I build?",
+      "What's unresolved that I now have the structure to resolve?",
+    ],
+  },
+  {
+    number: 4,
+    theme: "Even the impossible becomes possible when you break it down right.",
+    lectures: [
+      { id: "s4-l1", title: "Chunking. Breaking big questions into node-based sub-problems", content: "Content forthcoming." },
+      { id: "s4-l2", title: "How researchers map topics. Hierarchies vs relational maps", content: "Content forthcoming." },
+    ],
+    reflections: [
+      "What if every big problem I feared was just poorly decomposed?",
+      "What insights are buried because I've been thinking too linearly?",
+      "Dashboard shows most connected concepts.",
+    ],
+  },
+  {
+    number: 5,
+    theme: "You are now the architect of your thinking.",
+    lectures: [
+      { id: "s5-l1", title: "Apply to life decisions (career, relationships, purpose)", content: "Content forthcoming." },
+      { id: "s5-l2", title: "Designing workflows using mental models", content: "Content forthcoming." },
+    ],
+    reflections: [
+      "What new possibility just became visible?",
+      "What's misaligned—and fixable?",
+      "What mindset am I taking into the rest of my life?",
+    ],
+  },
 ];
