@@ -117,14 +117,14 @@ const Index = () => {
           pattern recognition, and strategic thinking through our revolutionary graph-based methodology.
         </p>
         
-        <div className="flex flex-col gap-4 mb-12 w-full max-w-md px-4">
+        <div className="flex flex-col gap-4 mb-12 w-full max-w-md px-4 mx-auto">
           <Button 
             size="lg" 
-            className="hover-scale cyber-glow neon-border text-sm sm:text-lg px-4 sm:px-8 py-6 w-full"
+            className="hover-scale cyber-glow neon-border text-base sm:text-lg px-6 sm:px-8 py-6 sm:py-7 w-full text-center"
             onClick={scrollToBooking}
           >
-            <Phone className="mr-2 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-            <span className="text-center">Book Your Free 15-Minute Discovery Call</span>
+            <Phone className="mr-2 sm:mr-3 h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
+            <span className="font-semibold">Book Your Free 15-Minute Discovery Call</span>
           </Button>
         </div>
 
@@ -206,10 +206,10 @@ const Index = () => {
           <div className="text-center px-4">
             <Button 
               size="lg" 
-              className="hover-scale cyber-glow neon-border text-sm sm:text-base px-4 sm:px-6 w-full sm:w-auto max-w-md"
+              className="hover-scale cyber-glow neon-border text-base sm:text-lg px-6 sm:px-8 py-6 sm:py-7 w-full sm:w-auto max-w-lg mx-auto"
               onClick={scrollToBooking}
             >
-              <span className="text-center">Schedule Intro Call - See If This Is Right For Your Family</span>
+              <span className="font-semibold text-center leading-tight">Schedule Intro Call - See If This Is Right For Your Family</span>
             </Button>
           </div>
         </div>
@@ -371,10 +371,10 @@ const Index = () => {
           <div className="text-center px-4">
             <Button 
               size="lg" 
-              className="hover-scale cyber-glow neon-border text-sm sm:text-base px-4 sm:px-6 w-full sm:w-auto max-w-md"
+              className="hover-scale cyber-glow neon-border text-base sm:text-lg px-6 sm:px-8 py-6 sm:py-7 w-full sm:w-auto max-w-md mx-auto"
               onClick={scrollToBooking}
             >
-              Get Started - Book Your Consultation
+              <span className="font-semibold">Get Started - Book Your Consultation</span>
             </Button>
           </div>
         </div>
@@ -868,11 +868,11 @@ const Index = () => {
               
               <Button 
                 size="lg" 
-                className="hover-scale cyber-glow neon-border text-sm sm:text-xl px-6 sm:px-16 py-6 sm:py-8 w-full sm:w-auto max-w-md"
+                className="hover-scale cyber-glow neon-border text-base sm:text-xl px-6 sm:px-16 py-6 sm:py-8 w-full sm:w-auto max-w-lg mx-auto"
                 onClick={() => window.open('https://calendly.com/autonate-ai/15-min-discovery-call', '_blank')}
               >
-                <Phone className="mr-2 sm:mr-3 h-4 w-4 sm:h-6 sm:w-6 flex-shrink-0" />
-                <span>Claim Your Strategy Session Today</span>
+                <Phone className="mr-2 sm:mr-3 h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
+                <span className="font-semibold text-center">Claim Your Strategy Session Today</span>
               </Button>
               
               <p className="text-xs sm:text-sm text-muted-foreground mt-6 px-2">
