@@ -5,6 +5,50 @@ export type SessionContent = {
   reflections: string[];
 };
 
+// Updated session structure for marketing page
+export const sessionOverview = [
+  { 
+    number: 1, 
+    title: "Introduction to Graph Theory", 
+    theme: "Everything is connected",
+    description: "Discover how relationships and connections form the foundation of all logical thinking.",
+    duration: "2.5 hours",
+    keySkills: ["Pattern Recognition", "Visual Thinking", "Connection Mapping", "Systems Awareness"]
+  },
+  { 
+    number: 2, 
+    title: "Mental Models & Mapping", 
+    theme: "You don't see with your eyes—you see with your models",
+    description: "Learn to identify and construct powerful mental frameworks for complex problem-solving.",
+    duration: "2.5 hours",
+    keySkills: ["Model Construction", "Perspective Taking", "Framework Building", "Cognitive Flexibility"]
+  },
+  { 
+    number: 3, 
+    title: "The Space Between", 
+    theme: "The meaning isn't in the nodes—it's in the edges",
+    description: "Master the art of finding insights in relationships and hidden connections.",
+    duration: "2.5 hours",
+    keySkills: ["Relationship Analysis", "Gap Identification", "Inference Making", "Critical Analysis"]
+  },
+  { 
+    number: 4, 
+    title: "Research Decomposition", 
+    theme: "Even the impossible becomes possible when you break it down right",
+    description: "Develop systematic approaches to breaking down complex problems into manageable parts.",
+    duration: "2.5 hours",
+    keySkills: ["Problem Decomposition", "Research Methods", "Systematic Thinking", "Solution Architecture"]
+  },
+  { 
+    number: 5, 
+    title: "Advanced Applications & Mastery", 
+    theme: "You are now the architect of your thinking",
+    description: "Apply all learned skills to real-world scenarios and become a master of strategic thinking.",
+    duration: "2.5 hours",
+    keySkills: ["Strategic Integration", "Advanced Problem Solving", "Decision Architecture", "Thinking Mastery"]
+  }
+];
+
 export const sessions: SessionContent[] = [
   {
     number: 1,
@@ -32,7 +76,7 @@ export const sessions: SessionContent[] = [
       "Build dashboard of your inner mental web—what patterns do you notice?",
     ],
   },
-  ...Array.from({ length: 9 }).map((_, i) => ({
+  ...Array.from({ length: 4 }).map((_, i) => ({
     number: i + 2,
     theme: "Coming soon",
     lectures: [
