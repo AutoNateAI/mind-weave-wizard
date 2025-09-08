@@ -104,9 +104,9 @@ const Index = () => {
 
       {/* Hero Section */}
       <section className="relative container mx-auto px-4 py-24 animate-fade-in">
-        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-12 items-center">
-          {/* Title - Mobile: First, Desktop: Left */}
-          <div className="text-center order-1 lg:order-1">
+        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-12 lg:gap-16 items-start lg:items-center">
+          {/* Left Content - Desktop */}
+          <div className="text-center lg:text-left order-1 lg:order-1">
             <Badge variant="secondary" className="mb-6 cyber-glow">
               <Brain className="mr-2 h-4 w-4" />
               Graph-Based Learning System
@@ -115,9 +115,17 @@ const Index = () => {
             <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight gradient-text mb-6 leading-tight">
               Master Critical Thinking for Software Engineering
             </h1>
+            
+            {/* Subtext - Desktop: stays with title */}
+            <div className="hidden lg:block">
+              <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
+                Advanced graph-based methodology to enhance logical reasoning, pattern recognition, 
+                and strategic thinking for software engineers at all career levels.
+              </p>
+            </div>
           </div>
 
-          {/* Image - Mobile: Second, Desktop: Right */}
+          {/* Right Image - Desktop */}
           <div className="relative order-2 lg:order-2">
             <div className="rounded-2xl overflow-hidden shadow-2xl border border-primary/20">
               <img 
@@ -128,16 +136,16 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Subtext - Mobile: Third, Desktop: Below title */}
-          <div className="text-center order-3 lg:order-1 lg:col-start-1">
+          {/* Mobile Subtext - Shows between image and buttons on mobile */}
+          <div className="text-center order-3 lg:hidden">
             <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-0 leading-relaxed">
               Advanced graph-based methodology to enhance logical reasoning, pattern recognition, 
               and strategic thinking for software engineers at all career levels.
             </p>
           </div>
           
-          {/* Buttons and Features - Mobile: Fourth, Desktop: Below both content and image */}
-          <div className="order-4 lg:order-3 lg:col-span-2 w-full">
+          {/* Buttons and Features - Below everything */}
+          <div className="order-4 lg:col-span-2 w-full">
             <div className="flex flex-col items-center space-y-8">
               <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm sm:max-w-2xl mx-auto">
                 <Button 
