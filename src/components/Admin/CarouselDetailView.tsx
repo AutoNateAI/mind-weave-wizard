@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -45,6 +45,8 @@ interface CarouselDetailViewProps {
 export function CarouselDetailView({ carousel, onBack }: CarouselDetailViewProps) {
   const [viewMode, setViewMode] = useState<'gallery' | 'single'>('gallery');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -79,6 +81,33 @@ export function CarouselDetailView({ carousel, onBack }: CarouselDetailViewProps
   };
 
   const validImages = carousel.generated_images.filter(img => img);
+
+  // Touch handlers for swipe navigation
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (viewMode !== 'single' || validImages.length <= 1) return;
+    
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartRef.current || viewMode !== 'single' || validImages.length <= 1) return;
+    
+    const touch = e.changedTouches[0];
+    const deltaX = touch.clientX - touchStartRef.current.x;
+    const deltaY = touch.clientY - touchStartRef.current.y;
+    
+    // Only handle horizontal swipes (ignore vertical scrolling)
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+      if (deltaX > 0) {
+        prevImage(); // Swipe right = previous image
+      } else {
+        nextImage(); // Swipe left = next image
+      }
+    }
+    
+    touchStartRef.current = null;
+  };
 
   return (
     <div className="space-y-6">
@@ -293,14 +322,20 @@ export function CarouselDetailView({ carousel, onBack }: CarouselDetailViewProps
                         </Button>
                       </div>
                     </div>
-                    <div className="aspect-square rounded overflow-hidden bg-muted">
+                    <div 
+                      ref={imageContainerRef}
+                      className="aspect-square rounded overflow-hidden bg-muted touch-pan-x"
+                      onTouchStart={handleTouchStart}
+                      onTouchEnd={handleTouchEnd}
+                    >
                       <img
                         src={validImages[currentImageIndex]}
                         alt={`Carousel image ${currentImageIndex + 1}`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover select-none"
                         onError={(e) => {
                           e.currentTarget.style.display = 'none';
                         }}
+                        draggable={false}
                       />
                     </div>
                     {carousel.image_prompts && carousel.image_prompts[currentImageIndex] && (
