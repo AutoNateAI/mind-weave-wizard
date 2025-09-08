@@ -1,0 +1,262 @@
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { PublicGameFlowCanvas } from '@/components/Games/PublicGameFlowCanvas';
+import { Brain, Clock, Target, ArrowRight, Cpu, Code, Cloud } from 'lucide-react';
+import { PageMeta } from '@/components/UI/PageMeta';
+
+interface GameTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  template_data: any;
+  mechanics: any;
+  heuristic_targets: any;
+}
+
+export default function MindGames() {
+  const [gameTemplates, setGameTemplates] = useState<GameTemplate[]>([]);
+  const [selectedGame, setSelectedGame] = useState<GameTemplate | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadPublicGameTemplates();
+  }, []);
+
+  const loadPublicGameTemplates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('game_templates')
+        .select('*')
+        .eq('category', 'ai-engineering')
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setGameTemplates(data || []);
+    } catch (error) {
+      console.error('Error loading public games:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getGameIcon = (gameName: string) => {
+    if (gameName.includes('Agent')) return Cpu;
+    if (gameName.includes('Prompt')) return Code;
+    if (gameName.includes('Cloud')) return Cloud;
+    return Brain;
+  };
+
+  const getGameColor = (gameName: string) => {
+    if (gameName.includes('Agent')) return 'from-blue-500 to-cyan-500';
+    if (gameName.includes('Prompt')) return 'from-purple-500 to-pink-500';
+    if (gameName.includes('Cloud')) return 'from-green-500 to-emerald-500';
+    return 'from-primary to-secondary';
+  };
+
+  const getDifficultyLevel = (gameName: string) => {
+    if (gameName.includes('Agent')) return { level: 'Advanced', color: 'bg-red-500' };
+    if (gameName.includes('Prompt')) return { level: 'Intermediate', color: 'bg-yellow-500' };
+    if (gameName.includes('Cloud')) return { level: 'Expert', color: 'bg-purple-500' };
+    return { level: 'Beginner', color: 'bg-green-500' };
+  };
+
+  const getEstimatedTime = (gameName: string) => {
+    if (gameName.includes('Agent')) return '15-20 min';
+    if (gameName.includes('Prompt')) return '12-15 min';
+    if (gameName.includes('Cloud')) return '18-25 min';
+    return '10-15 min';
+  };
+
+  if (selectedGame) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background/90">
+        <PageMeta 
+          title={`${selectedGame.name} - AI Mind Games | AutoNate`}
+          description={`Challenge your critical thinking with ${selectedGame.name}. Navigate complex AI engineering scenarios and test your decision-making skills.`}
+        />
+        
+        <div className="container mx-auto px-4 py-6">
+          <div className="mb-6 flex items-center justify-between">
+            <Button 
+              variant="outline" 
+              onClick={() => setSelectedGame(null)}
+              className="hover:bg-muted/50 transition-colors"
+            >
+              ← Back to Games
+            </Button>
+            <h1 className="text-2xl font-bold text-primary">{selectedGame.name}</h1>
+          </div>
+
+          <div className="h-[calc(100vh-180px)] rounded-xl border bg-card shadow-lg overflow-hidden">
+            <PublicGameFlowCanvas
+              gameTemplate={selectedGame}
+              onComplete={(analytics, leadData) => {
+                console.log('Game completed:', analytics, leadData);
+                // Lead capture handled in PublicGameFlowCanvas
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background/90">
+      <PageMeta 
+        title="AI Mind Games - Test Your Critical Thinking | AutoNate"
+        description="Challenge yourself with AI engineering scenarios. Test your critical thinking skills through interactive graph-based games covering AI agents, prompt engineering, and cloud infrastructure."
+      />
+      
+      {/* Header */}
+      <div className="border-b bg-card/50 backdrop-blur-sm">
+        <div className="container mx-auto px-4">
+          <div className="flex h-16 items-center justify-between">
+            <div className="flex items-center gap-8">
+              <Link to="/" className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                  <Brain className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  AutoNate
+                </span>
+              </Link>
+            </div>
+            <div className="flex items-center gap-6">
+              <Link 
+                to="/about" 
+                className="text-sm font-medium hover:text-primary transition-colors"
+              >
+                About AutoNate
+              </Link>
+              <Link 
+                to="/auth" 
+                className="text-sm font-medium hover:text-primary transition-colors"
+              >
+                Sign In
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Hero Section */}
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary font-medium text-sm mb-6">
+            <Brain className="w-4 h-4" />
+            AI Engineering Mind Games
+          </div>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-secondary bg-clip-text text-transparent leading-tight">
+            Test Your AI Engineering
+            <br />
+            Critical Thinking
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+            Navigate complex AI scenarios through interactive graph-based challenges. 
+            Build agentic systems, optimize prompts, and scale infrastructure under pressure.
+          </p>
+        </div>
+
+        {/* Games Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+          {loading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="h-96 animate-pulse">
+                <div className="h-full bg-muted/50 rounded-lg"></div>
+              </Card>
+            ))
+          ) : (
+            gameTemplates.map((game) => {
+              const IconComponent = getGameIcon(game.name);
+              const gradientClass = getGameColor(game.name);
+              const difficulty = getDifficultyLevel(game.name);
+              const estimatedTime = getEstimatedTime(game.name);
+
+              return (
+                <Card 
+                  key={game.id} 
+                  className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-0 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm"
+                >
+                  <CardHeader className="pb-4">
+                    <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${gradientClass} flex items-center justify-center mb-4 shadow-lg`}>
+                      <IconComponent className="w-8 h-8 text-white" />
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="secondary" className={`${difficulty.color} text-white border-0`}>
+                        {difficulty.level}
+                      </Badge>
+                      <div className="flex items-center gap-1 text-muted-foreground text-sm">
+                        <Clock className="w-3 h-3" />
+                        {estimatedTime}
+                      </div>
+                    </div>
+                    <CardTitle className="text-xl font-bold leading-tight group-hover:text-primary transition-colors">
+                      {game.name}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <p className="text-muted-foreground mb-6 leading-relaxed">
+                      {game.description}
+                    </p>
+                    <div className="mb-6">
+                      <div className="text-sm font-medium mb-2 text-foreground">Critical Thinking Skills:</div>
+                      <div className="flex flex-wrap gap-1">
+                        {game.heuristic_targets.slice(0, 3).map((target, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {target}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={() => setSelectedGame(game)}
+                      className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300"
+                      size="lg"
+                    >
+                      Start Challenge
+                      <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
+        </div>
+
+        {/* CTA Section */}
+        <div className="text-center mt-20">
+          <Card className="max-w-4xl mx-auto bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5 border-primary/20">
+            <CardContent className="p-12">
+              <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Ready for the Full Experience?
+              </h2>
+              <p className="text-lg text-muted-foreground mb-8">
+                Join AutoNate's complete Thinking Wizard course with 10 sessions, 30 interactive games, 
+                and personalized AI coaching to master critical thinking for software engineering.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button asChild size="lg" className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90">
+                  <Link to="/auth">
+                    Start Free Trial
+                    <Target className="w-4 h-4 ml-2" />
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="lg">
+                  <Link to="/about">
+                    Learn More
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1113,6 +1113,45 @@ export type Database = {
         }
         Relationships: []
       }
+      public_game_leads: {
+        Row: {
+          analytics_data: Json | null
+          completion_score: number | null
+          completion_time_seconds: number | null
+          created_at: string
+          email: string
+          game_template_id: string
+          game_title: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          analytics_data?: Json | null
+          completion_score?: number | null
+          completion_time_seconds?: number | null
+          created_at?: string
+          email: string
+          game_template_id: string
+          game_title: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          analytics_data?: Json | null
+          completion_score?: number | null
+          completion_time_seconds?: number | null
+          created_at?: string
+          email?: string
+          game_template_id?: string
+          game_title?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reddit_analytics: {
         Row: {
           additional_data: Json | null
