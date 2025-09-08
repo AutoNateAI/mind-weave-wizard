@@ -5,8 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { PublicGameFlowCanvas } from '@/components/Games/PublicGameFlowCanvas';
-import { Brain, Clock, Target, ArrowRight, Cpu, Code, Cloud } from 'lucide-react';
+import { Brain, Clock, ArrowRight, Cpu, Code, Cloud } from 'lucide-react';
 import { PageMeta } from '@/components/UI/PageMeta';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { useScrollToTop } from '@/hooks/useScrollToTop';
 
 interface GameTemplate {
   id: string;
@@ -22,6 +24,8 @@ export default function MindGames() {
   const [gameTemplates, setGameTemplates] = useState<GameTemplate[]>([]);
   const [selectedGame, setSelectedGame] = useState<GameTemplate | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useScrollToTop();
 
   useEffect(() => {
     loadPublicGameTemplates();
@@ -113,20 +117,13 @@ export default function MindGames() {
         description="Challenge yourself with AI engineering scenarios. Test your critical thinking skills through interactive graph-based games covering AI agents, prompt engineering, and cloud infrastructure."
       />
       
-      {/* Header */}
-      <div className="border-b bg-card/50 backdrop-blur-sm">
+      {/* Navigation Bar */}
+      <nav className="absolute top-0 left-0 right-0 z-10 bg-background/80 backdrop-blur-sm border-b border-primary/20">
         <div className="container mx-auto px-4">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-8">
-              <Link to="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                  <Brain className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                  AutoNate
-                </span>
-              </Link>
-            </div>
+          <div className="flex items-center justify-between h-16">
+            <Link to="/" className="text-xl font-bold gradient-text">
+              AutoNateAI
+            </Link>
             <div className="flex items-center gap-6">
               <Link 
                 to="/about" 
@@ -138,21 +135,22 @@ export default function MindGames() {
                 to="/auth" 
                 className="text-sm font-medium hover:text-primary transition-colors"
               >
-                Sign In
+                Login
               </Link>
+              <ThemeToggle />
             </div>
           </div>
         </div>
-      </div>
+      </nav>
 
       {/* Hero Section */}
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 pt-24 pb-16">
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary font-medium text-sm mb-6">
             <Brain className="w-4 h-4" />
             AI Engineering Mind Games
           </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-secondary bg-clip-text text-transparent leading-tight">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-foreground leading-tight">
             Test Your AI Engineering
             <br />
             Critical Thinking
@@ -181,7 +179,7 @@ export default function MindGames() {
               return (
                 <Card 
                   key={game.id} 
-                  className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-0 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm"
+                  className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-0 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm h-full flex flex-col"
                 >
                   <CardHeader className="pb-4">
                     <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${gradientClass} flex items-center justify-center mb-4 shadow-lg`}>
@@ -200,8 +198,8 @@ export default function MindGames() {
                       {game.name}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0">
-                    <p className="text-muted-foreground mb-6 leading-relaxed">
+                  <CardContent className="pt-0 flex-1 flex flex-col">
+                    <p className="text-muted-foreground mb-6 leading-relaxed flex-1">
                       {game.description}
                     </p>
                     <div className="mb-6">
@@ -216,7 +214,7 @@ export default function MindGames() {
                     </div>
                     <Button 
                       onClick={() => setSelectedGame(game)}
-                      className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300"
+                      className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 mt-auto"
                       size="lg"
                     >
                       Start Challenge
@@ -233,20 +231,14 @@ export default function MindGames() {
         <div className="text-center mt-20">
           <Card className="max-w-4xl mx-auto bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5 border-primary/20">
             <CardContent className="p-12">
-              <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              <h2 className="text-3xl font-bold mb-4 text-foreground">
                 Ready for the Full Experience?
               </h2>
               <p className="text-lg text-muted-foreground mb-8">
                 Join AutoNate's complete Thinking Wizard course with 10 sessions, 30 interactive games, 
                 and personalized AI coaching to master critical thinking for software engineering.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button asChild size="lg" className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90">
-                  <Link to="/auth">
-                    Start Free Trial
-                    <Target className="w-4 h-4 ml-2" />
-                  </Link>
-                </Button>
+              <div className="flex justify-center">
                 <Button asChild variant="outline" size="lg">
                   <Link to="/about">
                     Learn More
