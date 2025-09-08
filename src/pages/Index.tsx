@@ -104,9 +104,9 @@ const Index = () => {
 
       {/* Hero Section */}
       <section className="relative container mx-auto px-4 py-24 animate-fade-in">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left Content */}
-          <div className="text-center lg:text-left">
+        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-12 items-center">
+          {/* Content - Mobile: Title first */}
+          <div className="text-center lg:text-left order-1 lg:order-1">
             <Badge variant="secondary" className="mb-6 cyber-glow">
               <Brain className="mr-2 h-4 w-4" />
               Graph-Based Learning System
@@ -116,55 +116,60 @@ const Index = () => {
               Master Critical Thinking for Software Engineering
             </h1>
             
-            <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
+            <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-8 lg:mb-0 leading-relaxed">
               Advanced graph-based methodology to enhance logical reasoning, pattern recognition, 
               and strategic thinking for software engineers at all career levels.
             </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 mb-12 w-full max-w-sm sm:max-w-2xl lg:max-w-none mx-auto lg:mx-0">
-              <Button 
-                size="lg" 
-                className="hover-scale cyber-glow neon-border text-sm sm:text-lg px-4 sm:px-8 py-5 sm:py-7 w-full flex items-center justify-center gap-2 sm:gap-3"
-                onClick={scrollToBooking}
-              >
-                <Phone className="h-4 w-4 sm:h-6 sm:w-6 flex-shrink-0" />
-                <span className="font-semibold leading-tight">Book Your Free 15-Minute Discovery Call</span>
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline"
-                className="hover-scale text-sm sm:text-lg px-4 sm:px-8 py-5 sm:py-7 w-full flex items-center justify-center gap-2 sm:gap-3"
-                onClick={() => window.location.href = '/auth'}
-              >
-                <UserCheck className="h-4 w-4 sm:h-6 sm:w-6 flex-shrink-0" />
-                <span className="font-semibold leading-tight">Login / Sign Up</span>
-              </Button>
-            </div>
-
-            <div className="flex flex-wrap justify-center lg:justify-start gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
-              <div className="flex items-center">
-                <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
-                <span>All Experience Levels</span>
-              </div>
-              <div className="flex items-center">
-                <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
-                <span>Self-Paced Learning</span>
-              </div>
-              <div className="flex items-center">
-                <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
-                <span>Advanced Analytics Included</span>
-              </div>
-            </div>
           </div>
 
-          {/* Right Image */}
-          <div className="relative">
+          {/* Image - Mobile: After title/subtext, Desktop: Right side */}
+          <div className="relative order-2 lg:order-2">
             <div className="rounded-2xl overflow-hidden shadow-2xl border border-primary/20">
               <img 
                 src={heroEngineer} 
                 alt="Software engineer working with AI and graph algorithms" 
                 className="w-full h-auto"
               />
+            </div>
+          </div>
+          
+          {/* Buttons and Features - Mobile: Last, Desktop: Below both content and image */}
+          <div className="order-3 lg:order-3 lg:col-span-2 w-full">
+            <div className="flex flex-col items-center space-y-8">
+              <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm sm:max-w-2xl mx-auto">
+                <Button 
+                  size="lg" 
+                  className="hover-scale cyber-glow neon-border text-sm sm:text-lg px-4 sm:px-8 py-5 sm:py-7 w-full flex items-center justify-center gap-2 sm:gap-3"
+                  onClick={scrollToBooking}
+                >
+                  <Phone className="h-4 w-4 sm:h-6 sm:w-6 flex-shrink-0" />
+                  <span className="font-semibold leading-tight">Book Your Free 15-Minute Discovery Call</span>
+                </Button>
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  className="hover-scale text-sm sm:text-lg px-4 sm:px-8 py-5 sm:py-7 w-full flex items-center justify-center gap-2 sm:gap-3"
+                  onClick={() => window.location.href = '/auth'}
+                >
+                  <UserCheck className="h-4 w-4 sm:h-6 sm:w-6 flex-shrink-0" />
+                  <span className="font-semibold leading-tight">Login / Sign Up</span>
+                </Button>
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
+                <div className="flex items-center">
+                  <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                  <span>All Experience Levels</span>
+                </div>
+                <div className="flex items-center">
+                  <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                  <span>Self-Paced Learning</span>
+                </div>
+                <div className="flex items-center">
+                  <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                  <span>Advanced Analytics Included</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -552,7 +557,7 @@ const Index = () => {
             >
               <span className="font-semibold text-center leading-tight">
                 <span className="sm:hidden">Reserve Your Spot</span>
-                <span className="hidden sm:inline">Reserve Your Family's Spot - Limited Availability</span>
+                <span className="hidden sm:inline">Reserve Your Professional Development Spot - Limited Availability</span>
               </span>
             </Button>
           </div>
@@ -564,11 +569,11 @@ const Index = () => {
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold gradient-text mb-4">
-              Transformational Benefits for Your Family
+              Transformational Benefits for Your Career
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Watch your child develop advanced reasoning skills while you gain insights 
-              into their cognitive development with our professional analytics.
+              Develop advanced reasoning skills and gain insights into your thinking patterns 
+              with our professional analytics and career-focused curriculum.
             </p>
           </div>
 
@@ -576,28 +581,28 @@ const Index = () => {
             <GlassCard className="p-8">
               <div className="flex items-center mb-6">
                 <Users className="h-8 w-8 text-primary mr-3" />
-                <h3 className="text-2xl font-bold">For Parents</h3>
+                <h3 className="text-2xl font-bold">For Engineering Teams</h3>
               </div>
               <ul className="space-y-4">
                 <li className="flex items-start">
                   <CheckCircle className="mr-3 h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span>Watch your child develop advanced reasoning skills through our visual analytics</span>
+                  <span>Develop advanced reasoning skills through visual analytics and team collaboration</span>
                 </li>
                 <li className="flex items-start">
                   <CheckCircle className="mr-3 h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span>Get detailed insights into their cognitive development and thinking patterns</span>
+                  <span>Get detailed insights into team thinking patterns and problem-solving approaches</span>
                 </li>
                 <li className="flex items-start">
                   <CheckCircle className="mr-3 h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span>Learn alongside them or have them work independently with confidence</span>
+                  <span>Learn collaboratively or work independently with structured guidance</span>
                 </li>
                 <li className="flex items-start">
                   <CheckCircle className="mr-3 h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span>Receive professional-grade reports on their critical thinking progress</span>
+                  <span>Receive professional-grade reports on critical thinking progress and team dynamics</span>
                 </li>
                 <li className="flex items-start">
                   <CheckCircle className="mr-3 h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span>Build critical thinking skills that benefit the whole family</span>
+                  <span>Build critical thinking skills that enhance engineering decision-making</span>
                 </li>
               </ul>
             </GlassCard>
@@ -605,28 +610,28 @@ const Index = () => {
             <GlassCard className="p-8">
               <div className="flex items-center mb-6">
                 <Brain className="h-8 w-8 text-primary mr-3" />
-                <h3 className="text-2xl font-bold">For Children</h3>
+                <h3 className="text-2xl font-bold">For Individual Engineers</h3>
               </div>
               <ul className="space-y-4">
                 <li className="flex items-start">
                   <Star className="mr-3 h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span>Make abstract thinking visual and engaging through interactive games</span>
+                  <span>Make abstract thinking visual and engaging through interactive simulations</span>
                 </li>
                 <li className="flex items-start">
                   <Star className="mr-3 h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span>Build real cognitive skills while having fun with graph-based learning</span>
+                  <span>Build real cognitive skills while applying graph-based learning to engineering challenges</span>
                 </li>
                 <li className="flex items-start">
                   <Star className="mr-3 h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span>See immediate feedback on their reasoning and problem-solving</span>
+                  <span>Get immediate feedback on reasoning and problem-solving approaches</span>
                 </li>
                 <li className="flex items-start">
                   <Star className="mr-3 h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span>Develop confidence in tackling complex problems step by step</span>
+                  <span>Develop confidence in tackling complex software architecture challenges</span>
                 </li>
                 <li className="flex items-start">
                   <Star className="mr-3 h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span>Gain skills that dramatically improve academic performance</span>
+                  <span>Gain skills that dramatically improve career advancement and technical leadership</span>
                 </li>
               </ul>
             </GlassCard>
@@ -722,11 +727,11 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold gradient-text mb-4 px-2">
-              Investment in Your Child's Future
+              Investment in Your Professional Development
             </h2>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto px-4">
               Professional-grade critical thinking development with flexible payment options 
-              and group discounts available.
+              and team discounts available for engineering organizations.
             </p>
           </div>
 
@@ -785,7 +790,7 @@ const Index = () => {
                     </li>
                     <li className="flex items-center">
                       <Target className="mr-3 h-5 w-5 text-primary" />
-                      <span><strong>Ages 8-18+</strong> Welcome</span>
+                      <span><strong>All Career Levels</strong> Welcome</span>
                     </li>
                   </ul>
                 </div>
