@@ -163,7 +163,7 @@ const Index = () => {
                   onClick={() => window.location.href = '/auth'}
                 >
                   <UserCheck className="h-4 w-4 sm:h-6 sm:w-6 flex-shrink-0" />
-                  <span className="font-semibold leading-tight">Login / Sign Up</span>
+                  <span className="font-semibold leading-tight">Login</span>
                 </Button>
               </div>
 
