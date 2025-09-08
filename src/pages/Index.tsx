@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import hero from "@/assets/hero-cyberwizard.jpg";
+import heroEngineer from "@/assets/hero-software-engineer.jpg";
 import sessionInterface from "@/assets/lms-session-interface.jpg";
 import lectureInterface from "@/assets/lms-lecture-interface.jpg";
 import analyticsDashboard from "@/assets/lms-analytics-dashboard.jpg";
@@ -86,8 +87,8 @@ const Index = () => {
   return (
     <main className="min-h-screen relative overflow-x-hidden">
       <PageMeta 
-        title="Transform Your Child's Critical Thinking Skills | Thinking Wizard" 
-        description="5 comprehensive sessions designed for children and families to master logical reasoning, pattern recognition, and strategic thinking through graph-based learning."
+        title="Master Critical Thinking Skills for Software Engineers | Thinking Wizard" 
+        description="Advanced graph-based methodology to enhance logical reasoning, pattern recognition, and strategic thinking for software engineers at all career levels."
       />
       
       {/* Hero Background */}
@@ -102,53 +103,69 @@ const Index = () => {
       </div>
 
       {/* Hero Section */}
-      <section className="relative container mx-auto px-4 py-24 flex flex-col items-center text-center animate-fade-in">
-        <Badge variant="secondary" className="mb-6 cyber-glow">
-          <Brain className="mr-2 h-4 w-4" />
-          Graph-Based Learning System
-        </Badge>
-        
-        <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight gradient-text mb-6 px-2">
-          Transform Your Child's Critical Thinking Skills
-        </h1>
-        
-        <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-4xl mb-8 leading-relaxed px-4">
-          5 comprehensive sessions designed for children and families to master logical reasoning, 
-          pattern recognition, and strategic thinking through our revolutionary graph-based methodology.
-        </p>
-        
-        <div className="flex flex-col sm:flex-row gap-4 mb-12 w-full max-w-sm sm:max-w-2xl px-4 mx-auto">
-          <Button 
-            size="lg" 
-            className="hover-scale cyber-glow neon-border text-sm sm:text-lg px-4 sm:px-8 py-5 sm:py-7 w-full flex items-center justify-center gap-2 sm:gap-3"
-            onClick={scrollToBooking}
-          >
-            <Phone className="h-4 w-4 sm:h-6 sm:w-6 flex-shrink-0" />
-            <span className="font-semibold leading-tight">Book Your Free 15-Minute Discovery Call</span>
-          </Button>
-          <Button 
-            size="lg" 
-            variant="outline"
-            className="hover-scale text-sm sm:text-lg px-4 sm:px-8 py-5 sm:py-7 w-full flex items-center justify-center gap-2 sm:gap-3"
-            onClick={() => window.location.href = '/auth'}
-          >
-            <UserCheck className="h-4 w-4 sm:h-6 sm:w-6 flex-shrink-0" />
-            <span className="font-semibold leading-tight">Login / Sign Up</span>
-          </Button>
-        </div>
+      <section className="relative container mx-auto px-4 py-24 animate-fade-in">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* Left Content */}
+          <div className="text-center lg:text-left">
+            <Badge variant="secondary" className="mb-6 cyber-glow">
+              <Brain className="mr-2 h-4 w-4" />
+              Graph-Based Learning System
+            </Badge>
+            
+            <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight gradient-text mb-6">
+              Master Critical Thinking for Software Engineering
+            </h1>
+            
+            <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
+              Advanced graph-based methodology to enhance logical reasoning, pattern recognition, 
+              and strategic thinking for software engineers at all career levels.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 mb-12 w-full max-w-sm sm:max-w-2xl lg:max-w-none mx-auto lg:mx-0">
+              <Button 
+                size="lg" 
+                className="hover-scale cyber-glow neon-border text-sm sm:text-lg px-4 sm:px-8 py-5 sm:py-7 w-full flex items-center justify-center gap-2 sm:gap-3"
+                onClick={scrollToBooking}
+              >
+                <Phone className="h-4 w-4 sm:h-6 sm:w-6 flex-shrink-0" />
+                <span className="font-semibold leading-tight">Book Your Free 15-Minute Discovery Call</span>
+              </Button>
+              <Button 
+                size="lg" 
+                variant="outline"
+                className="hover-scale text-sm sm:text-lg px-4 sm:px-8 py-5 sm:py-7 w-full flex items-center justify-center gap-2 sm:gap-3"
+                onClick={() => window.location.href = '/auth'}
+              >
+                <UserCheck className="h-4 w-4 sm:h-6 sm:w-6 flex-shrink-0" />
+                <span className="font-semibold leading-tight">Login / Sign Up</span>
+              </Button>
+            </div>
 
-        <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground px-4">
-          <div className="flex items-center">
-            <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
-            <span>Ages 8-18+ Welcome</span>
+            <div className="flex flex-wrap justify-center lg:justify-start gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
+              <div className="flex items-center">
+                <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                <span>All Experience Levels</span>
+              </div>
+              <div className="flex items-center">
+                <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                <span>Self-Paced Learning</span>
+              </div>
+              <div className="flex items-center">
+                <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                <span>Advanced Analytics Included</span>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center">
-            <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
-            <span>Parent-Child Learning</span>
-          </div>
-          <div className="flex items-center">
-            <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
-            <span>Advanced Analytics Included</span>
+
+          {/* Right Image */}
+          <div className="relative">
+            <div className="rounded-2xl overflow-hidden shadow-2xl border border-primary/20">
+              <img 
+                src={heroEngineer} 
+                alt="Software engineer working with AI and graph algorithms" 
+                className="w-full h-auto"
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -158,10 +175,10 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold gradient-text mb-4 px-2">
-              Flexible Learning That Fits Your Family
+              Flexible Learning That Fits Your Career
             </h2>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto px-4">
-              Choose the learning format that works best - solo sessions, group learning, or parent-child exploration.
+              Choose the learning format that works best - individual study, team training, or mentorship programs.
             </p>
           </div>
 
@@ -170,14 +187,14 @@ const Index = () => {
               <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-primary/20 flex items-center justify-center">
                 <UserCheck className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold mb-4">Solo Sessions</h3>
+              <h3 className="text-2xl font-bold mb-4">Individual Learning</h3>
               <p className="text-muted-foreground mb-6">
-                One-on-one focused learning tailored to your child's pace and learning style.
+                Self-paced focused learning tailored to your career level and learning style.
               </p>
               <ul className="text-sm space-y-2 text-left">
-                <li className="flex items-center"><CheckCircle className="mr-2 h-4 w-4 text-primary" /> Personalized attention</li>
+                <li className="flex items-center"><CheckCircle className="mr-2 h-4 w-4 text-primary" /> Personalized curriculum</li>
                 <li className="flex items-center"><CheckCircle className="mr-2 h-4 w-4 text-primary" /> Custom pacing</li>
-                <li className="flex items-center"><CheckCircle className="mr-2 h-4 w-4 text-primary" /> Individual analytics</li>
+                <li className="flex items-center"><CheckCircle className="mr-2 h-4 w-4 text-primary" /> Individual progress analytics</li>
               </ul>
             </GlassCard>
 
@@ -185,14 +202,14 @@ const Index = () => {
               <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-primary/20 flex items-center justify-center">
                 <Users className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold mb-4">Group Learning</h3>
+              <h3 className="text-2xl font-bold mb-4">Team Training</h3>
               <p className="text-muted-foreground mb-6">
-                Siblings, friends, or homeschool groups can explore concepts together and learn collaboratively.
+                Collaborative learning for development teams, engineering cohorts, or peer groups.
               </p>
               <ul className="text-sm space-y-2 text-left">
-                <li className="flex items-center"><CheckCircle className="mr-2 h-4 w-4 text-primary" /> Collaborative thinking</li>
-                <li className="flex items-center"><CheckCircle className="mr-2 h-4 w-4 text-primary" /> Peer learning</li>
-                <li className="flex items-center"><CheckCircle className="mr-2 h-4 w-4 text-primary" /> Group discounts available</li>
+                <li className="flex items-center"><CheckCircle className="mr-2 h-4 w-4 text-primary" /> Collaborative problem solving</li>
+                <li className="flex items-center"><CheckCircle className="mr-2 h-4 w-4 text-primary" /> Peer learning & discussion</li>
+                <li className="flex items-center"><CheckCircle className="mr-2 h-4 w-4 text-primary" /> Team discounts available</li>
               </ul>
             </GlassCard>
 
@@ -200,14 +217,14 @@ const Index = () => {
               <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-primary/20 flex items-center justify-center">
                 <Brain className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold mb-4">Parent-Child</h3>
+              <h3 className="text-2xl font-bold mb-4">Mentorship Program</h3>
               <p className="text-muted-foreground mb-6">
-                Interactive sessions where parents and children explore critical thinking concepts together.
+                Guided learning with experienced engineers and critical thinking mentors.
               </p>
               <ul className="text-sm space-y-2 text-left">
-                <li className="flex items-center"><CheckCircle className="mr-2 h-4 w-4 text-primary" /> Family bonding</li>
-                <li className="flex items-center"><CheckCircle className="mr-2 h-4 w-4 text-primary" /> Shared learning experience</li>
-                <li className="flex items-center"><CheckCircle className="mr-2 h-4 w-4 text-primary" /> Parents learn too</li>
+                <li className="flex items-center"><CheckCircle className="mr-2 h-4 w-4 text-primary" /> Expert guidance</li>
+                <li className="flex items-center"><CheckCircle className="mr-2 h-4 w-4 text-primary" /> Career-focused learning</li>
+                <li className="flex items-center"><CheckCircle className="mr-2 h-4 w-4 text-primary" /> Real-world applications</li>
               </ul>
             </GlassCard>
           </div>
@@ -220,7 +237,7 @@ const Index = () => {
             >
               <span className="font-semibold text-center leading-tight text-sm sm:text-lg">
                 <span className="sm:hidden">Schedule Your Call</span>
-                <span className="hidden sm:inline">Schedule Intro Call - See If This Is Right For Your Family</span>
+                <span className="hidden sm:inline">Schedule Intro Call - See If This Is Right For Your Career</span>
               </span>
             </Button>
           </div>
@@ -232,11 +249,11 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold gradient-text mb-4 px-2">
-              5-Session Critical Thinking Journey
+              10-Session Critical Thinking Mastery
             </h2>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto px-4">
-              Each 2.5-hour session builds upon the previous, creating a comprehensive transformation 
-              in how your child approaches complex problems and logical reasoning.
+              Each comprehensive session builds upon the previous, creating a transformation 
+              in how you approach complex engineering problems and strategic thinking.
             </p>
           </div>
 
