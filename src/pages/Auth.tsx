@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/components/ui/use-toast";
 import { PageMeta } from "@/components/UI/PageMeta";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useScrollToTop } from "@/hooks/useScrollToTop";
 
 const schema = z.object({
   email: z.string().email(),
@@ -18,6 +20,8 @@ const schema = z.object({
 type Values = z.infer<typeof schema>;
 
 export default function Auth() {
+  useScrollToTop();
+  
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -46,46 +50,83 @@ export default function Auth() {
   };
 
   return (
-    <main className="container py-10 max-w-md">
+    <main className="min-h-screen relative">
       <PageMeta title="Thinking Wizard — Login" description="Login to your Thinking Wizard account" />
-      <header className="mb-6">
-        <h1 className="text-3xl font-bold">Login</h1>
-        <p className="text-muted-foreground text-sm">Email and password only. No sign up available.</p>
-      </header>
-
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField name="email" control={form.control} render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input type="email" placeholder="you@example.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          <FormField name="password" control={form.control} render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          <Button type="submit" className="w-full">Login</Button>
-          <p className="text-xs text-muted-foreground text-center">
-            Need access? Contact the administrator.
-          </p>
-          <div className="text-center">
-            <Button variant="secondary" asChild>
-              <Link to="/">Back to Home</Link>
-            </Button>
+      
+      {/* Navigation Bar */}
+      <nav className="relative z-10 bg-background/80 backdrop-blur-sm border-b border-primary/20">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            <Link to="/" className="text-xl font-bold gradient-text">
+              AutoNateAI
+            </Link>
+            <div className="flex items-center gap-6">
+              <Link 
+                to="/" 
+                className="text-sm font-medium hover:text-primary transition-colors"
+              >
+                Home
+              </Link>
+              <Link 
+                to="/mind-games" 
+                className="text-sm font-medium hover:text-primary transition-colors"
+              >
+                Mind Games
+              </Link>
+              <Link 
+                to="/about" 
+                className="text-sm font-medium hover:text-primary transition-colors"
+              >
+                About AutoNate
+              </Link>
+              <Link 
+                to="/auth" 
+                className="text-sm font-medium hover:text-primary transition-colors border-b-2 border-primary"
+              >
+                Login
+              </Link>
+              <ThemeToggle />
+            </div>
           </div>
-        </form>
-      </Form>
+        </div>
+      </nav>
+
+      {/* Login Form */}
+      <div className="container py-20 max-w-md mx-auto">
+        <header className="mb-6 text-center">
+          <h1 className="text-3xl font-bold">Login</h1>
+          <p className="text-muted-foreground text-sm">Email and password only. No sign up available.</p>
+        </header>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField name="email" control={form.control} render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input type="email" placeholder="you@example.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            <FormField name="password" control={form.control} render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input type="password" placeholder="••••••••" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            <Button type="submit" className="w-full">Login</Button>
+            <p className="text-xs text-muted-foreground text-center">
+              Need access? Contact the administrator.
+            </p>
+          </form>
+        </Form>
+      </div>
     </main>
   );
 }
