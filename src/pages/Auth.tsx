@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { PageMeta } from "@/components/UI/PageMeta";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
+import { Phone } from "lucide-react";
 
 const schema = z.object({
   email: z.string().email(),
@@ -127,6 +128,28 @@ export default function Auth() {
           </form>
         </Form>
       </div>
+
+      {/* Sticky CTA Footer */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t border-primary/20 p-4">
+        <div className="container mx-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 max-w-4xl mx-auto">
+            <div className="text-center sm:text-left">
+              <p className="font-semibold text-foreground">Don't have an account? Let's chat!</p>
+            </div>
+            <Button 
+              size="lg"
+              className="hover-scale cyber-glow neon-border flex items-center gap-2 w-full sm:w-auto"
+              onClick={() => window.open('https://calendly.com/autonate-ai/15-min-discovery-call', '_blank')}
+            >
+              <Phone className="h-4 w-4" />
+              Book Your Free 15-Minute Discovery Call
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom padding to account for sticky footer */}
+      <div className="h-20"></div>
     </main>
   );
 }
