@@ -105,24 +105,19 @@ const Index = () => {
       {/* Hero Section */}
       <section className="relative container mx-auto px-4 py-24 animate-fade-in">
         <div className="flex flex-col lg:grid lg:grid-cols-2 gap-12 items-center">
-          {/* Content - Mobile: Title first */}
-          <div className="text-center lg:text-left order-1 lg:order-1">
+          {/* Title - Mobile: First, Desktop: Left */}
+          <div className="text-center order-1 lg:order-1">
             <Badge variant="secondary" className="mb-6 cyber-glow">
               <Brain className="mr-2 h-4 w-4" />
               Graph-Based Learning System
             </Badge>
             
-            <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight gradient-text mb-6">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight gradient-text mb-6 leading-tight">
               Master Critical Thinking for Software Engineering
             </h1>
-            
-            <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-8 lg:mb-0 leading-relaxed">
-              Advanced graph-based methodology to enhance logical reasoning, pattern recognition, 
-              and strategic thinking for software engineers at all career levels.
-            </p>
           </div>
 
-          {/* Image - Mobile: After title/subtext, Desktop: Right side */}
+          {/* Image - Mobile: Second, Desktop: Right */}
           <div className="relative order-2 lg:order-2">
             <div className="rounded-2xl overflow-hidden shadow-2xl border border-primary/20">
               <img 
@@ -132,9 +127,17 @@ const Index = () => {
               />
             </div>
           </div>
+
+          {/* Subtext - Mobile: Third, Desktop: Below title */}
+          <div className="text-center order-3 lg:order-1 lg:col-start-1">
+            <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-0 leading-relaxed">
+              Advanced graph-based methodology to enhance logical reasoning, pattern recognition, 
+              and strategic thinking for software engineers at all career levels.
+            </p>
+          </div>
           
-          {/* Buttons and Features - Mobile: Last, Desktop: Below both content and image */}
-          <div className="order-3 lg:order-3 lg:col-span-2 w-full">
+          {/* Buttons and Features - Mobile: Fourth, Desktop: Below both content and image */}
+          <div className="order-4 lg:order-3 lg:col-span-2 w-full">
             <div className="flex flex-col items-center space-y-8">
               <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm sm:max-w-2xl mx-auto">
                 <Button 
@@ -809,7 +812,7 @@ const Index = () => {
                   </span>
                 </Button>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-4 px-2">
-                  15-minute consultation to see if this program is right for your family
+                  15-minute consultation to see if this program is right for your career development
                 </p>
               </div>
             </GlassCard>
@@ -826,44 +829,44 @@ const Index = () => {
             </h2>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto px-4">
               Get answers to common questions about our program structure, 
-              age appropriateness, and learning approach.
+              experience requirements, and learning approach.
             </p>
           </div>
 
           <div className="max-w-4xl mx-auto grid gap-6">
             <GlassCard className="p-6">
-              <h3 className="text-xl font-bold mb-3">What if my child isn't ready for this level of thinking?</h3>
+              <h3 className="text-xl font-bold mb-3">What if I don't have experience with graph theory?</h3>
               <p className="text-muted-foreground">
-                Our program is designed to meet children where they are. We start with fundamental concepts 
-                and build progressively. The visual, game-based approach makes complex ideas accessible 
-                to learners aged 8-18+. During your discovery call, we'll assess readiness.
+                Our program is designed to meet engineers where they are. We start with fundamental concepts 
+                and build progressively. The visual, interactive approach makes complex ideas accessible 
+                to software engineers at all career levels. During your discovery call, we'll assess your background.
               </p>
             </GlassCard>
 
             <GlassCard className="p-6">
-              <h3 className="text-xl font-bold mb-3">Can parents learn alongside their children?</h3>
+              <h3 className="text-xl font-bold mb-3">Can engineering teams learn together?</h3>
               <p className="text-muted-foreground">
-                Absolutely! Many parents find the program valuable for their own critical thinking development. 
-                Parent-child sessions create powerful bonding experiences while both participants develop 
-                advanced reasoning skills.
+                Absolutely! Many engineering teams find the program valuable for collaborative problem-solving development. 
+                Team sessions create powerful learning experiences while all participants develop 
+                advanced reasoning skills and shared mental models.
               </p>
             </GlassCard>
 
             <GlassCard className="p-6">
               <h3 className="text-xl font-bold mb-3">What if we need to reschedule sessions?</h3>
               <p className="text-muted-foreground">
-                We offer flexible scheduling to accommodate family needs. Sessions can be rescheduled 
-                with 24-hour notice. We understand that family schedules change and work with you 
-                to ensure consistent progress.
+                We offer flexible scheduling to accommodate professional needs. Sessions can be rescheduled 
+                with 24-hour notice. We understand that engineering schedules change and work with you 
+                to ensure consistent progress in your learning journey.
               </p>
             </GlassCard>
 
             <GlassCard className="p-6">
-              <h3 className="text-xl font-bold mb-3">How do I track my child's progress?</h3>
+              <h3 className="text-xl font-bold mb-3">How do I track my progress and learning outcomes?</h3>
               <p className="text-muted-foreground">
                 You'll have access to a comprehensive analytics dashboard showing detailed metrics 
-                on critical thinking development, problem-solving skills, and cognitive growth. 
-                Regular progress reports help you understand your child's journey.
+                on critical thinking development, problem-solving skills, and cognitive growth patterns. 
+                Regular progress reports help you understand your learning journey and career development.
               </p>
             </GlassCard>
 
@@ -884,11 +887,11 @@ const Index = () => {
         <div className="container mx-auto text-center px-4">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl sm:text-5xl font-bold gradient-text mb-6 px-2">
-              Ready to Transform Your Child's Thinking?
+              Ready to Transform Your Engineering Mindset?
             </h2>
             <p className="text-lg sm:text-xl text-muted-foreground mb-12 leading-relaxed px-4">
-              Join families who are already seeing remarkable improvements in their children's 
-              critical thinking, problem-solving, and academic performance. Limited spots available.
+              Join software engineers who are already seeing remarkable improvements in their 
+              critical thinking, problem-solving, and technical leadership skills. Limited spots available.
             </p>
             
             <GlassCard className="p-6 sm:p-8 border-primary/50 mb-12">
@@ -934,11 +937,11 @@ const Index = () => {
               </div>
               <div className="flex items-center">
                 <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
-                <span>Ages 8-18+ Welcome</span>
+                <span>All Career Levels Welcome</span>
               </div>
               <div className="flex items-center">
                 <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
-                <span>Group Discounts Available</span>
+                <span>Team Discounts Available</span>
               </div>
             </div>
           </div>
