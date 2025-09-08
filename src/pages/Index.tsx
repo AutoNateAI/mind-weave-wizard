@@ -97,13 +97,40 @@ const Index = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-background/60 to-background/80" />
       </div>
 
-      {/* Theme Toggle */}
-      <div className="absolute top-6 right-6 z-10">
-        <ThemeToggle />
-      </div>
+      {/* Navigation Bar */}
+      <nav className="absolute top-0 left-0 right-0 z-10 bg-background/80 backdrop-blur-sm border-b border-primary/20">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            <Link to="/" className="text-xl font-bold gradient-text">
+              AutoNateAI
+            </Link>
+            <div className="flex items-center gap-6">
+              <Link 
+                to="/learn-more" 
+                className="text-sm font-medium hover:text-primary transition-colors"
+              >
+                Learn More
+              </Link>
+              <Link 
+                to="/about" 
+                className="text-sm font-medium hover:text-primary transition-colors"
+              >
+                About Nathan
+              </Link>
+              <Link 
+                to="/auth" 
+                className="text-sm font-medium hover:text-primary transition-colors"
+              >
+                Login
+              </Link>
+              <ThemeToggle />
+            </div>
+          </div>
+        </div>
+      </nav>
 
       {/* Hero Section */}
-      <section className="relative container mx-auto px-4 py-24 animate-fade-in">
+      <section className="relative container mx-auto px-4 pt-32 pb-24 animate-fade-in">
         <div className="flex flex-col lg:grid lg:grid-cols-2 gap-12 lg:gap-16 items-start lg:items-center">
           {/* Left Content - Desktop */}
           <div className="text-center order-1 lg:order-1">

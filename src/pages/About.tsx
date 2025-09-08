@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { PageMeta } from "@/components/UI/PageMeta";
 import { GlassCard } from "@/components/UI/GlassCard";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Phone } from "lucide-react";
+import { Link } from "react-router-dom";
+import nathanPortrait from "@/assets/nathan-baker-portrait.png";
 
 const About = () => {
   return (
@@ -11,20 +14,51 @@ const About = () => {
         description="Learn about Nathan Baker, founder of AutoNateAI and creator of the Critical Thinking Academy for software engineers. From Fortune 500 systems to graph-based thinking."
       />
 
+      {/* Navigation Bar */}
+      <nav className="relative z-10 bg-background/80 backdrop-blur-sm border-b border-primary/20">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            <Link to="/" className="text-xl font-bold gradient-text">
+              AutoNateAI
+            </Link>
+            <div className="flex items-center gap-6">
+              <Link 
+                to="/" 
+                className="text-sm font-medium hover:text-primary transition-colors"
+              >
+                Home
+              </Link>
+              <Link 
+                to="/learn-more" 
+                className="text-sm font-medium hover:text-primary transition-colors"
+              >
+                Learn More
+              </Link>
+              <Link 
+                to="/auth" 
+                className="text-sm font-medium hover:text-primary transition-colors"
+              >
+                Login
+              </Link>
+              <ThemeToggle />
+            </div>
+          </div>
+        </div>
+      </nav>
+
       {/* Hero Section */}
       <section className="relative py-16 bg-gradient-to-b from-background/60 to-background/80">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
-            {/* Portrait Placeholder */}
+            {/* Professional Portrait */}
             <div className="order-2 lg:order-1">
               <div className="relative">
-                <div className="aspect-[4/5] bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl flex items-center justify-center border border-primary/20">
-                  <div className="text-center">
-                    <div className="w-24 h-24 bg-primary/30 rounded-full mx-auto mb-4 flex items-center justify-center">
-                      <span className="text-2xl font-bold">NB</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">Professional Portrait<br />Nathan Baker</p>
-                  </div>
+                <div className="aspect-square rounded-2xl overflow-hidden border border-primary/20 shadow-2xl">
+                  <img 
+                    src={nathanPortrait}
+                    alt="Nathan Baker - Professional Portrait"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               </div>
             </div>
