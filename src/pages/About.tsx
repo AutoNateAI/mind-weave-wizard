@@ -29,6 +29,12 @@ const About = () => {
                 Home
               </Link>
               <Link 
+                to="/mind-games" 
+                className="text-sm font-medium hover:text-primary transition-colors"
+              >
+                Mind Games
+              </Link>
+              <Link 
                 to="/auth" 
                 className="text-sm font-medium hover:text-primary transition-colors"
               >

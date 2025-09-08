@@ -12,6 +12,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import SessionPage from "./pages/SessionPage";
 import { HelmetProvider } from "react-helmet-async";
 import Auth from "./pages/Auth";
+import MindGames from "./pages/MindGames";
 import LearnMore from "./pages/LearnMore";
 import About from "./pages/About";
 import Profile from "./pages/Profile";
@@ -30,6 +31,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/mind-games" element={<MindGames />} />
               <Route path="/learn-more" element={<LearnMore />} />
               <Route path="/about" element={<About />} />
               <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />

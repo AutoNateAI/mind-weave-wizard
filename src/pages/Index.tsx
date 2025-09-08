@@ -106,6 +106,12 @@ const Index = () => {
             </Link>
             <div className="flex items-center gap-6">
               <Link 
+                to="/mind-games" 
+                className="text-sm font-medium hover:text-primary transition-colors"
+              >
+                Mind Games
+              </Link>
+              <Link 
                 to="/about" 
                 className="text-sm font-medium hover:text-primary transition-colors"
               >
