@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { 
   Plus, 
@@ -21,6 +21,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminHeader } from "@/components/Admin/AdminHeader";
+import { AdminSidebar } from "@/components/Admin/AdminSidebar";
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { CoursePlanningChat } from "@/components/Admin/CoursePlanningChat";
 import { CourseStructureView } from "@/components/Admin/CourseStructureView";
 import { ChatHistoryView } from "@/components/Admin/ChatHistoryView";
@@ -137,84 +139,32 @@ export default function AdminDashboard() {
         description="AI-powered course generation and management system"
       />
       
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-        <AdminHeader />
-        
-        <div className="container mx-auto p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold cyber-glow">Admin Dashboard</h1>
-              <p className="text-muted-foreground">AI-powered course generation and management</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="default" className="gap-2">
-                <Wand2 className="w-3 h-3" />
-                AI Powered
-              </Badge>
-            </div>
-          </div>
-
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-            <div className="w-full overflow-x-auto scrollbar-hide">
-              <TabsList className="inline-flex w-max min-w-full h-auto p-1 gap-1">
-                <TabsTrigger value="overview" className="gap-2 whitespace-nowrap flex-shrink-0">
-                  <BarChart3 className="w-4 h-4" />
-                  Overview
-                </TabsTrigger>
-                <TabsTrigger value="planning" className="gap-2 whitespace-nowrap flex-shrink-0">
-                  <MessageSquare className="w-4 h-4" />
-                  Course Planning
-                </TabsTrigger>
-                <TabsTrigger value="chat-history" className="gap-2 whitespace-nowrap flex-shrink-0">
-                  <MessageSquare className="w-4 h-4" />
-                  Chat History
-                </TabsTrigger>
-                <TabsTrigger value="locations" className="gap-2 whitespace-nowrap flex-shrink-0">
-                  <MapPin className="w-4 h-4" />
-                  Locations
-                </TabsTrigger>
-                <TabsTrigger value="social-media" className="gap-2 whitespace-nowrap flex-shrink-0">
-                  <Share2 className="w-4 h-4" />
-                  Social Media
-                </TabsTrigger>
-                <TabsTrigger value="content-creation" className="gap-2 whitespace-nowrap flex-shrink-0">
-                  <Sparkles className="w-4 h-4" />
-                  Content Creation
-                </TabsTrigger>
-                <TabsTrigger value="ai-prompts" className="gap-2 whitespace-nowrap flex-shrink-0">
-                  <Bot className="w-4 h-4" />
-                  AI Prompts
-                </TabsTrigger>
-                <TabsTrigger value="reddit" className="gap-2 whitespace-nowrap flex-shrink-0">
-                  <MessageSquare className="w-4 h-4" />
-                  Reddit
-                </TabsTrigger>
-                <TabsTrigger value="structure" className="gap-2 whitespace-nowrap flex-shrink-0">
-                  <BookOpen className="w-4 h-4" />
-                  Course Structure
-                </TabsTrigger>
-                <TabsTrigger value="slides" className="gap-2 whitespace-nowrap flex-shrink-0">
-                  <FileText className="w-4 h-4" />
-                  Slides
-                </TabsTrigger>
-                <TabsTrigger value="session-slides" className="gap-2 whitespace-nowrap flex-shrink-0">
-                  <FileText className="w-4 h-4" />
-                  Session View
-                </TabsTrigger>
-                <TabsTrigger value="games" className="gap-2 whitespace-nowrap flex-shrink-0">
-                  <Gamepad2 className="w-4 h-4" />
-                  Games
-                </TabsTrigger>
-                <TabsTrigger value="session-games" className="gap-2 whitespace-nowrap flex-shrink-0">
-                  <Gamepad2 className="w-4 h-4" />
-                  Session Games
-                </TabsTrigger>
-                <TabsTrigger value="users" className="gap-2 whitespace-nowrap flex-shrink-0">
-                  <Users className="w-4 h-4" />
-                  Users
-                </TabsTrigger>
-              </TabsList>
-            </div>
+      <SidebarProvider>
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 w-full">
+          <AdminHeader />
+          
+          <div className="flex w-full">
+            <AdminSidebar activeTab={activeTab} onTabChange={handleTabChange} />
+            
+            <SidebarInset className="flex-1">
+              <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b">
+                <div className="flex items-center gap-2 px-4">
+                  <SidebarTrigger className="-ml-1" />
+                  <div>
+                    <h1 className="text-2xl font-bold cyber-glow">Admin Dashboard</h1>
+                    <p className="text-sm text-muted-foreground">AI-powered course generation and management</p>
+                  </div>
+                </div>
+                <div className="ml-auto flex items-center gap-2 px-4">
+                  <Badge variant="default" className="gap-2">
+                    <Wand2 className="w-3 h-3" />
+                    AI Powered
+                  </Badge>
+                </div>
+              </header>
+              
+              <div className="flex-1 overflow-auto p-6">
+                <Tabs value={activeTab} onValueChange={handleTabChange}>
 
             <TabsContent value="overview" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -495,9 +445,12 @@ export default function AdminDashboard() {
             <TabsContent value="reddit">
               <RedditTab />
             </TabsContent>
-          </Tabs>
+                </Tabs>
+              </div>
+            </SidebarInset>
+          </div>
         </div>
-      </div>
+      </SidebarProvider>
     </>
   );
 }
