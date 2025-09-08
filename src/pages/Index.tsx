@@ -106,16 +106,10 @@ const Index = () => {
             </Link>
             <div className="flex items-center gap-6">
               <Link 
-                to="/learn-more" 
-                className="text-sm font-medium hover:text-primary transition-colors"
-              >
-                Learn More
-              </Link>
-              <Link 
                 to="/about" 
                 className="text-sm font-medium hover:text-primary transition-colors"
               >
-                About Nathan
+                About AutoNate
               </Link>
               <Link 
                 to="/auth" 

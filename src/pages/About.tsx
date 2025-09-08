@@ -29,12 +29,6 @@ const About = () => {
                 Home
               </Link>
               <Link 
-                to="/learn-more" 
-                className="text-sm font-medium hover:text-primary transition-colors"
-              >
-                Learn More
-              </Link>
-              <Link 
                 to="/auth" 
                 className="text-sm font-medium hover:text-primary transition-colors"
               >
