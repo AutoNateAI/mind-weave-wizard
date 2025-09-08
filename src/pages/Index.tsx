@@ -106,7 +106,7 @@ const Index = () => {
       <section className="relative container mx-auto px-4 py-24 animate-fade-in">
         <div className="flex flex-col lg:grid lg:grid-cols-2 gap-12 lg:gap-16 items-start lg:items-center">
           {/* Left Content - Desktop */}
-          <div className="text-center lg:text-left order-1 lg:order-1">
+          <div className="text-center order-1 lg:order-1">
             <Badge variant="secondary" className="mb-6 cyber-glow">
               <Brain className="mr-2 h-4 w-4" />
               Graph-Based Learning System
