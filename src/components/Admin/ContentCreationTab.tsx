@@ -6,45 +6,41 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
 import { 
-  Sparkles, 
-  Target, 
-  Calendar, 
-  BarChart3, 
-  FileText,
-  MapPin,
-  Users,
+  Instagram, 
   Brain,
   Send,
   Eye,
+  Sparkles,
+  Image as ImageIcon,
+  Library,
   Edit,
-  Trash2
+  Check,
+  Loader
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { CarouselLibrary } from './CarouselLibrary';
+import { CarouselDetailView } from './CarouselDetailView';
 
-interface TargetedLocation {
+interface InstagramCarousel {
   id: string;
-  company_name: string;
-  office_address: string;
-  city: string | null;
-  state: string | null;
-}
-
-interface ContentCampaign {
-  id: string;
-  campaign_name: string;
-  target_location_id: string | null;
-  content_type: string;
-  generated_content: string | null;
-  content_prompt: string | null;
+  carousel_name: string;
+  research_content: string;
   critical_thinking_concepts: string[];
-  content_status: string;
-  scheduled_publish_at: string | null;
-  published_at: string | null;
+  additional_instructions: string | null;
+  status: string;
+  image_prompts: string[];
+  generated_images: string[];
+  caption_text: string | null;
+  hashtags: string[];
+  target_audiences: string[];
+  progress: number;
+  error_message: string | null;
   created_at: string;
-  targeted_locations?: TargetedLocation;
+  updated_at?: string;
+  created_by?: string | null;
 }
 
 const CRITICAL_THINKING_CONCEPTS = [
@@ -60,194 +56,164 @@ const CRITICAL_THINKING_CONCEPTS = [
   'Cause and Effect Analysis'
 ];
 
-const CONTENT_TYPES = [
-  { value: 'linkedin_post', label: 'LinkedIn Post' },
-  { value: 'linkedin_article', label: 'LinkedIn Article' },
-  { value: 'instagram_post', label: 'Instagram Post' },
-  { value: 'instagram_story', label: 'Instagram Story' }
-];
-
 export function ContentCreationTab() {
   const [activeTab, setActiveTab] = useState('create');
-  const [locations, setLocations] = useState<TargetedLocation[]>([]);
-  const [campaigns, setCampaigns] = useState<ContentCampaign[]>([]);
-  const [selectedCampaign, setSelectedCampaign] = useState<ContentCampaign | null>(null);
+  const [carousels, setCarousels] = useState<InstagramCarousel[]>([]);
+  const [selectedCarousel, setSelectedCarousel] = useState<InstagramCarousel | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [currentStage, setCurrentStage] = useState<'form' | 'prompts' | 'images'>('form');
+  const [generatedPrompts, setGeneratedPrompts] = useState<string[]>([]);
+  const [editablePrompts, setEditablePrompts] = useState<string[]>([]);
+  const [captionText, setCaptionText] = useState('');
+  const [hashtags, setHashtags] = useState<string[]>([]);
+  const [targetAudiences, setTargetAudiences] = useState<string[]>([]);
   
   const [formData, setFormData] = useState({
-    campaign_name: '',
-    target_location_id: '',
-    content_type: 'linkedin_post',
-    content_prompt: '',
+    carousel_name: '',
+    research_content: '',
     selected_concepts: [] as string[],
-    custom_instructions: ''
+    additional_instructions: ''
   });
 
   useEffect(() => {
-    loadLocations();
-    loadCampaigns();
+    loadCarousels();
+    // Set up real-time updates for carousel progress
+    const channel = supabase
+      .channel('carousel-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'instagram_carousels'
+        },
+        () => {
+          loadCarousels();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  const loadLocations = async () => {
+  const loadCarousels = async () => {
     try {
       const { data, error } = await supabase
-        .from('targeted_locations')
-        .select('id, company_name, office_address, city, state')
-        .eq('is_active', true)
-        .order('company_name');
-
-      if (error) throw error;
-      setLocations(data || []);
-    } catch (error) {
-      console.error('Error loading locations:', error);
-      toast.error('Failed to load locations');
-    }
-  };
-
-  const loadCampaigns = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('content_campaigns')
-        .select(`
-          *,
-          targeted_locations:target_location_id (
-            id,
-            company_name,
-            office_address,
-            city,
-            state
-          )
-        `)
+        .from('instagram_carousels')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setCampaigns((data || []).map(campaign => ({
-        ...campaign,
-        critical_thinking_concepts: Array.isArray(campaign.critical_thinking_concepts) 
-          ? campaign.critical_thinking_concepts.map(c => String(c))
+      
+      // Map the data to ensure proper types
+      const mappedData = (data || []).map(carousel => ({
+        ...carousel,
+        critical_thinking_concepts: Array.isArray(carousel.critical_thinking_concepts) 
+          ? carousel.critical_thinking_concepts as string[]
+          : [],
+        image_prompts: Array.isArray(carousel.image_prompts) 
+          ? carousel.image_prompts as string[]
+          : [],
+        generated_images: Array.isArray(carousel.generated_images) 
+          ? carousel.generated_images as string[]
+          : [],
+        hashtags: Array.isArray(carousel.hashtags) 
+          ? carousel.hashtags as string[]
+          : [],
+        target_audiences: Array.isArray(carousel.target_audiences) 
+          ? carousel.target_audiences as string[]
           : []
-      })));
+      }));
+      
+      setCarousels(mappedData);
     } catch (error) {
-      console.error('Error loading campaigns:', error);
-      toast.error('Failed to load campaigns');
+      console.error('Error loading carousels:', error);
+      toast.error('Failed to load carousels');
     }
   };
 
-  const generateContent = async () => {
-    if (!formData.campaign_name || !formData.content_type) {
+  const generatePrompts = async () => {
+    if (!formData.carousel_name || !formData.research_content) {
       toast.error('Please fill in required fields');
       return;
     }
 
     setIsGenerating(true);
     try {
-      // Get location and social data for context
-      const locationData = locations.find(l => l.id === formData.target_location_id);
-      
-      // Build the AI prompt
-      const basePrompt = formData.content_prompt || 
-        `Create engaging ${formData.content_type.replace('_', ' ')} content for professionals`;
-      
-      const contextPrompt = `
-        ${basePrompt}
-        
-        ${locationData ? `Target Location: ${locationData.company_name} in ${locationData.city}, ${locationData.state}` : ''}
-        
-        Critical Thinking Focus: ${formData.selected_concepts.join(', ')}
-        
-        The content should:
-        - Connect with local professionals and businesses
-        - Incorporate the specified critical thinking concepts naturally
-        - Be engaging and thought-provoking
-        - Encourage interaction and discussion
-        - Relate to our thinking skills course offerings
-        
-        ${formData.custom_instructions ? `Additional Instructions: ${formData.custom_instructions}` : ''}
-      `;
-
-      const { data, error } = await supabase.functions.invoke('generate-social-content', {
+      const { data, error } = await supabase.functions.invoke('generate-carousel', {
         body: {
-          prompt: contextPrompt,
-          content_type: formData.content_type,
-          location_context: locationData,
-          critical_thinking_concepts: formData.selected_concepts
+          action: 'generate_prompts',
+          carouselName: formData.carousel_name,
+          researchContent: formData.research_content,
+          criticalThinkingConcepts: formData.selected_concepts,
+          additionalInstructions: formData.additional_instructions
         }
       });
 
       if (error) throw error;
 
-      // Save the campaign
-      const { data: campaignData, error: campaignError } = await supabase
-        .from('content_campaigns')
-        .insert([{
-          campaign_name: formData.campaign_name,
-          target_location_id: formData.target_location_id || null,
-          content_type: formData.content_type,
-          generated_content: data.content,
-          content_prompt: contextPrompt,
-          critical_thinking_concepts: formData.selected_concepts,
-          content_status: 'draft',
-          created_by: (await supabase.auth.getUser()).data.user?.id
-        }])
-        .select()
-        .single();
-
-      if (campaignError) throw campaignError;
-
-      toast.success('Content generated successfully!');
-      setFormData({
-        campaign_name: '',
-        target_location_id: '',
-        content_type: 'linkedin_post',
-        content_prompt: '',
-        selected_concepts: [],
-        custom_instructions: ''
-      });
-      loadCampaigns();
-      setActiveTab('campaigns');
+      setGeneratedPrompts(data.imagePrompts);
+      setEditablePrompts([...data.imagePrompts]);
+      setCaptionText(data.captionText);
+      setHashtags(data.hashtags);
+      setTargetAudiences(data.targetAudiences);
+      setCurrentStage('prompts');
+      
+      toast.success('Prompts generated successfully! Review and edit them before generating images.');
+      loadCarousels();
     } catch (error) {
-      console.error('Error generating content:', error);
-      toast.error('Failed to generate content');
+      console.error('Error generating prompts:', error);
+      toast.error('Failed to generate prompts');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const updateCampaignStatus = async (campaignId: string, status: string) => {
+  const generateImages = async () => {
+    setIsGenerating(true);
     try {
-      const { error } = await supabase
-        .from('content_campaigns')
-        .update({ content_status: status })
-        .eq('id', campaignId);
+      // Find the carousel that was just created
+      const carousel = carousels.find(c => c.status === 'ready_to_generate');
+      if (!carousel) {
+        throw new Error('Carousel not found');
+      }
+
+      const { error } = await supabase.functions.invoke('generate-carousel', {
+        body: {
+          action: 'generate_images',
+          carouselId: carousel.id,
+          imagePrompts: editablePrompts
+        }
+      });
 
       if (error) throw error;
-      
-      toast.success(`Campaign marked as ${status}`);
-      loadCampaigns();
+
+      setCurrentStage('images');
+      toast.success('Images are being generated! This may take a few moments.');
+      setActiveTab('library'); // Switch to library to see progress
     } catch (error) {
-      console.error('Error updating campaign:', error);
-      toast.error('Failed to update campaign');
+      console.error('Error generating images:', error);
+      toast.error('Failed to start image generation');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
-  const deleteCampaign = async (campaignId: string) => {
-    try {
-      const { error } = await supabase
-        .from('content_campaigns')
-        .delete()
-        .eq('id', campaignId);
-
-      if (error) throw error;
-      
-      toast.success('Campaign deleted successfully');
-      loadCampaigns();
-      if (selectedCampaign?.id === campaignId) {
-        setSelectedCampaign(null);
-      }
-    } catch (error) {
-      console.error('Error deleting campaign:', error);
-      toast.error('Failed to delete campaign');
-    }
+  const resetForm = () => {
+    setFormData({
+      carousel_name: '',
+      research_content: '',
+      selected_concepts: [],
+      additional_instructions: ''
+    });
+    setCurrentStage('form');
+    setGeneratedPrompts([]);
+    setEditablePrompts([]);
+    setCaptionText('');
+    setHashtags([]);
+    setTargetAudiences([]);
   };
 
   const toggleConcept = (concept: string) => {
@@ -259,97 +225,81 @@ export function ContentCreationTab() {
     }));
   };
 
+  const updatePrompt = (index: number, newPrompt: string) => {
+    const updated = [...editablePrompts];
+    updated[index] = newPrompt;
+    setEditablePrompts(updated);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'published': return 'default';
-      case 'scheduled': return 'secondary';
-      case 'reviewed': return 'outline';
+      case 'completed': return 'default';
+      case 'generating_images': return 'secondary';
+      case 'ready_to_generate': return 'outline';
+      case 'failed': return 'destructive';
       default: return 'secondary';
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  if (selectedCarousel) {
+    return (
+      <CarouselDetailView 
+        carousel={selectedCarousel} 
+        onBack={() => setSelectedCarousel(null)} 
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">AI Content Creation</h2>
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <Instagram className="h-6 w-6" />
+          Instagram Carousel Generator
+        </h2>
         <p className="text-muted-foreground">
-          Generate location-targeted social media content that incorporates critical thinking concepts.
+          Generate Instagram carousels for software engineers based on research and critical thinking concepts.
         </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="create">Create Content</TabsTrigger>
-          <TabsTrigger value="campaigns">Manage Campaigns</TabsTrigger>
-          <TabsTrigger value="analytics">Performance</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="create">Create Carousel</TabsTrigger>
+          <TabsTrigger value="library" className="flex items-center gap-2">
+            <Library className="h-4 w-4" />
+            Library ({carousels.length})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="create" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Content Creation Form */}
+          {currentStage === 'form' && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Sparkles className="h-5 w-5" />
-                  Generate New Content
+                  Generate Instagram Carousel
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="campaign_name">Campaign Name *</Label>
+                  <Label htmlFor="carousel_name">Carousel Name *</Label>
                   <Input
-                    id="campaign_name"
-                    value={formData.campaign_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, campaign_name: e.target.value }))}
-                    placeholder="e.g., SF Tech Professionals - Critical Thinking"
+                    id="carousel_name"
+                    value={formData.carousel_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, carousel_name: e.target.value }))}
+                    placeholder="e.g., AI Code Review Tools - Critical Analysis"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="target_location">Target Location</Label>
-                  <Select 
-                    value={formData.target_location_id} 
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, target_location_id: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a location (optional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {locations.map(location => (
-                        <SelectItem key={location.id} value={location.id}>
-                          {location.company_name} - {location.city}, {location.state}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="content_type">Content Type *</Label>
-                  <Select 
-                    value={formData.content_type} 
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, content_type: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CONTENT_TYPES.map(type => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="research_content">Research Content *</Label>
+                  <Textarea
+                    id="research_content"
+                    value={formData.research_content}
+                    onChange={(e) => setFormData(prev => ({ ...prev, research_content: e.target.value }))}
+                    placeholder="Paste your research content, article, or findings here..."
+                    rows={6}
+                  />
                 </div>
 
                 <div>
@@ -371,280 +321,130 @@ export function ContentCreationTab() {
                 </div>
 
                 <div>
-                  <Label htmlFor="content_prompt">Content Prompt</Label>
+                  <Label htmlFor="additional_instructions">Additional Instructions</Label>
                   <Textarea
-                    id="content_prompt"
-                    value={formData.content_prompt}
-                    onChange={(e) => setFormData(prev => ({ ...prev, content_prompt: e.target.value }))}
-                    placeholder="Describe the type of content you want to create..."
+                    id="additional_instructions"
+                    value={formData.additional_instructions}
+                    onChange={(e) => setFormData(prev => ({ ...prev, additional_instructions: e.target.value }))}
+                    placeholder="Any specific requirements, tone, or focus areas..."
                     rows={3}
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="custom_instructions">Additional Instructions</Label>
-                  <Textarea
-                    id="custom_instructions"
-                    value={formData.custom_instructions}
-                    onChange={(e) => setFormData(prev => ({ ...prev, custom_instructions: e.target.value }))}
-                    placeholder="Any specific tone, style, or requirements..."
-                    rows={2}
-                  />
-                </div>
-
                 <Button 
-                  onClick={generateContent}
-                  disabled={isGenerating || !formData.campaign_name}
+                  onClick={generatePrompts}
+                  disabled={isGenerating || !formData.carousel_name || !formData.research_content}
                   className="w-full"
                 >
                   {isGenerating ? (
                     <>
-                      <Sparkles className="h-4 w-4 mr-2 animate-spin" />
-                      Generating Content...
+                      <Loader className="h-4 w-4 mr-2 animate-spin" />
+                      Generating Prompts...
                     </>
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4 mr-2" />
-                      Generate Content
+                      Generate Image Prompts
                     </>
                   )}
                 </Button>
               </CardContent>
             </Card>
+          )}
 
-            {/* Preview/Guidelines */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  Content Strategy
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-2">Content Goals</h4>
-                  <ul className="text-sm space-y-1 text-muted-foreground">
-                    <li>• Engage local professionals with critical thinking concepts</li>
-                    <li>• Build awareness of our thinking skills course</li>
-                    <li>• Establish thought leadership in target markets</li>
-                    <li>• Generate meaningful discussions and interactions</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-medium mb-2">Content Best Practices</h4>
-                  <ul className="text-sm space-y-1 text-muted-foreground">
-                    <li>• Include relevant local business context</li>
-                    <li>• Make critical thinking concepts relatable</li>
-                    <li>• Use storytelling to illustrate points</li>
-                    <li>• Include a clear call-to-action</li>
-                    <li>• Optimize for platform-specific audiences</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-medium mb-2">Performance Tracking</h4>
+          {currentStage === 'prompts' && (
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Edit className="h-5 w-5" />
+                    Review & Edit Image Prompts
+                  </CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Generated content will be tracked for engagement, reach, and conversion metrics to help optimize future campaigns.
+                    Review the generated prompts below. You can edit them before generating the images.
                   </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="campaigns" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Campaigns List */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  Content Campaigns
-                  <Badge variant="secondary">{campaigns.length} campaigns</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {campaigns.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-4">
-                      No campaigns created yet. Generate your first content to get started.
-                    </p>
-                  ) : (
-                    campaigns.map((campaign) => (
-                      <div
-                        key={campaign.id}
-                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                          selectedCampaign?.id === campaign.id
-                            ? 'border-primary bg-primary/5'
-                            : 'hover:bg-muted/50'
-                        }`}
-                        onClick={() => setSelectedCampaign(campaign)}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-medium">{campaign.campaign_name}</h4>
-                            <p className="text-sm text-muted-foreground">{campaign.content_type.replace('_', ' ')}</p>
-                            {campaign.targeted_locations && (
-                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                                <MapPin className="h-3 w-3" />
-                                {campaign.targeted_locations.company_name}
-                              </p>
-                            )}
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge variant={getStatusColor(campaign.content_status)} className="text-xs">
-                                {campaign.content_status}
-                              </Badge>
-                              <p className="text-xs text-muted-foreground">
-                                {formatDate(campaign.created_at)}
-                              </p>
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteCampaign(campaign.id);
-                            }}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Campaign Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Campaign Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {selectedCampaign ? (
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-medium">{selectedCampaign.campaign_name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedCampaign.content_type.replace('_', ' ')}
-                      </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {editablePrompts.map((prompt, index) => (
+                    <div key={index} className="space-y-2">
+                      <Label>Image {index + 1} {index === 0 ? '(Scroll Stopper)' : index === 8 ? '(Call to Action)' : ''}</Label>
+                      <Textarea
+                        value={prompt}
+                        onChange={(e) => updatePrompt(index, e.target.value)}
+                        rows={3}
+                        className="text-sm"
+                      />
                     </div>
+                  ))}
+                  
+                  <div className="flex gap-2 pt-4">
+                    <Button 
+                      onClick={generateImages}
+                      disabled={isGenerating}
+                      className="flex-1"
+                    >
+                      {isGenerating ? (
+                        <>
+                          <Loader className="h-4 w-4 mr-2 animate-spin" />
+                          Starting Generation...
+                        </>
+                      ) : (
+                        <>
+                          <ImageIcon className="h-4 w-4 mr-2" />
+                          Generate 9 Images
+                        </>
+                      )}
+                    </Button>
+                    <Button variant="outline" onClick={resetForm}>
+                      Start Over
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
 
-                    {selectedCampaign.critical_thinking_concepts.length > 0 && (
-                      <div>
-                        <Label>Critical Thinking Concepts</Label>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {selectedCampaign.critical_thinking_concepts.map((concept, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {concept}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedCampaign.generated_content && (
-                      <div>
-                        <Label>Generated Content</Label>
-                        <div className="mt-2 p-3 bg-muted rounded-lg text-sm whitespace-pre-wrap">
-                          {selectedCampaign.generated_content}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => updateCampaignStatus(selectedCampaign.id, 'reviewed')}
-                        disabled={selectedCampaign.content_status === 'reviewed'}
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        Mark Reviewed
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateCampaignStatus(selectedCampaign.id, 'published')}
-                        disabled={selectedCampaign.content_status === 'published'}
-                      >
-                        <Send className="h-4 w-4 mr-1" />
-                        Mark Published
-                      </Button>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Caption & Hashtags Preview</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Caption Text</Label>
+                    <div className="mt-1 p-3 bg-muted rounded-md text-sm">
+                      {captionText}
                     </div>
                   </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">
-                    Select a campaign to view details
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                  <div>
+                    <Label>Hashtags</Label>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {hashtags.map((tag, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Target Audiences</Label>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {targetAudiences.map((audience, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          {audience}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </TabsContent>
 
-        <TabsContent value="analytics" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Campaigns</CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{campaigns.length}</div>
-                <p className="text-xs text-muted-foreground">Content campaigns created</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Published</CardTitle>
-                <Send className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {campaigns.filter(c => c.content_status === 'published').length}
-                </div>
-                <p className="text-xs text-muted-foreground">Published campaigns</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Locations Targeted</CardTitle>
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {new Set(campaigns.filter(c => c.target_location_id).map(c => c.target_location_id)).size}
-                </div>
-                <p className="text-xs text-muted-foreground">Unique locations targeted</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Content Performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Detailed performance analytics will appear here once content is published and engagement data is collected.
-                Metrics will include:
-              </p>
-              <ul className="list-disc list-inside mt-2 space-y-1 text-muted-foreground">
-                <li>Engagement rates by location</li>
-                <li>Critical thinking concept resonance</li>
-                <li>Lead generation effectiveness</li>
-                <li>Content type performance comparison</li>
-              </ul>
-            </CardContent>
-          </Card>
+        <TabsContent value="library">
+          <CarouselLibrary 
+            carousels={carousels} 
+            onSelectCarousel={(carousel) => setSelectedCarousel(carousel)}
+            getStatusColor={getStatusColor}
+          />
         </TabsContent>
       </Tabs>
     </div>

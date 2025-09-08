@@ -445,6 +445,63 @@ export type Database = {
           },
         ]
       }
+      instagram_carousels: {
+        Row: {
+          additional_instructions: string | null
+          caption_text: string | null
+          carousel_name: string
+          created_at: string
+          created_by: string | null
+          critical_thinking_concepts: Json | null
+          error_message: string | null
+          generated_images: Json | null
+          hashtags: Json | null
+          id: string
+          image_prompts: Json | null
+          progress: number | null
+          research_content: string
+          status: string | null
+          target_audiences: Json | null
+          updated_at: string
+        }
+        Insert: {
+          additional_instructions?: string | null
+          caption_text?: string | null
+          carousel_name: string
+          created_at?: string
+          created_by?: string | null
+          critical_thinking_concepts?: Json | null
+          error_message?: string | null
+          generated_images?: Json | null
+          hashtags?: Json | null
+          id?: string
+          image_prompts?: Json | null
+          progress?: number | null
+          research_content: string
+          status?: string | null
+          target_audiences?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          additional_instructions?: string | null
+          caption_text?: string | null
+          carousel_name?: string
+          created_at?: string
+          created_by?: string | null
+          critical_thinking_concepts?: Json | null
+          error_message?: string | null
+          generated_images?: Json | null
+          hashtags?: Json | null
+          id?: string
+          image_prompts?: Json | null
+          progress?: number | null
+          research_content?: string
+          status?: string | null
+          target_audiences?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       keywords_analytics: {
         Row: {
           created_at: string
