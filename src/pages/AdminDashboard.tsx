@@ -141,27 +141,11 @@ export default function AdminDashboard() {
       
       <SidebarProvider>
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 w-full">
-          <AdminHeader />
-          
           <div className="flex w-full">
             <AdminSidebar activeTab={activeTab} onTabChange={handleTabChange} />
             
             <SidebarInset className="flex-1">
-              <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b">
-                <div className="flex items-center gap-2 px-4">
-                  <SidebarTrigger className="-ml-1" />
-                  <div>
-                    <h1 className="text-2xl font-bold cyber-glow">Admin Dashboard</h1>
-                    <p className="text-sm text-muted-foreground">AI-powered course generation and management</p>
-                  </div>
-                </div>
-                <div className="ml-auto flex items-center gap-2 px-4">
-                  <Badge variant="default" className="gap-2">
-                    <Wand2 className="w-3 h-3" />
-                    AI Powered
-                  </Badge>
-                </div>
-              </header>
+              <AdminHeader />
               
               <div className="flex-1 overflow-auto p-6">
                 <Tabs value={activeTab} onValueChange={handleTabChange}>
