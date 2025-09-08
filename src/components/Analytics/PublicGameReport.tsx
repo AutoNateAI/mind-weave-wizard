@@ -225,7 +225,7 @@ export const PublicGameReport: React.FC<PublicGameReportProps> = ({
                 <Button 
                   type="submit" 
                   disabled={isSubmitting}
-                  className="bg-gradient-to-r from-primary to-secondary"
+                  className="bg-primary hover:bg-primary/90"
                 >
                   {isSubmitting ? 'Sending...' : 'Send Report'}
                   <Mail className="w-4 h-4 ml-2" />
@@ -375,8 +375,11 @@ export const PublicGameReport: React.FC<PublicGameReportProps> = ({
               and AI-powered coaching to master critical thinking for software engineering.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button className="bg-gradient-to-r from-primary to-secondary">
-                Start Free Trial
+              <Button 
+                className="bg-primary hover:bg-primary/90"
+                onClick={() => window.open('https://calendly.com/autonate-ai/15-min-discovery-call', '_blank')}
+              >
+                Book Discovery Call
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
               <Button variant="outline" onClick={onClose}>

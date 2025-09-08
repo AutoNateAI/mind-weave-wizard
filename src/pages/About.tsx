@@ -5,8 +5,11 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import nathanPortrait from "@/assets/nathan-baker-portrait.png";
+import { useScrollToTop } from "@/hooks/useScrollToTop";
 
 const About = () => {
+  useScrollToTop();
+  
   return (
     <main className="min-h-screen relative">
       <PageMeta 
@@ -33,6 +36,12 @@ const About = () => {
                 className="text-sm font-medium hover:text-primary transition-colors"
               >
                 Mind Games
+              </Link>
+              <Link 
+                to="/about" 
+                className="text-sm font-medium hover:text-primary transition-colors border-b-2 border-primary"
+              >
+                About AutoNate
               </Link>
               <Link 
                 to="/auth" 
@@ -158,7 +167,7 @@ const About = () => {
             <Button 
               size="lg"
               className="hover-scale cyber-glow neon-border flex items-center gap-2 w-full sm:w-auto"
-              onClick={() => window.open('https://calendly.com/autonateai', '_blank')}
+              onClick={() => window.open('https://calendly.com/autonate-ai/15-min-discovery-call', '_blank')}
             >
               <Phone className="h-4 w-4" />
               Book Your Free 15-Minute Discovery Call

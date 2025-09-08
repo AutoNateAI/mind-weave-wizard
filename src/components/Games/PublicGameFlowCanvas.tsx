@@ -53,12 +53,15 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
   const [timeSpent, setTimeSpent] = useState(0);
 
   useEffect(() => {
+    if (gameState.isCompleted) return; // Stop timer when game is completed
+
     const timer = setInterval(() => {
-      setTimeSpent(Math.floor((Date.now() - gameState.startTime) / 1000));
+      const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+      setTimeSpent(elapsed);
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [gameState.startTime]);
+  }, [gameState.startTime, gameState.isCompleted]);
 
   const instructorSolution = gameTemplate?.template_data?.instructorSolution || [];
 

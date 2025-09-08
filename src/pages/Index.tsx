@@ -19,6 +19,7 @@ import { PageMeta } from "@/components/UI/PageMeta";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { GlassCard } from "@/components/UI/GlassCard";
 import { Badge } from "@/components/ui/badge";
+import { useScrollToTop } from "@/hooks/useScrollToTop";
 import { 
   Brain, 
   Users, 
@@ -48,7 +49,9 @@ const sessionData = sessionOverview.map((session, index) => ({
 }));
 
 const Index = () => {
-  const [emblaRef, emblaApi] = useEmblaCarousel({ 
+  useScrollToTop();
+  
+  const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true, 
     align: 'start',
     slidesToScroll: 1,
@@ -105,6 +108,12 @@ const Index = () => {
               AutoNateAI
             </Link>
             <div className="flex items-center gap-6">
+              <Link 
+                to="/" 
+                className="text-sm font-medium hover:text-primary transition-colors border-b-2 border-primary"
+              >
+                Home
+              </Link>
               <Link 
                 to="/mind-games" 
                 className="text-sm font-medium hover:text-primary transition-colors"

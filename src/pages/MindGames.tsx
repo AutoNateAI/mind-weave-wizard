@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { PublicGameFlowCanvas } from '@/components/Games/PublicGameFlowCanvas';
-import { Brain, Clock, ArrowRight, Cpu, Code, Cloud } from 'lucide-react';
+import { Brain, Clock, ArrowRight, Cpu, Code, Cloud, Phone } from 'lucide-react';
 import { PageMeta } from '@/components/UI/PageMeta';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useScrollToTop } from '@/hooks/useScrollToTop';
@@ -84,7 +84,45 @@ export default function MindGames() {
           description={`Challenge your critical thinking with ${selectedGame.name}. Navigate complex AI engineering scenarios and test your decision-making skills.`}
         />
         
-        <div className="container mx-auto px-4 py-6">
+        {/* Navigation Bar */}
+        <nav className="absolute top-0 left-0 right-0 z-10 bg-background/80 backdrop-blur-sm border-b border-primary/20">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between h-16">
+              <Link to="/" className="text-xl font-bold gradient-text">
+                AutoNateAI
+              </Link>
+              <div className="flex items-center gap-6">
+                <Link 
+                  to="/" 
+                  className="text-sm font-medium hover:text-primary transition-colors"
+                >
+                  Home
+                </Link>
+                <Link 
+                  to="/mind-games" 
+                  className="text-sm font-medium hover:text-primary transition-colors border-b-2 border-primary"
+                >
+                  Mind Games
+                </Link>
+                <Link 
+                  to="/about" 
+                  className="text-sm font-medium hover:text-primary transition-colors"
+                >
+                  About AutoNate
+                </Link>
+                <Link 
+                  to="/auth" 
+                  className="text-sm font-medium hover:text-primary transition-colors"
+                >
+                  Login
+                </Link>
+                <ThemeToggle />
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        <div className="container mx-auto px-4 pt-20 py-6">
           <div className="mb-6 flex items-center justify-between">
             <Button 
               variant="outline" 
@@ -93,10 +131,10 @@ export default function MindGames() {
             >
               ← Back to Games
             </Button>
-            <h1 className="text-2xl font-bold text-primary">{selectedGame.name}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{selectedGame.name}</h1>
           </div>
 
-          <div className="h-[calc(100vh-180px)] rounded-xl border bg-card shadow-lg overflow-hidden">
+          <div className="h-[100vh] rounded-xl border bg-card shadow-lg overflow-hidden">
             <PublicGameFlowCanvas
               gameTemplate={selectedGame}
               onComplete={(analytics, leadData) => {
@@ -125,6 +163,18 @@ export default function MindGames() {
               AutoNateAI
             </Link>
             <div className="flex items-center gap-6">
+              <Link 
+                to="/" 
+                className="text-sm font-medium hover:text-primary transition-colors"
+              >
+                Home
+              </Link>
+              <Link 
+                to="/mind-games" 
+                className="text-sm font-medium hover:text-primary transition-colors border-b-2 border-primary"
+              >
+                Mind Games
+              </Link>
               <Link 
                 to="/about" 
                 className="text-sm font-medium hover:text-primary transition-colors"
@@ -248,6 +298,28 @@ export default function MindGames() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Sticky CTA Footer */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t border-primary/20 p-4">
+          <div className="container mx-auto">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 max-w-4xl mx-auto">
+              <div className="text-center sm:text-left">
+                <p className="font-semibold text-foreground">Ready to level up your engineering mind?</p>
+              </div>
+              <Button 
+                size="lg"
+                className="hover-scale cyber-glow neon-border flex items-center gap-2 w-full sm:w-auto"
+                onClick={() => window.open('https://calendly.com/autonate-ai/15-min-discovery-call', '_blank')}
+              >
+                <Phone className="h-4 w-4" />
+                Book Your Free 15-Minute Discovery Call
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom padding to account for sticky footer */}
+        <div className="h-20"></div>
       </div>
     </div>
   );
