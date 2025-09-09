@@ -74,7 +74,10 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
     const isCorrect = evaluateConnection(params.source!, params.target!);
     
     // Track interaction and update score
-    const newScore = calculateScore();
+    const newCorrect = isCorrect ? gameState.correctConnections + 1 : gameState.correctConnections;
+    const newIncorrect = !isCorrect ? gameState.incorrectConnections + 1 : gameState.incorrectConnections;
+    const newScore = calculateScore(newCorrect, newIncorrect, gameState.hintsUsed);
+    
     setGameState(prev => ({
       ...prev,
       interactions: prev.interactions + 1,
@@ -89,18 +92,18 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
         correct: isCorrect,
         timestamp: Date.now()
       }, ...prev.connectionHistory.slice(0, 9)], // Keep last 10
-      correctConnections: isCorrect ? prev.correctConnections + 1 : prev.correctConnections,
-      incorrectConnections: !isCorrect ? prev.incorrectConnections + 1 : prev.incorrectConnections,
+      correctConnections: newCorrect,
+      incorrectConnections: newIncorrect,
       score: newScore
     }));
 
     // Visual feedback
     if (isCorrect) {
-      toast.success("Correct connection! +10 points", {
+      toast.success(`Correct connection! +10 points (Score: ${newScore})`, {
         icon: <CheckCircle className="w-4 h-4 text-green-500" />
       });
     } else {
-      toast.error("Connection needs review", {
+      toast.error(`Incorrect connection! -5 points (Score: ${newScore})`, {
         icon: <XCircle className="w-4 h-4 text-red-500" />
       });
     }
@@ -162,9 +165,13 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
         setEdges(prev => prev.filter(edge => edge.id !== hintEdge.id));
       }, 3000);
 
+      const newHints = gameState.hintsUsed + 1;
+      const newScore = calculateScore(gameState.correctConnections, gameState.incorrectConnections, newHints);
+      
       setGameState(prev => ({
         ...prev,
-        hintsUsed: prev.hintsUsed + 1
+        hintsUsed: newHints,
+        score: newScore
       }));
 
       toast.info(`Hint ${gameState.hintsUsed + 1}/3: Connection highlighted temporarily`, {
@@ -173,22 +180,16 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
     }
   };
 
-  const calculateScore = (): number => {
+  const calculateScore = (correct: number, incorrect: number, hints: number): number => {
     const correctWeight = 10;
-    const incorrectPenalty = 2;
-    const hintPenalty = 5;
-    const timeBonusThreshold = 600; // 10 minutes
+    const incorrectPenalty = 5;
+    const hintPenalty = 3;
     
-    let score = gameState.correctConnections * correctWeight;
-    score -= gameState.incorrectConnections * incorrectPenalty;
-    score -= gameState.hintsUsed * hintPenalty;
+    let score = correct * correctWeight;
+    score -= incorrect * incorrectPenalty;
+    score -= hints * hintPenalty;
     
-    // Time bonus
-    if (timeSpent < timeBonusThreshold) {
-      score += Math.max(0, timeBonusThreshold - timeSpent) * 0.1;
-    }
-    
-    return Math.max(0, Math.min(100, score));
+    return Math.max(0, score);
   };
 
   const checkGameCompletion = () => {
@@ -201,7 +202,7 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
   };
 
   const completeGame = () => {
-    const finalScore = calculateScore();
+    const finalScore = calculateScore(gameState.correctConnections, gameState.incorrectConnections, gameState.hintsUsed);
     
     const analytics = {
       timeSpent,
@@ -267,8 +268,8 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
     <div className="h-full flex flex-col bg-background">
       {/* Instructions Overlay */}
       {gameState.showInstructions && (
-        <div className="absolute inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center">
-          <div className="max-w-2xl mx-auto p-8 bg-card rounded-2xl shadow-2xl border">
+        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center overflow-hidden">
+          <div className="max-w-2xl mx-auto p-8 bg-card rounded-2xl shadow-2xl border max-h-[90vh] overflow-y-auto">
             <div className="text-center">
               <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Target className="w-8 h-8 text-white" />
@@ -408,7 +409,7 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
       )}
 
       {/* Game Completion Report */}
-      {gameState.showReport && (
+        {gameState.showReport && (
         <PublicGameReport
           analytics={{
             timeSpent,
@@ -416,7 +417,7 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
             incorrectConnections: gameState.incorrectConnections,
             hintsUsed: gameState.hintsUsed,
             totalInteractions: gameState.interactions,
-            completionScore: calculateScore(),
+            completionScore: gameState.score,
             decisionPath: gameState.connectionHistory
           }}
           gameTitle={gameTemplate.name}
