@@ -9,6 +9,7 @@ import { Brain, Clock, ArrowRight, Cpu, Code, Cloud, Phone } from 'lucide-react'
 import { PageMeta } from '@/components/UI/PageMeta';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useScrollToTop } from '@/hooks/useScrollToTop';
+import MobileNav from "@/components/Navigation/MobileNav";
 
 interface GameTemplate {
   id: string;
@@ -91,7 +92,9 @@ export default function MindGames() {
               <Link to="/" className="text-xl font-bold gradient-text">
                 AutoNateAI
               </Link>
-              <div className="flex items-center gap-6">
+            <div className="flex items-center gap-6">
+              {/* Desktop Navigation */}
+              <div className="hidden md:flex items-center gap-6">
                 <Link 
                   to="/" 
                   className="text-sm font-medium hover:text-primary transition-colors"
@@ -116,8 +119,11 @@ export default function MindGames() {
                 >
                   Login
                 </Link>
-                <ThemeToggle />
               </div>
+              <ThemeToggle />
+              {/* Mobile Navigation */}
+              <MobileNav />
+            </div>
             </div>
           </div>
         </nav>
@@ -155,43 +161,48 @@ export default function MindGames() {
         description="Challenge yourself with AI engineering scenarios. Test your critical thinking skills through interactive graph-based games covering AI agents, prompt engineering, and cloud infrastructure."
       />
       
-      {/* Navigation Bar */}
-      <nav className="absolute top-0 left-0 right-0 z-10 bg-background/80 backdrop-blur-sm border-b border-primary/20">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <Link to="/" className="text-xl font-bold gradient-text">
-              AutoNateAI
-            </Link>
-            <div className="flex items-center gap-6">
-              <Link 
-                to="/" 
-                className="text-sm font-medium hover:text-primary transition-colors"
-              >
-                Home
+        {/* Navigation Bar */}
+        <nav className="absolute top-0 left-0 right-0 z-10 bg-background/80 backdrop-blur-sm border-b border-primary/20">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between h-16">
+              <Link to="/" className="text-xl font-bold gradient-text">
+                AutoNateAI
               </Link>
-              <Link 
-                to="/mind-games" 
-                className="text-sm font-medium hover:text-primary transition-colors border-b-2 border-primary"
-              >
-                Mind Games
-              </Link>
-              <Link 
-                to="/about" 
-                className="text-sm font-medium hover:text-primary transition-colors"
-              >
-                About AutoNate
-              </Link>
-              <Link 
-                to="/auth" 
-                className="text-sm font-medium hover:text-primary transition-colors"
-              >
-                Login
-              </Link>
-              <ThemeToggle />
+              <div className="flex items-center gap-6">
+                {/* Desktop Navigation */}
+                <div className="hidden md:flex items-center gap-6">
+                  <Link 
+                    to="/" 
+                    className="text-sm font-medium hover:text-primary transition-colors"
+                  >
+                    Home
+                  </Link>
+                  <Link 
+                    to="/mind-games" 
+                    className="text-sm font-medium hover:text-primary transition-colors border-b-2 border-primary"
+                  >
+                    Mind Games
+                  </Link>
+                  <Link 
+                    to="/about" 
+                    className="text-sm font-medium hover:text-primary transition-colors"
+                  >
+                    About AutoNate
+                  </Link>
+                  <Link 
+                    to="/auth" 
+                    className="text-sm font-medium hover:text-primary transition-colors"
+                  >
+                    Login
+                  </Link>
+                </div>
+                <ThemeToggle />
+                {/* Mobile Navigation */}
+                <MobileNav />
+              </div>
             </div>
           </div>
-        </div>
-      </nav>
+        </nav>
 
       {/* Hero Section */}
       <div className="container mx-auto px-4 pt-24 pb-16">
@@ -312,7 +323,8 @@ export default function MindGames() {
                 onClick={() => window.open('https://calendly.com/autonate-ai/15-min-discovery-call', '_blank')}
               >
                 <Phone className="h-4 w-4" />
-                Book Your Free 15-Minute Discovery Call
+                <span className="hidden sm:inline">Book Your Free 15-Minute Discovery Call</span>
+                <span className="sm:hidden">Book Discovery Call</span>
               </Button>
             </div>
           </div>

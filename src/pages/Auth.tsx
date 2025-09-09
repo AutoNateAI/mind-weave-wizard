@@ -12,6 +12,7 @@ import { PageMeta } from "@/components/UI/PageMeta";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
 import { Phone } from "lucide-react";
+import MobileNav from "@/components/Navigation/MobileNav";
 
 const schema = z.object({
   email: z.string().email(),
@@ -62,31 +63,36 @@ export default function Auth() {
               AutoNateAI
             </Link>
             <div className="flex items-center gap-6">
-              <Link 
-                to="/" 
-                className="text-sm font-medium hover:text-primary transition-colors"
-              >
-                Home
-              </Link>
-              <Link 
-                to="/mind-games" 
-                className="text-sm font-medium hover:text-primary transition-colors"
-              >
-                Mind Games
-              </Link>
-              <Link 
-                to="/about" 
-                className="text-sm font-medium hover:text-primary transition-colors"
-              >
-                About AutoNate
-              </Link>
-              <Link 
-                to="/auth" 
-                className="text-sm font-medium hover:text-primary transition-colors border-b-2 border-primary"
-              >
-                Login
-              </Link>
+              {/* Desktop Navigation */}
+              <div className="hidden md:flex items-center gap-6">
+                <Link 
+                  to="/" 
+                  className="text-sm font-medium hover:text-primary transition-colors"
+                >
+                  Home
+                </Link>
+                <Link 
+                  to="/mind-games" 
+                  className="text-sm font-medium hover:text-primary transition-colors"
+                >
+                  Mind Games
+                </Link>
+                <Link 
+                  to="/about" 
+                  className="text-sm font-medium hover:text-primary transition-colors"
+                >
+                  About AutoNate
+                </Link>
+                <Link 
+                  to="/auth" 
+                  className="text-sm font-medium hover:text-primary transition-colors border-b-2 border-primary"
+                >
+                  Login
+                </Link>
+              </div>
               <ThemeToggle />
+              {/* Mobile Navigation */}
+              <MobileNav />
             </div>
           </div>
         </div>
@@ -136,14 +142,15 @@ export default function Auth() {
             <div className="text-center sm:text-left">
               <p className="font-semibold text-foreground">Don't have an account? Let's chat!</p>
             </div>
-            <Button 
-              size="lg"
-              className="hover-scale cyber-glow neon-border flex items-center gap-2 w-full sm:w-auto"
-              onClick={() => window.open('https://calendly.com/autonate-ai/15-min-discovery-call', '_blank')}
-            >
-              <Phone className="h-4 w-4" />
-              Book Your Free 15-Minute Discovery Call
-            </Button>
+              <Button 
+                size="lg"
+                className="hover-scale cyber-glow neon-border flex items-center gap-2 w-full sm:w-auto"
+                onClick={() => window.open('https://calendly.com/autonate-ai/15-min-discovery-call', '_blank')}
+              >
+                <Phone className="h-4 w-4" />
+                <span className="hidden sm:inline">Book Your Free 15-Minute Discovery Call</span>
+                <span className="sm:hidden">Book Discovery Call</span>
+              </Button>
           </div>
         </div>
       </div>

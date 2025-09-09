@@ -20,6 +20,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { GlassCard } from "@/components/UI/GlassCard";
 import { Badge } from "@/components/ui/badge";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
+import MobileNav from "@/components/Navigation/MobileNav";
 import { 
   Brain, 
   Users, 
@@ -108,31 +109,36 @@ const Index = () => {
               AutoNateAI
             </Link>
             <div className="flex items-center gap-6">
-              <Link 
-                to="/" 
-                className="text-sm font-medium hover:text-primary transition-colors border-b-2 border-primary"
-              >
-                Home
-              </Link>
-              <Link 
-                to="/mind-games" 
-                className="text-sm font-medium hover:text-primary transition-colors"
-              >
-                Mind Games
-              </Link>
-              <Link 
-                to="/about" 
-                className="text-sm font-medium hover:text-primary transition-colors"
-              >
-                About AutoNate
-              </Link>
-              <Link 
-                to="/auth" 
-                className="text-sm font-medium hover:text-primary transition-colors"
-              >
-                Login
-              </Link>
+              {/* Desktop Navigation */}
+              <div className="hidden md:flex items-center gap-6">
+                <Link 
+                  to="/" 
+                  className="text-sm font-medium hover:text-primary transition-colors border-b-2 border-primary"
+                >
+                  Home
+                </Link>
+                <Link 
+                  to="/mind-games" 
+                  className="text-sm font-medium hover:text-primary transition-colors"
+                >
+                  Mind Games
+                </Link>
+                <Link 
+                  to="/about" 
+                  className="text-sm font-medium hover:text-primary transition-colors"
+                >
+                  About AutoNate
+                </Link>
+                <Link 
+                  to="/auth" 
+                  className="text-sm font-medium hover:text-primary transition-colors"
+                >
+                  Login
+                </Link>
+              </div>
               <ThemeToggle />
+              {/* Mobile Navigation */}
+              <MobileNav />
             </div>
           </div>
         </div>
@@ -190,7 +196,10 @@ const Index = () => {
                   onClick={scrollToBooking}
                 >
                   <Phone className="h-4 w-4 sm:h-6 sm:w-6 flex-shrink-0" />
-                  <span className="font-semibold leading-tight">Book Your Free 15-Minute Discovery Call</span>
+                  <span className="font-semibold leading-tight">
+                    <span className="hidden sm:inline">Book Your Free 15-Minute Discovery Call</span>
+                    <span className="sm:hidden">Book Discovery Call</span>
+                  </span>
                 </Button>
                 <Button 
                   size="lg" 
