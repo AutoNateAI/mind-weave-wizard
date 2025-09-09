@@ -32,7 +32,7 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
   const [gameState, setGameState] = useState({
     interactions: 0,
     hintsUsed: 0,
-    startTime: Date.now(),
+    startTime: null as number | null,
     isCompleted: false,
     revealedNodes: new Set<string>(),
     score: 0,
@@ -46,22 +46,23 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
       timestamp: number
     }>,
     showInstructions: true,
-    showReport: false
+    showReport: false,
+    gameStarted: false
   });
 
   // Track time spent
   const [timeSpent, setTimeSpent] = useState(0);
 
   useEffect(() => {
-    if (gameState.isCompleted) return; // Stop timer when game is completed
+    if (gameState.isCompleted || !gameState.gameStarted || !gameState.startTime) return;
 
     const timer = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+      const elapsed = Math.floor((Date.now() - gameState.startTime!) / 1000);
       setTimeSpent(elapsed);
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [gameState.startTime, gameState.isCompleted]);
+  }, [gameState.startTime, gameState.isCompleted, gameState.gameStarted]);
 
   const instructorSolution = gameTemplate?.template_data?.instructorSolution || [];
 
@@ -72,7 +73,8 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
     // Evaluate connection
     const isCorrect = evaluateConnection(params.source!, params.target!);
     
-    // Track interaction
+    // Track interaction and update score
+    const newScore = calculateScore();
     setGameState(prev => ({
       ...prev,
       interactions: prev.interactions + 1,
@@ -88,7 +90,8 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
         timestamp: Date.now()
       }, ...prev.connectionHistory.slice(0, 9)], // Keep last 10
       correctConnections: isCorrect ? prev.correctConnections + 1 : prev.correctConnections,
-      incorrectConnections: !isCorrect ? prev.incorrectConnections + 1 : prev.incorrectConnections
+      incorrectConnections: !isCorrect ? prev.incorrectConnections + 1 : prev.incorrectConnections,
+      score: newScore
     }));
 
     // Visual feedback
@@ -224,10 +227,11 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
 
   const resetGame = () => {
     setEdges([]);
+    setTimeSpent(0);
     setGameState({
       interactions: 0,
       hintsUsed: 0,
-      startTime: Date.now(),
+      startTime: null,
       isCompleted: false,
       revealedNodes: new Set<string>(),
       score: 0,
@@ -236,7 +240,8 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
       incorrectConnections: 0,
       connectionHistory: [],
       showInstructions: true,
-      showReport: false
+      showReport: false,
+      gameStarted: false
     });
   };
 
@@ -285,9 +290,14 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
                 </div>
               </div>
               <Button 
-                onClick={() => setGameState(prev => ({ ...prev, showInstructions: false }))}
+                onClick={() => setGameState(prev => ({ 
+                  ...prev, 
+                  showInstructions: false, 
+                  gameStarted: true,
+                  startTime: Date.now(),
+                  score: 0
+                }))}
                 size="lg"
-                className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
               >
                 Start Challenge
                 <Trophy className="w-4 h-4 ml-2" />
@@ -327,7 +337,7 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
             </span>
             <span className="flex items-center gap-1">
               <Trophy className="w-4 h-4 text-primary" />
-              Score: {calculateScore()}
+              Score: {gameState.score}
             </span>
           </div>
           
@@ -362,9 +372,10 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
         </div>
       </div>
 
-      {/* React Flow Canvas */}
-      <div className="flex-1 min-h-0">
-        <ReactFlow
+      {/* React Flow Canvas - Only show when game has started */}
+      {gameState.gameStarted && (
+        <div className="flex-1 min-h-0">
+          <ReactFlow
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
@@ -393,7 +404,8 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
             className={theme === 'dark' ? 'dark' : ''}
           />
         </ReactFlow>
-      </div>
+        </div>
+      )}
 
       {/* Game Completion Report */}
       {gameState.showReport && (

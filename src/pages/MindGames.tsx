@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { PublicGameFlowCanvas } from '@/components/Games/PublicGameFlowCanvas';
@@ -222,8 +223,8 @@ export default function MindGames() {
           </p>
         </div>
 
-        {/* Games Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        {/* Games Grid - Desktop */}
+        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
           {loading ? (
             Array.from({ length: 3 }).map((_, i) => (
               <Card key={i} className="h-96 animate-pulse">
@@ -286,6 +287,79 @@ export default function MindGames() {
               );
             })
           )}
+        </div>
+
+        {/* Mobile Carousel */}
+        <div className="md:hidden">
+          <Carousel className="w-full max-w-sm mx-auto">
+            <CarouselContent>
+              {loading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <CarouselItem key={i}>
+                    <Card className="h-96 animate-pulse">
+                      <div className="h-full bg-muted/50 rounded-lg"></div>
+                    </Card>
+                  </CarouselItem>
+                ))
+              ) : (
+                gameTemplates.map((game) => {
+                  const IconComponent = getGameIcon(game.name);
+                  const gradientClass = getGameColor(game.name);
+                  const difficulty = getDifficultyLevel(game.name);
+                  const estimatedTime = getEstimatedTime(game.name);
+
+                  return (
+                    <CarouselItem key={game.id}>
+                      <Card className="h-full flex flex-col bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
+                        <CardHeader className="pb-4">
+                          <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${gradientClass} flex items-center justify-center mb-4 shadow-lg`}>
+                            <IconComponent className="w-8 h-8 text-white" />
+                          </div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="secondary" className={`${difficulty.color} text-white border-0`}>
+                              {difficulty.level}
+                            </Badge>
+                            <div className="flex items-center gap-1 text-muted-foreground text-sm">
+                              <Clock className="w-3 h-3" />
+                              {estimatedTime}
+                            </div>
+                          </div>
+                          <CardTitle className="text-xl font-bold leading-tight">
+                            {game.name}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0 flex-1 flex flex-col">
+                          <p className="text-muted-foreground mb-6 leading-relaxed flex-1">
+                            {game.description}
+                          </p>
+                          <div className="mb-6">
+                            <div className="text-sm font-medium mb-2 text-foreground">Critical Thinking Skills:</div>
+                            <div className="flex flex-wrap gap-1">
+                              {game.heuristic_targets.slice(0, 3).map((target, index) => (
+                                <Badge key={index} variant="outline" className="text-xs">
+                                  {target}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                          <Button 
+                            onClick={() => setSelectedGame(game)}
+                            className="w-full mt-auto"
+                            size="lg"
+                          >
+                            Start Challenge
+                            <ArrowRight className="w-4 h-4 ml-2" />
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </CarouselItem>
+                  );
+                })
+              )}
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+          </Carousel>
         </div>
 
         {/* CTA Section */}
