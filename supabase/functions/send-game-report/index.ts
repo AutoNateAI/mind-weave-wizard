@@ -157,6 +157,11 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     console.log("Game report email sent successfully:", emailResponse);
+    
+    if (emailResponse.error) {
+      console.error("Resend API error:", emailResponse.error);
+      throw new Error(`Email sending failed: ${emailResponse.error}`);
+    }
 
     return new Response(JSON.stringify({ success: true, emailResponse }), {
       status: 200,
