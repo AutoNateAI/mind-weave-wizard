@@ -309,7 +309,7 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
       )}
 
       {/* Game Controls */}
-      <div className="flex items-center justify-between p-4 border-b bg-card/50">
+      <div className="flex flex-col md:flex-row md:items-center justify-between p-4 border-b bg-card/50 gap-4 md:gap-0">
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
@@ -326,8 +326,34 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
           </div>
         </div>
         
-        <div className="flex items-center gap-4">
-          <div className="text-sm flex items-center gap-4">
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
+          {/* Mobile Score Display */}
+          <div className="md:hidden grid grid-cols-3 gap-4 text-sm">
+            <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <div className="flex items-center justify-center gap-1 text-green-600 dark:text-green-400">
+                <CheckCircle className="w-4 h-4" />
+                <span className="font-medium">{gameState.correctConnections}</span>
+              </div>
+              <div className="text-xs text-muted-foreground">Correct</div>
+            </div>
+            <div className="text-center p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
+              <div className="flex items-center justify-center gap-1 text-red-600 dark:text-red-400">
+                <XCircle className="w-4 h-4" />
+                <span className="font-medium">{gameState.incorrectConnections}</span>
+              </div>
+              <div className="text-xs text-muted-foreground">Wrong</div>
+            </div>
+            <div className="text-center p-2 bg-primary/10 rounded-lg">
+              <div className="flex items-center justify-center gap-1 text-primary">
+                <Trophy className="w-4 h-4" />
+                <span className="font-medium">{gameState.score}</span>
+              </div>
+              <div className="text-xs text-muted-foreground">Score</div>
+            </div>
+          </div>
+
+          {/* Desktop Score Display */}
+          <div className="hidden md:flex text-sm items-center gap-4">
             <span className="flex items-center gap-1">
               <CheckCircle className="w-4 h-4 text-green-500" />
               {gameState.correctConnections}
@@ -342,22 +368,23 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
             </span>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-center md:justify-start">
             <Button 
               onClick={useHint} 
               disabled={gameState.hintsUsed >= 3}
               variant="outline" 
               size="sm"
-              className="hover:bg-yellow-50 hover:border-yellow-200"
+              className="hover:bg-yellow-50 hover:border-yellow-200 text-xs md:text-sm"
             >
               <Lightbulb className="w-4 h-4 mr-1" />
-              Hint ({3 - gameState.hintsUsed})
+              <span className="hidden sm:inline">Hint ({3 - gameState.hintsUsed})</span>
+              <span className="sm:hidden">({3 - gameState.hintsUsed})</span>
             </Button>
             <Button 
               onClick={completeGame} 
               variant="outline" 
               size="sm"
-              className="hover:bg-green-50 hover:border-green-200"
+              className="hover:bg-green-50 hover:border-green-200 text-xs md:text-sm"
             >
               Finish
             </Button>
@@ -365,7 +392,7 @@ export function PublicGameFlowCanvas({ gameTemplate, onComplete }: PublicGameFlo
               onClick={resetGame} 
               variant="outline" 
               size="sm"
-              className="hover:bg-red-50 hover:border-red-200"
+              className="hover:bg-red-50 hover:border-red-200 text-xs md:text-sm"
             >
               Reset
             </Button>

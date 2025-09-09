@@ -130,15 +130,18 @@ export default function MindGames() {
         </nav>
 
         <div className="container mx-auto px-4 pt-20 py-6">
-          <div className="mb-6 flex items-center justify-between">
-            <Button 
-              variant="outline" 
-              onClick={() => setSelectedGame(null)}
-              className="hover:bg-muted/50 transition-colors"
-            >
-              ← Back to Games
-            </Button>
-            <h1 className="text-2xl font-bold text-foreground">{selectedGame.name}</h1>
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4 md:mb-0">
+              <Button 
+                variant="outline" 
+                onClick={() => setSelectedGame(null)}
+                className="hover:bg-muted/50 transition-colors"
+              >
+                ← Back to Games
+              </Button>
+              <h1 className="hidden md:block text-2xl font-bold text-foreground">{selectedGame.name}</h1>
+            </div>
+            <h1 className="md:hidden text-xl font-bold text-foreground text-center mt-4">{selectedGame.name}</h1>
           </div>
 
           <div className="h-[100vh] rounded-xl border bg-card shadow-lg overflow-hidden">
@@ -291,8 +294,14 @@ export default function MindGames() {
 
         {/* Mobile Carousel */}
         <div className="md:hidden">
-          <Carousel className="w-full max-w-sm mx-auto">
-            <CarouselContent>
+          <Carousel 
+            className="w-full max-w-sm mx-auto" 
+            opts={{
+              align: "start",
+              loop: false,
+            }}
+          >
+            <CarouselContent className="-ml-2 md:-ml-4">
               {loading ? (
                 Array.from({ length: 3 }).map((_, i) => (
                   <CarouselItem key={i}>
@@ -309,7 +318,7 @@ export default function MindGames() {
                   const estimatedTime = getEstimatedTime(game.name);
 
                   return (
-                    <CarouselItem key={game.id}>
+                    <CarouselItem key={game.id} className="pl-2 md:pl-4 basis-4/5">
                       <Card className="h-full flex flex-col bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
                         <CardHeader className="pb-4">
                           <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${gradientClass} flex items-center justify-center mb-4 shadow-lg`}>
@@ -357,8 +366,6 @@ export default function MindGames() {
                 })
               )}
             </CarouselContent>
-            <CarouselPrevious />
-            <CarouselNext />
           </Carousel>
         </div>
 
