@@ -235,6 +235,7 @@ Make sure each session has exactly 3 lectures, each 5-7 minutes long. Focus on e
         { role: 'user', content: prompt }
       ],
       temperature: 0.7,
+      max_tokens: 4000,
       response_format: { type: "json_object" }
     }),
   });
@@ -349,6 +350,7 @@ Keep replies concise and conversational. Focus on how to adapt the course themes
       model: 'gpt-4o',
       messages,
       temperature: 0.7,
+      max_tokens: 2000
     }),
   });
 
@@ -497,6 +499,7 @@ Return ONLY this JSON structure:
         { role: 'user', content: prompt }
       ],
       temperature: 0.8,
+      max_tokens: 3000
     }),
   });
 
@@ -668,6 +671,7 @@ Return JSON format:
         { role: 'user', content: prompt }
       ],
       temperature: 0.7,
+      max_tokens: 3000
     }),
   });
 
