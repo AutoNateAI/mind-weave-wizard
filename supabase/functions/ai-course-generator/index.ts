@@ -273,9 +273,9 @@ Make sure each session has exactly 3 lectures, each 5-7 minutes long. Focus on e
   const { data: course, error: courseError } = await supabase
     .from('courses')
     .insert({
-      title: generatedPlan.course.title,
-      description: generatedPlan.course.description,
-      overview: generatedPlan.course.overview,
+      title: generatedPlan.courseTitle || 'AutoNateAI: Thinking Wizard Course',
+      description: generatedPlan.courseDescription || 'A comprehensive course on graph theory and mental models for structured thinking.',
+      overview: generatedPlan.courseOverview || 'Learn to apply graph theory and mental models to solve complex problems and improve decision-making.',
       created_by: userId,
       status: 'draft'
     })
