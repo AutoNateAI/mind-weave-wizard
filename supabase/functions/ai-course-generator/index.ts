@@ -222,28 +222,51 @@ Make sure each session has exactly 3 lectures, each 5-7 minutes long. Focus on e
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
+      'Authorization': `Bearer ${openaiApiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       model: 'gpt-4o',
       messages: [
-        { role: 'system', content: 'You are an expert educational content designer.' },
+        { 
+          role: 'system', 
+          content: 'You are an expert educational content designer. You MUST respond with valid JSON only. Do not include any markdown formatting or additional text.' 
+        },
         { role: 'user', content: prompt }
       ],
       temperature: 0.7,
+      response_format: { type: "json_object" }
     }),
   });
 
   const data = await response.json();
+  console.log('🔍 OpenAI API response:', { 
+    status: response.status, 
+    hasChoices: !!data.choices, 
+    firstChoice: data.choices?.[0] 
+  });
+
+  if (!response.ok) {
+    console.error('❌ OpenAI API error:', data);
+    throw new Error(`OpenAI API error: ${data.error?.message || 'Unknown error'}`);
+  }
+
   let rawContent = data.choices[0].message.content;
+  console.log('📝 Raw OpenAI content (first 200 chars):', rawContent?.substring(0, 200));
   
   // Clean up markdown formatting if present
   if (rawContent.includes('```json')) {
     rawContent = rawContent.replace(/```json\s*/, '').replace(/```\s*$/, '');
   }
   
-  const generatedPlan = JSON.parse(rawContent);
+  let generatedPlan;
+  try {
+    generatedPlan = JSON.parse(rawContent);
+  } catch (parseError) {
+    console.error('❌ JSON parse error:', parseError);
+    console.error('❌ Raw content that failed to parse:', rawContent);
+    throw new Error(`Failed to parse course plan response as JSON: ${parseError.message}`);
+  }
 
   // Save to database
   const { data: course, error: courseError } = await supabase
