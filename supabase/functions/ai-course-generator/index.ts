@@ -135,13 +135,12 @@ Return a single, well-structured paragraph block suitable as a context seed for 
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o',
+      model: 'gpt-5-2025-08-07',
       messages: [
         { role: 'system', content: 'You are an expert educational content strategist that crafts precise, actionable context seeds.' },
         { role: 'user', content: enhancementPrompt }
       ],
-      max_tokens: 800,
-      temperature: 0.7
+      max_completion_tokens: 800
     }),
   });
 
@@ -222,11 +221,11 @@ Make sure each session has exactly 3 lectures, each 5-7 minutes long. Focus on e
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${openaiApiKey}`,
+      'Authorization': `Bearer ${openAIApiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o',
+      model: 'gpt-5-2025-08-07',
       messages: [
         { 
           role: 'system', 
@@ -234,7 +233,7 @@ Make sure each session has exactly 3 lectures, each 5-7 minutes long. Focus on e
         },
         { role: 'user', content: prompt }
       ],
-      temperature: 0.7,
+      max_completion_tokens: 4000,
       response_format: { type: "json_object" }
     }),
   });
@@ -346,9 +345,9 @@ Keep replies concise and conversational. Focus on how to adapt the course themes
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o',
+      model: 'gpt-5-2025-08-07',
       messages,
-      temperature: 0.7,
+      max_completion_tokens: 2000
     }),
   });
 
@@ -491,12 +490,12 @@ Return ONLY this JSON structure:
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o',
+      model: 'gpt-5-2025-08-07',
       messages: [
         { role: 'system', content: 'You are an expert educational content creator specializing in visual presentations for cognitive and mental model training. Always return valid JSON without any markdown formatting.' },
         { role: 'user', content: prompt }
       ],
-      temperature: 0.8,
+      max_completion_tokens: 3000
     }),
   });
 
@@ -662,12 +661,12 @@ Return JSON format:
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o',
+      model: 'gpt-5-2025-08-07',
       messages: [
         { role: 'system', content: 'You are an expert assessment designer creating engaging educational evaluations for cognitive skill development. Always return valid JSON without any markdown formatting.' },
         { role: 'user', content: prompt }
       ],
-      temperature: 0.7,
+      max_completion_tokens: 3000
     }),
   });
 
@@ -1018,13 +1017,12 @@ async function editContent(payload: any) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini-2025-08-07',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.3,
-        max_tokens: 1000,
+        max_completion_tokens: 1000
       }),
     });
 
