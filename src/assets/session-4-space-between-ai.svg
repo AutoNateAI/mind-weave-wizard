@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#0f172a"/>
+  
+  <circle cx="80" cy="150" r="35" fill="#10b981" stroke="#059669" stroke-width="3"/>
+  <text x="80" y="155" text-anchor="middle" font-size="12" fill="#fff">Idea A</text>
+  
+  <circle cx="320" cy="150" r="35" fill="#10b981" stroke="#059669" stroke-width="3"/>
+  <text x="320" y="155" text-anchor="middle" font-size="12" fill="#fff">Idea B</text>
+  
+  <rect x="140" y="110" width="120" height="80" fill="#8b5cf6" opacity="0.4" rx="15"/>
+  <rect x="150" y="120" width="100" height="60" fill="#6366f1" opacity="0.6" rx="10"/>
+  <text x="200" y="145" text-anchor="middle" font-size="14" fill="#fff">THE SPACE</text>
+  <text x="200" y="165" text-anchor="middle" font-size="14" fill="#fff">BETWEEN</text>
+  
+  <rect x="180" y="130" width="12" height="12" fill="#06b6d4" rx="2"/>
+  <circle cx="186" cy="136" r="2" fill="#fff"/>
+  
+  <rect x="210" y="160" width="12" height="12" fill="#06b6d4" rx="2"/>
+  <circle cx="216" cy="166" r="2" fill="#fff"/>
+  
+  <line x1="115" y1="150" x2="140" y2="150" stroke="#fbbf24" stroke-width="3"/>
+  <line x1="260" y1="150" x2="285" y2="150" stroke="#fbbf24" stroke-width="3"/>
+  
+  <polygon points="200,200 195,210 205,210" fill="#f59e0b"/>
+  
+  <text x="200" y="40" text-anchor="middle" font-size="18" fill="#f1f5f9">Space Between & AI Tools</text>
+  <text x="200" y="270" text-anchor="middle" font-size="12" fill="#94a3b8">The meaning emerges at the edges</text>
+</svg>

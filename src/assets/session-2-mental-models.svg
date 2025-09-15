@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <defs>
+    <linearGradient id="eyeGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="lensGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6366F1;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="400" height="300" fill="#1E1B4B" opacity="0.1"/>
+  
+  <!-- Central eye representing perspective -->
+  <g transform="translate(200, 120)">
+    <!-- Eye outline -->
+    <ellipse cx="0" cy="0" rx="50" ry="30" fill="url(#eyeGradient2)" stroke="#10B981" stroke-width="3"/>
+    <!-- Pupil -->
+    <circle cx="0" cy="0" r="18" fill="#1E1B4B"/>
+    <!-- Iris -->
+    <circle cx="0" cy="0" r="10" fill="#FFFFFF"/>
+    <circle cx="0" cy="0" r="5" fill="#1E1B4B"/>
+  </g>
+  
+  <!-- Mental model lenses around the eye -->
+  <g transform="translate(120, 80)">
+    <rect x="-20" y="-15" width="40" height="30" fill="none" stroke="url(#lensGradient2)" stroke-width="3" rx="8"/>
+    <text x="0" y="5" font-family="Arial, sans-serif" font-size="10" fill="#8B5CF6" text-anchor="middle" font-weight="bold">Filter 1</text>
+  </g>
+  
+  <g transform="translate(280, 80)">
+    <rect x="-20" y="-15" width="40" height="30" fill="none" stroke="url(#lensGradient2)" stroke-width="3" rx="8"/>
+    <text x="0" y="5" font-family="Arial, sans-serif" font-size="10" fill="#8B5CF6" text-anchor="middle" font-weight="bold">Filter 2</text>
+  </g>
+  
+  <g transform="translate(120, 160)">
+    <rect x="-20" y="-15" width="40" height="30" fill="none" stroke="url(#lensGradient2)" stroke-width="3" rx="8"/>
+    <text x="0" y="5" font-family="Arial, sans-serif" font-size="10" fill="#8B5CF6" text-anchor="middle" font-weight="bold">Filter 3</text>
+  </g>
+  
+  <g transform="translate(280, 160)">
+    <rect x="-20" y="-15" width="40" height="30" fill="none" stroke="url(#lensGradient2)" stroke-width="3" rx="8"/>
+    <text x="0" y="5" font-family="Arial, sans-serif" font-size="10" fill="#8B5CF6" text-anchor="middle" font-weight="bold">Filter 4</text>
+  </g>
+  
+  <!-- Connection lines -->
+  <line x1="140" y1="80" x2="170" y2="100" stroke="#10B981" stroke-width="2" stroke-dasharray="3,3"/>
+  <line x1="260" y1="80" x2="230" y2="100" stroke="#10B981" stroke-width="2" stroke-dasharray="3,3"/>
+  <line x1="140" y1="160" x2="170" y2="140" stroke="#10B981" stroke-width="2" stroke-dasharray="3,3"/>
+  <line x1="260" y1="160" x2="230" y2="140" stroke="#10B981" stroke-width="2" stroke-dasharray="3,3"/>
+  
+  <!-- Reality vs Perception -->
+  <g transform="translate(80, 220)">
+    <circle cx="0" cy="0" r="15" fill="#EF4444" opacity="0.7"/>
+    <text x="0" y="25" font-family="Arial, sans-serif" font-size="10" fill="#374151" text-anchor="middle">Reality</text>
+  </g>
+  
+  <path d="M95 220 L135 220 L130 215 M135 220 L130 225" stroke="#F59E0B" stroke-width="2" fill="none"/>
+  
+  <g transform="translate(170, 220)">
+    <rect x="-15" y="-15" width="30" height="30" fill="#8B5CF6" opacity="0.7" rx="5"/>
+    <text x="0" y="25" font-family="Arial, sans-serif" font-size="10" fill="#374151" text-anchor="middle">Perception</text>
+  </g>
+  
+  <!-- Key insight -->
+  <g transform="translate(320, 220)">
+    <path d="M0,-8 L2,-2 L8,-2 L3,2 L5,8 L0,4 L-5,8 L-3,2 L-8,-2 L-2,-2 Z" fill="#F59E0B"/>
+    <text x="0" y="25" font-family="Arial, sans-serif" font-size="8" fill="#374151" text-anchor="middle">Insight</text>
+  </g>
+  
+  <!-- Title -->
+  <text x="200" y="40" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#1E1B4B" text-anchor="middle">Mental Models Unveiled</text>
+  
+  <!-- Subtitle -->
+  <text x="200" y="280" font-family="Arial, sans-serif" font-size="12" fill="#6B7280" text-anchor="middle">You see with your models, not your eyes</text>
+</svg>

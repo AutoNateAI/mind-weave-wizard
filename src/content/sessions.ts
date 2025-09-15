@@ -9,43 +9,83 @@ export type SessionContent = {
 export const sessionOverview = [
   { 
     number: 1, 
-    title: "Introduction to Graph Theory", 
-    theme: "Everything is connected",
-    description: "Discover how relationships and connections form the foundation of all logical thinking.",
-    duration: "2.5 hours",
-    keySkills: ["Pattern Recognition", "Visual Thinking", "Connection Mapping", "Systems Awareness"]
+    title: "Introduction to Critical Thinking", 
+    theme: "Building the foundation of logical reasoning",
+    description: "Establish core principles of critical thinking and logical reasoning for software engineers.",
+    duration: "1 hour",
+    keySkills: ["Logical Reasoning", "Foundation Building", "Critical Analysis", "Problem Framing"]
   },
   { 
     number: 2, 
-    title: "Mental Models & Mapping", 
+    title: "Mental Models Unveiled", 
     theme: "You don't see with your eyes—you see with your models",
     description: "Learn to identify and construct powerful mental frameworks for complex problem-solving.",
-    duration: "2.5 hours",
+    duration: "1 hour",
     keySkills: ["Model Construction", "Perspective Taking", "Framework Building", "Cognitive Flexibility"]
   },
   { 
     number: 3, 
-    title: "The Space Between", 
-    theme: "The meaning isn't in the nodes—it's in the edges",
-    description: "Master the art of finding insights in relationships and hidden connections.",
-    duration: "2.5 hours",
-    keySkills: ["Relationship Analysis", "Gap Identification", "Inference Making", "Critical Analysis"]
+    title: "Visualizing with Graph Theory", 
+    theme: "Everything is connected",
+    description: "Discover how relationships and connections form the foundation of all logical thinking.",
+    duration: "1 hour",
+    keySkills: ["Pattern Recognition", "Visual Thinking", "Connection Mapping", "Systems Awareness"]
   },
   { 
     number: 4, 
-    title: "Research Decomposition", 
-    theme: "Even the impossible becomes possible when you break it down right",
-    description: "Develop systematic approaches to breaking down complex problems into manageable parts.",
-    duration: "2.5 hours",
-    keySkills: ["Problem Decomposition", "Research Methods", "Systematic Thinking", "Solution Architecture"]
+    title: "Space Between and AI Tools", 
+    theme: "The meaning isn't in the nodes—it's in the edges",
+    description: "Master the art of finding insights in relationships and leveraging AI tools effectively.",
+    duration: "1 hour",
+    keySkills: ["Relationship Analysis", "AI Integration", "Tool Utilization", "Gap Identification"]
   },
   { 
     number: 5, 
-    title: "Advanced Applications & Mastery", 
+    title: "Research Decomposition", 
+    theme: "Even the impossible becomes possible when you break it down right",
+    description: "Develop systematic approaches to breaking down complex problems into manageable parts.",
+    duration: "1 hour",
+    keySkills: ["Problem Decomposition", "Research Methods", "Systematic Thinking", "Solution Architecture"]
+  },
+  { 
+    number: 6, 
+    title: "Traversal Techniques", 
+    theme: "Navigate complex problem spaces with precision",
+    description: "Learn advanced techniques for exploring and navigating complex problem domains.",
+    duration: "1 hour",
+    keySkills: ["Navigation Strategies", "Path Finding", "Exploration Techniques", "Strategic Movement"]
+  },
+  { 
+    number: 7, 
+    title: "Thinking Multidimensional", 
+    theme: "Expand beyond linear thinking patterns",
+    description: "Develop the ability to think across multiple dimensions and perspectives simultaneously.",
+    duration: "1 hour",
+    keySkills: ["Multidimensional Analysis", "Perspective Shifting", "Complex Reasoning", "Dimensional Thinking"]
+  },
+  { 
+    number: 8, 
+    title: "Pattern Recognition", 
+    theme: "See the patterns that others miss",
+    description: "Master advanced pattern recognition techniques for identifying hidden structures and relationships.",
+    duration: "1 hour",
+    keySkills: ["Pattern Detection", "Structure Recognition", "Trend Analysis", "Hidden Connections"]
+  },
+  { 
+    number: 9, 
+    title: "Advanced Applications", 
+    theme: "Apply mastery to real-world challenges",
+    description: "Apply all learned skills to complex real-world engineering scenarios and challenges.",
+    duration: "1 hour",
+    keySkills: ["Strategic Integration", "Advanced Problem Solving", "Real-world Application", "Complex Scenarios"]
+  },
+  { 
+    number: 10, 
+    title: "Mastery & Beyond", 
     theme: "You are now the architect of your thinking",
-    description: "Apply all learned skills to real-world scenarios and become a master of strategic thinking.",
-    duration: "2.5 hours",
-    keySkills: ["Strategic Integration", "Advanced Problem Solving", "Decision Architecture", "Thinking Mastery"]
+    description: "Achieve mastery of strategic thinking and become a leader in critical thinking excellence.",
+    duration: "1 hour",
+    keySkills: ["Thinking Mastery", "Leadership", "Strategic Excellence", "Continuous Growth"]
   }
 ];
 

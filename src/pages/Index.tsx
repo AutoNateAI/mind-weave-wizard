@@ -6,11 +6,16 @@ import lectureInterface from "@/assets/lms-lecture-interface.jpg";
 import analyticsDashboard from "@/assets/lms-analytics-dashboard.jpg";
 import graphEditor from "@/assets/lms-graph-editor.jpg";
 import reflectionInterface from "@/assets/deep-reflection-metacognition.jpg";
-import session1Image from "@/assets/session-1-graph-theory.jpg";
-import session2Image from "@/assets/session-2-mental-models.jpg";
-import session3Image from "@/assets/session-3-space-between.jpg";
-import session4Image from "@/assets/session-4-decomposition.jpg";
-import session5Image from "@/assets/session-5-mastery.jpg";
+import session1Image from "@/assets/session-1-critical-thinking.svg";
+import session2Image from "@/assets/session-2-mental-models.svg";
+import session3Image from "@/assets/session-3-graph-theory.svg";
+import session4Image from "@/assets/session-4-space-between-ai.svg";
+import session5Image from "@/assets/session-5-research-decomposition.svg";
+import session6Image from "@/assets/session-6-traversal-techniques.svg";
+import session7Image from "@/assets/session-7-multidimensional-thinking.svg";
+import session8Image from "@/assets/session-8-pattern-recognition.svg";
+import session9Image from "@/assets/session-9-advanced-applications.svg";
+import session10Image from "@/assets/session-10-mastery-beyond.svg";
 import { sessionOverview } from "@/content/sessions";
 import useEmblaCarousel from 'embla-carousel-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -42,7 +47,7 @@ import {
   Phone
 } from "lucide-react";
 
-const sessionImages = [session1Image, session2Image, session3Image, session4Image, session5Image];
+const sessionImages = [session1Image, session2Image, session3Image, session4Image, session5Image, session6Image, session7Image, session8Image, session9Image, session10Image];
 
 const sessionData = sessionOverview.map((session, index) => ({
   ...session,
@@ -794,7 +799,7 @@ const Index = () => {
           <div className="max-w-4xl mx-auto px-4">
             <GlassCard className="p-6 sm:p-8 border-primary/50 text-center">
               <div className="mb-8">
-                <div className="text-4xl sm:text-6xl font-bold gradient-text mb-4">$500</div>
+                <div className="text-4xl sm:text-6xl font-bold gradient-text mb-4">$55</div>
                 <div className="text-lg sm:text-xl text-muted-foreground">per session</div>
               </div>
 
@@ -804,7 +809,7 @@ const Index = () => {
                   <ul className="space-y-3 text-left">
                     <li className="flex items-center">
                       <CheckCircle className="mr-3 h-5 w-5 text-primary" />
-                      <span>2.5 hours of expert instruction</span>
+                      <span>1 hour of expert instruction</span>
                     </li>
                     <li className="flex items-center">
                       <CheckCircle className="mr-3 h-5 w-5 text-primary" />
@@ -830,11 +835,11 @@ const Index = () => {
                   <ul className="space-y-3 text-left">
                     <li className="flex items-center">
                       <Calendar className="mr-3 h-5 w-5 text-primary" />
-                      <span><strong>5 Sessions Total</strong> (12.5 hours)</span>
+                      <span><strong>10 Sessions Total</strong> (10 hours)</span>
                     </li>
                     <li className="flex items-center">
                       <DollarSign className="mr-3 h-5 w-5 text-primary" />
-                      <span><strong>$2,500 Total Investment</strong></span>
+                      <span><strong>$550 Total Investment</strong></span>
                     </li>
                     <li className="flex items-center">
                       <Users className="mr-3 h-5 w-5 text-primary" />
@@ -955,7 +960,7 @@ const Index = () => {
                 </div>
                 <ArrowRight className="h-6 w-6 sm:h-8 sm:w-8 text-primary mx-auto rotate-90" />
                 <div className="text-center">
-                  <div className="text-3xl sm:text-4xl font-bold text-primary mb-2">5</div>
+                  <div className="text-3xl sm:text-4xl font-bold text-primary mb-2">10</div>
                   <div className="text-sm sm:text-base text-muted-foreground">Transformative Sessions</div>
                 </div>
                 <ArrowRight className="h-6 w-6 sm:h-8 sm:w-8 text-primary mx-auto rotate-90" />

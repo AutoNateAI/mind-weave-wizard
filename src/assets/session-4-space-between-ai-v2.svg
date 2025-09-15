@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <defs>
+    <linearGradient id="nodeGradient4v2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="spaceGradient4v2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:0.4" />
+      <stop offset="100%" style="stop-color:#6366F1;stop-opacity:0.2" />
+    </linearGradient>
+    <linearGradient id="aiGradient4v2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#06B6D4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0891B2;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="edgeGlow4v2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#F59E0B;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#F59E0B;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="400" height="300" fill="#1E1B4B" opacity="0.1"/>
+  
+  <!-- Main concept nodes -->
+  <g transform="translate(100, 120)">
+    <circle cx="0" cy="0" r="25" fill="url(#nodeGradient4v2)" stroke="#10B981" stroke-width="3"/>
+    <text x="0" y="5" font-family="Arial, sans-serif" font-size="10" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Idea A</text>
+    <text x="0" y="-35" font-family="Arial, sans-serif" font-size="8" fill="#374151" text-anchor="middle">Known</text>
+  </g>
+  
+  <g transform="translate(300, 120)">
+    <circle cx="0" cy="0" r="25" fill="url(#nodeGradient4v2)" stroke="#10B981" stroke-width="3"/>
+    <text x="0" y="5" font-family="Arial, sans-serif" font-size="10" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Idea B</text>
+    <text x="0" y="-35" font-family="Arial, sans-serif" font-size="8" fill="#374151" text-anchor="middle">Known</text>
+  </g>
+  
+  <!-- The magical space between -->
+  <g transform="translate(200, 120)">
+    <!-- Glow effect -->
+    <circle cx="0" cy="0" r="60" fill="url(#edgeGlow4v2)"/>
+    <!-- Space container -->
+    <ellipse cx="0" cy="0" rx="75" ry="35" fill="url(#spaceGradient4v2)" stroke="#8B5CF6" stroke-width="2" stroke-dasharray="8,4"/>
+    <text x="0" y="-45" font-family="Arial, sans-serif" font-size="12" fill="#8B5CF6" text-anchor="middle" font-weight="bold">THE SPACE BETWEEN</text>
+  </g>
+  
+  <!-- AI tools in the space -->
+  <g transform="translate(170, 110)">
+    <rect x="-6" y="-6" width="12" height="12" fill="url(#aiGradient4v2)" rx="2"/>
+    <circle cx="0" cy="0" r="2" fill="#FFFFFF"/>
+    <text x="0" y="18" font-family="Arial, sans-serif" font-size="7" fill="#374151" text-anchor="middle">AI Tool</text>
+  </g>
+  
+  <g transform="translate(230, 130)">
+    <rect x="-6" y="-6" width="12" height="12" fill="url(#aiGradient4v2)" rx="2"/>
+    <circle cx="0" cy="0" r="2" fill="#FFFFFF"/>
+    <text x="0" y="18" font-family="Arial, sans-serif" font-size="7" fill="#374151" text-anchor="middle">AI Tool</text>
+  </g>
+  
+  <g transform="translate(200, 100)">
+    <rect x="-6" y="-6" width="12" height="12" fill="url(#aiGradient4v2)" rx="2"/>
+    <circle cx="0" cy="0" r="2" fill="#FFFFFF"/>
+    <text x="0" y="18" font-family="Arial, sans-serif" font-size="7" fill="#374151" text-anchor="middle">AI Tool</text>
+  </g>
+  
+  <!-- Connection lines -->
+  <line x1="125" y1="120" x2="145" y2="120" stroke="#10B981" stroke-width="2"/>
+  <line x1="275" y1="120" x2="255" y2="120" stroke="#10B981" stroke-width="2"/>
+  
+  <!-- Insight emergence -->
+  <g transform="translate(200, 140)">
+    <path d="M0,-8 L3,-2 L9,-2 L4,2 L6,8 L0,4 L-6,8 L-4,2 L-9,-2 L-3,-2 Z" fill="#F59E0B"/>
+    <text x="0" y="18" font-family="Arial, sans-serif" font-size="8" fill="#374151" text-anchor="middle" font-weight="bold">New Insight</text>
+  </g>
+  
+  <!-- Edge analysis concept -->
+  <g transform="translate(80, 200)">
+    <rect x="-30" y="-10" width="60" height="20" fill="#EF4444" opacity="0.7" rx="10"/>
+    <text x="0" y="5" font-family="Arial, sans-serif" font-size="10" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Edge Analysis</text>
+  </g>
+  
+  <path d="M110 200 L150 160 L145 165 M150 160 L145 155" stroke="#EF4444" stroke-width="2" fill="none"/>
+  
+  <!-- Relationship mapping -->
+  <g transform="translate(320, 200)">
+    <circle cx="0" cy="0" r="15" fill="#8B5CF6" opacity="0.7"/>
+    <text x="0" y="5" font-family="Arial, sans-serif" font-size="8" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Map</text>
+    <text x="0" y="25" font-family="Arial, sans-serif" font-size="8" fill="#374151" text-anchor="middle">Relations</text>
+  </g>
+  
+  <path d="M290 200 L250 160 L255 165 M250 160 L255 155" stroke="#8B5CF6" stroke-width="2" fill="none"/>
+  
+  <!-- Title -->
+  <text x="200" y="40" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#1E1B4B" text-anchor="middle">Space Between & AI Tools</text>
+  
+  <!-- Subtitle -->
+  <text x="200" y="280" font-family="Arial, sans-serif" font-size="12" fill="#6B7280" text-anchor="middle">The meaning emerges at the edges</text>
+</svg>
