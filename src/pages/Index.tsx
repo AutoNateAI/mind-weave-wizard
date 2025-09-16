@@ -443,7 +443,7 @@ const Index = () => {
                   <div className="space-y-3">
                     <div className="flex items-center">
                       <Calendar className="mr-3 h-5 w-5 text-primary" />
-                      <span>2 focused lectures per session with clear progression</span>
+                      <span>3 focused lectures per session with clear progression</span>
                     </div>
                     <div className="flex items-center">
                       <TrendingUp className="mr-3 h-5 w-5 text-primary" />
@@ -487,7 +487,7 @@ const Index = () => {
             </h2>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto px-4">
               Every session includes multiple learning modalities and real-time analytics 
-              to track your child's cognitive development.
+              to track your professional cognitive development and critical thinking progress.
             </p>
           </div>
 
@@ -546,7 +546,7 @@ const Index = () => {
               <Brain className="h-12 w-12 text-primary mx-auto mb-4" />
               <h3 className="text-xl font-bold mb-3">Smart Flashcards</h3>
               <p className="text-sm text-muted-foreground">
-                Adaptive review system that personalizes based on your child's learning progress.
+                Adaptive review system that personalizes based on your learning progress and professional development needs.
               </p>
             </GlassCard>
 
@@ -574,7 +574,7 @@ const Index = () => {
                   Advanced Analytics Dashboard
                 </h3>
                 <p className="text-lg text-muted-foreground mb-6">
-                  Get detailed insights into your child's cognitive development with our 
+                  Get detailed insights into your cognitive development and critical thinking patterns with our 
                   comprehensive analytics system.
                 </p>
                 
@@ -593,7 +593,7 @@ const Index = () => {
                   </div>
                   <div className="flex items-center">
                     <UserCheck className="mr-3 h-5 w-5 text-primary" />
-                    <span>Parent Dashboard with Detailed Progress Reports</span>
+                    <span>Professional Dashboard with Detailed Progress Reports</span>
                   </div>
                 </div>
               </div>
@@ -618,7 +618,7 @@ const Index = () => {
             >
               <span className="font-semibold text-center leading-tight">
                 <span className="sm:hidden">Reserve Your Spot</span>
-                <span className="hidden sm:inline">Reserve Your Professional Development Spot - Limited Availability</span>
+                <span className="hidden sm:inline">Reserve Your Spot - Limited Availability</span>
               </span>
             </Button>
           </div>
