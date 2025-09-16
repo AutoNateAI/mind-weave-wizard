@@ -9,6 +9,14 @@
       <stop offset="100%" style="stop-color:#6366F1;stop-opacity:1" />
     </linearGradient>
   </defs>
+  <style>
+    .title { fill: #1E1B4B; font-weight: bold; }
+    .subtitle { fill: #6B7280; }
+    @media (prefers-color-scheme: dark) {
+      .title { fill: #E5E7EB; }
+      .subtitle { fill: #94A3B8; }
+    }
+  </style>
   
   <!-- Background -->
   <rect width="400" height="300" fill="#1E1B4B" opacity="0.1"/>
@@ -39,8 +47,8 @@
   <path d="M350 50 Q300 30 250 50" stroke="#6366F1" stroke-width="1" fill="none" opacity="0.5"/>
   
   <!-- Title -->
-  <text x="200" y="40" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#1E1B4B" text-anchor="middle">Graph Theory Visualization</text>
+  <text x="200" y="40" font-family="Arial, sans-serif" font-size="18" class="title" text-anchor="middle">Graph Theory Visualization</text>
   
   <!-- Subtitle -->
-  <text x="200" y="260" font-family="Arial, sans-serif" font-size="12" fill="#6B7280" text-anchor="middle">Everything is connected</text>
+  <text x="200" y="260" font-family="Arial, sans-serif" font-size="12" class="subtitle" text-anchor="middle">Everything is connected</text>
 </svg>

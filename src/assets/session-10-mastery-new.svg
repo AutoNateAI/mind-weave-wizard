@@ -1,37 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
-  <defs>
-    <linearGradient id="crownGradient10new" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#F59E0B;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#D97706;stop-opacity:1" />
-    </linearGradient>
-    <linearGradient id="masteryGradient10new" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#6366F1;stop-opacity:1" />
-    </linearGradient>
-    <linearGradient id="foundationGradient10new" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
-    </linearGradient>
-    <radialGradient id="masteryGlow10new" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" style="stop-color:#F59E0B;stop-opacity:0.3" />
-      <stop offset="100%" style="stop-color:#F59E0B;stop-opacity:0" />
-    </radialGradient>
-  </defs>
-  
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
   <!-- Background -->
-  <rect width="400" height="300" fill="#1E1B4B" opacity="0.1"/>
-  
-  <!-- Mastery glow -->
-  <circle cx="200" cy="120" r="90" fill="url(#masteryGlow10new)"/>
+  <rect width="400" height="300" fill="#f8fafc"/>
   
   <!-- Crown representing mastery -->
   <g transform="translate(200, 80)">
     <!-- Crown base -->
-    <rect x="-40" y="15" width="80" height="12" fill="url(#crownGradient10new)" stroke="#D97706" stroke-width="2" rx="2"/>
+    <rect x="-40" y="15" width="80" height="12" fill="#F59E0B" stroke="#D97706" stroke-width="2" rx="2"/>
     <!-- Crown peaks -->
-    <polygon points="-30,15 -25,0 -20,15" fill="url(#crownGradient10new)" stroke="#D97706" stroke-width="1"/>
-    <polygon points="-10,15 -5,-5 0,15" fill="url(#crownGradient10new)" stroke="#D97706" stroke-width="1"/>
-    <polygon points="10,15 15,0 20,15" fill="url(#crownGradient10new)" stroke="#D97706" stroke-width="1"/>
+    <polygon points="-30,15 -25,0 -20,15" fill="#F59E0B" stroke="#D97706" stroke-width="1"/>
+    <polygon points="-10,15 -5,-5 0,15" fill="#F59E0B" stroke="#D97706" stroke-width="1"/>
+    <polygon points="10,15 15,0 20,15" fill="#F59E0B" stroke="#D97706" stroke-width="1"/>
     <!-- Gems -->
     <circle cx="-5" cy="8" r="3" fill="#06B6D4"/>
     <circle cx="15" cy="12" r="2" fill="#EF4444"/>
@@ -39,54 +17,31 @@
   </g>
   
   <!-- Central mastery badge -->
-  <g transform="translate(200, 140)">
-    <circle cx="0" cy="0" r="35" fill="url(#masteryGradient10new)" stroke="#8B5CF6" stroke-width="3"/>
-    <text x="0" y="-5" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">SESSION</text>
-    <text x="0" y="12" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF" text-anchor="middle">10</text>
-  </g>
+  <circle cx="200" cy="140" r="35" fill="#8B5CF6" stroke="#6366F1" stroke-width="3"/>
+  <text x="200" y="135" font-size="16" fill="#FFFFFF" text-anchor="middle">SESSION</text>
+  <text x="200" y="152" font-size="20" fill="#FFFFFF" text-anchor="middle">10</text>
   
   <!-- Mastery pillars -->
-  <g transform="translate(120, 200)">
-    <rect x="-15" y="-30" width="30" height="30" fill="url(#foundationGradient10new)" stroke="#10B981" stroke-width="2" rx="3"/>
-    <text x="0" y="-10" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Critical</text>
-    <text x="0" y="2" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Thinking</text>
-    <text x="0" y="20" font-family="Arial, sans-serif" font-size="8" fill="#374151" text-anchor="middle">Foundation</text>
-  </g>
+  <rect x="105" y="170" width="30" height="30" fill="#10B981" stroke="#059669" stroke-width="2" rx="3"/>
+  <text x="120" y="190" font-size="10" fill="#FFFFFF" text-anchor="middle">Critical</text>
+  <text x="120" y="202" font-size="10" fill="#FFFFFF" text-anchor="middle">Thinking</text>
   
-  <g transform="translate(200, 200)">
-    <rect x="-15" y="-30" width="30" height="30" fill="url(#masteryGradient10new)" stroke="#8B5CF6" stroke-width="2" rx="3"/>
-    <text x="0" y="-10" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Strategic</text>
-    <text x="0" y="2" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Models</text>
-    <text x="0" y="20" font-family="Arial, sans-serif" font-size="8" fill="#374151" text-anchor="middle">Application</text>
-  </g>
+  <rect x="185" y="170" width="30" height="30" fill="#8B5CF6" stroke="#6366F1" stroke-width="2" rx="3"/>
+  <text x="200" y="190" font-size="10" fill="#FFFFFF" text-anchor="middle">Strategic</text>
+  <text x="200" y="202" font-size="10" fill="#FFFFFF" text-anchor="middle">Models</text>
   
-  <g transform="translate(280, 200)">
-    <rect x="-15" y="-30" width="30" height="30" fill="url(#crownGradient10new)" stroke="#F59E0B" stroke-width="2" rx="3"/>
-    <text x="0" y="-10" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Thinking</text>
-    <text x="0" y="2" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Mastery</text>
-    <text x="0" y="20" font-family="Arial, sans-serif" font-size="8" fill="#374151" text-anchor="middle">Leadership</text>
-  </g>
+  <rect x="265" y="170" width="30" height="30" fill="#F59E0B" stroke="#D97706" stroke-width="2" rx="3"/>
+  <text x="280" y="190" font-size="10" fill="#FFFFFF" text-anchor="middle">Thinking</text>
+  <text x="280" y="202" font-size="10" fill="#FFFFFF" text-anchor="middle">Mastery</text>
   
   <!-- Achievement stars -->
-  <g transform="translate(160, 110)">
-    <path d="M0,-6 L2,-2 L6,-2 L3,0 L4,4 L0,2 L-4,4 L-3,0 L-6,-2 L-2,-2 Z" fill="#F59E0B"/>
-  </g>
-  
-  <g transform="translate(240, 110)">
-    <path d="M0,-6 L2,-2 L6,-2 L3,0 L4,4 L0,2 L-4,4 L-3,0 L-6,-2 L-2,-2 Z" fill="#F59E0B"/>
-  </g>
-  
-  <g transform="translate(200, 95)">
-    <path d="M0,-8 L3,-3 L8,-3 L4,0 L5,5 L0,3 L-5,5 L-4,0 L-8,-3 L-3,-3 Z" fill="#06B6D4"/>
-  </g>
-  
-  <!-- Upward arrows showing growth -->
-  <path d="M170 170 L185 155 L180 160 M185 155 L180 150" stroke="#10B981" stroke-width="2" fill="none"/>
-  <path d="M230 170 L215 155 L220 160 M215 155 L220 150" stroke="#10B981" stroke-width="2" fill="none"/>
+  <path d="M160,110 L162,106 L166,106 L163,103 L164,99 L160,101 L156,99 L157,103 L154,106 L158,106 Z" fill="#F59E0B"/>
+  <path d="M240,110 L242,106 L246,106 L243,103 L244,99 L240,101 L236,99 L237,103 L234,106 L238,106 Z" fill="#F59E0B"/>
+  <path d="M200,95 L203,90 L208,90 L204,86 L205,81 L200,83 L195,81 L196,86 L192,90 L197,90 Z" fill="#06B6D4"/>
   
   <!-- Title -->
-  <text x="200" y="40" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#1E1B4B" text-anchor="middle">Mastery & Beyond</text>
+  <text x="200" y="40" font-size="18" fill="#1E1B4B" text-anchor="middle">Mastery &amp; Beyond</text>
   
   <!-- Subtitle -->
-  <text x="200" y="280" font-family="Arial, sans-serif" font-size="12" fill="#6B7280" text-anchor="middle">You are now the architect of your thinking</text>
+  <text x="200" y="280" font-size="12" fill="#6B7280" text-anchor="middle">You are now the architect of your thinking</text>
 </svg>

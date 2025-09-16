@@ -1,60 +1,75 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
-  <defs>
-    <linearGradient id="nodeGradient4" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
-    </linearGradient>
-    <linearGradient id="spaceGradient4" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:0.8" />
-      <stop offset="100%" style="stop-color:#6366F1;stop-opacity:0.6" />
-    </linearGradient>
-    <linearGradient id="aiGradient4" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#06B6D4;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#0891B2;stop-opacity:1" />
-    </linearGradient>
-    <radialGradient id="edgeGlow4" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" style="stop-color:#F59E0B;stop-opacity:0.4" />
-      <stop offset="100%" style="stop-color:#F59E0B;stop-opacity:0" />
-    </radialGradient>
-  </defs>
-  
-  <!-- Light background -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <style>
+    .title { fill: #1E1B4B; font-weight: bold; }
+    .subtitle { fill: #6B7280; }
+    @media (prefers-color-scheme: dark) {
+      .title { fill: #E5E7EB; }
+      .subtitle { fill: #94A3B8; }
+    }
+  </style>
+  <!-- Background (match other sessions) -->
   <rect width="400" height="300" fill="#1E1B4B" opacity="0.1"/>
   
-  <!-- Main concept nodes -->
-  <circle cx="80" cy="150" r="35" fill="url(#nodeGradient4)" stroke="#10B981" stroke-width="3"/>
-  <text x="80" y="155" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Idea A</text>
+  <!-- Main concept nodes (layered with subtle shadow and ring) -->
+  <g>
+    <!-- shadow -->
+    <circle cx="82" cy="152" r="35" fill="#000000" opacity="0.12"/>
+    <!-- base -->
+    <circle cx="80" cy="150" r="35" fill="#10B981" stroke="#059669" stroke-width="3"/>
+    <!-- inner ring highlight -->
+    <circle cx="80" cy="150" r="28" fill="none" stroke="#34d399" stroke-width="2" opacity="0.6"/>
+    <!-- label -->
+    <text x="80" y="155" font-size="12" fill="#FFFFFF" text-anchor="middle">Idea A</text>
+  </g>
   
-  <circle cx="320" cy="150" r="35" fill="url(#nodeGradient4)" stroke="#10B981" stroke-width="3"/>
-  <text x="320" y="155" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Idea B</text>
+  <g>
+    <!-- shadow -->
+    <circle cx="322" cy="152" r="35" fill="#000000" opacity="0.12"/>
+    <!-- base -->
+    <circle cx="320" cy="150" r="35" fill="#10B981" stroke="#059669" stroke-width="3"/>
+    <!-- inner ring highlight -->
+    <circle cx="320" cy="150" r="28" fill="none" stroke="#34d399" stroke-width="2" opacity="0.6"/>
+    <!-- label -->
+    <text x="320" y="155" font-size="12" fill="#FFFFFF" text-anchor="middle">Idea B</text>
+  </g>
   
-  <!-- The magical space between with glow -->
-  <circle cx="200" cy="150" r="70" fill="url(#edgeGlow4)"/>
-  <ellipse cx="200" cy="150" rx="60" ry="40" fill="url(#spaceGradient4)" stroke="#8B5CF6" stroke-width="2" stroke-dasharray="8,4"/>
-  <text x="200" y="145" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">THE SPACE</text>
-  <text x="200" y="165" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">BETWEEN</text>
+  <!-- The space between (with layered highlight) -->
+  <!-- soft outer glow -->
+  <ellipse cx="200" cy="150" rx="66" ry="44" fill="#8B5CF6" opacity="0.18"/>
+  <!-- base -->
+  <ellipse cx="200" cy="150" rx="60" ry="40" fill="#8B5CF6" stroke="#6366F1" stroke-width="2"/>
+  <!-- inner soft highlight -->
+  <ellipse cx="200" cy="142" rx="45" ry="24" fill="#ffffff" opacity="0.18"/>
+  <text x="200" y="145" font-size="14" fill="#FFFFFF" text-anchor="middle">THE SPACE</text>
+  <text x="200" y="165" font-size="14" fill="#FFFFFF" text-anchor="middle">BETWEEN</text>
   
-  <!-- AI tools in the space -->
-  <rect x="174" y="124" width="12" height="12" fill="url(#aiGradient4)" rx="2"/>
-  <circle cx="180" cy="130" r="2" fill="#FFFFFF"/>
-  
-  <rect x="204" y="154" width="12" height="12" fill="url(#aiGradient4)" rx="2"/>
-  <circle cx="210" cy="160" r="2" fill="#FFFFFF"/>
-  
-  <rect x="194" y="134" width="12" height="12" fill="url(#aiGradient4)" rx="2"/>
-  <circle cx="200" cy="140" r="2" fill="#FFFFFF"/>
+  <!-- Center visual motif (replace connectors with rings and orbits) -->
+  <!-- subtle inner ring -->
+  <ellipse cx="200" cy="150" rx="46" ry="26" fill="none" stroke="#a78bfa" stroke-width="2" opacity="0.5"/>
+  <!-- dashed ring -->
+  <ellipse cx="200" cy="150" rx="52" ry="32" fill="none" stroke="#c4b5fd" stroke-width="1.5" stroke-dasharray="6 6" opacity="0.6"/>
+  <!-- orbiting dots -->
+  <circle cx="168" cy="140" r="3" fill="#ffffff" opacity="0.9"/>
+  <circle cx="232" cy="160" r="3" fill="#ffffff" opacity="0.9"/>
   
   <!-- Connection lines -->
-  <line x1="115" y1="150" x2="140" y2="150" stroke="#10B981" stroke-width="3"/>
-  <line x1="260" y1="150" x2="285" y2="150" stroke="#10B981" stroke-width="3"/>
+  <line x1="115" y1="150" x2="140" y2="150" stroke="#059669" stroke-width="4"/>
+  <line x1="260" y1="150" x2="285" y2="150" stroke="#059669" stroke-width="4"/>
+  <!-- subtle dashed overlay -->
+  <line x1="115" y1="150" x2="140" y2="150" stroke="#34d399" stroke-width="2" stroke-dasharray="6 4" opacity="0.7"/>
+  <line x1="260" y1="150" x2="285" y2="150" stroke="#34d399" stroke-width="2" stroke-dasharray="6 4" opacity="0.7"/>
   
   <!-- Insight emergence -->
   <path d="M200,200 L195,210 L205,210 Z" fill="#F59E0B"/>
-  <text x="200" y="225" font-family="Arial, sans-serif" font-size="10" fill="#374151" text-anchor="middle" font-weight="bold">New Insight</text>
+  <text x="200" y="225" font-size="10" fill="#1E1B4B" text-anchor="middle">New Insight</text>
+  
+  <!-- decorative dots -->
+  <circle cx="160" cy="128" r="3" fill="#ffffff" opacity="0.5"/>
+  <circle cx="240" cy="172" r="3" fill="#ffffff" opacity="0.5"/>
   
   <!-- Title -->
-  <text x="200" y="40" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#1E1B4B" text-anchor="middle">Space Between & AI Tools</text>
+  <text x="200" y="40" font-size="18" class="title" text-anchor="middle">Space Between &amp; AI Tools</text>
   
   <!-- Subtitle -->
-  <text x="200" y="280" font-family="Arial, sans-serif" font-size="12" fill="#6B7280" text-anchor="middle">The meaning emerges at the edges</text>
+  <text x="200" y="280" font-size="12" class="subtitle" text-anchor="middle">The meaning emerges at the edges</text>
 </svg>

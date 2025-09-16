@@ -9,13 +9,13 @@ import reflectionInterface from "@/assets/deep-reflection-metacognition.jpg";
 import session1Image from "@/assets/session-1-critical-thinking.svg";
 import session2Image from "@/assets/session-2-mental-models.svg";
 import session3Image from "@/assets/session-3-graph-theory.svg";
-import session4Image from "@/assets/session-4-space-between-new.svg";
+import session4Image from "@/assets/session-4-space-between-ai.svg";
 import session5Image from "@/assets/session-5-research-decomposition.svg";
 import session6Image from "@/assets/session-6-traversal-techniques.svg";
 import session7Image from "@/assets/session-7-multidimensional-thinking.svg";
 import session8Image from "@/assets/session-8-pattern-recognition.svg";
 import session9Image from "@/assets/session-9-advanced-applications.svg";
-import session10Image from "@/assets/session-10-mastery-new.svg";
+import session10Image from "@/assets/session-10-mastery-beyond.svg";
 import { sessionOverview } from "@/content/sessions";
 import useEmblaCarousel from 'embla-carousel-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -355,12 +355,12 @@ const Index = () => {
                 {sessionData.map((session, index) => (
                   <div key={session.number} className="flex-[0_0_85%] sm:flex-[0_0_90%] md:flex-[0_0_45%] lg:flex-[0_0_30%] min-w-0 pl-2 sm:pl-4">
                     <GlassCard className="h-full hover-scale transition-all duration-300 border-primary/30">
-                      {/* Large Image Header */}
-                      <div className="relative h-48 overflow-hidden rounded-t-lg">
-                        <img 
-                          src={session.image} 
+                      {/* Large Image Header (responsive SVG rendering) */}
+                      <div className="relative w-full aspect-[4/3] overflow-hidden rounded-t-lg bg-background">
+                        <img
+                          src={session.image}
                           alt={`Visual representation of ${session.title}`}
-                          className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                          className="absolute inset-0 w-full h-full object-contain p-4"
                         />
                         <div className="absolute top-4 left-4">
                           <div className="w-12 h-12 rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center border-2 border-white/50">

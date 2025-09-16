@@ -9,6 +9,14 @@
       <stop offset="100%" style="stop-color:#6366F1;stop-opacity:1" />
     </linearGradient>
   </defs>
+  <style>
+    .title { fill: #1E1B4B; font-weight: bold; }
+    .subtitle { fill: #6B7280; }
+    @media (prefers-color-scheme: dark) {
+      .title { fill: #E5E7EB; }
+      .subtitle { fill: #94A3B8; }
+    }
+  </style>
   
   <!-- Background -->
   <rect width="400" height="300" fill="#1E1B4B" opacity="0.1"/>
@@ -71,8 +79,8 @@
   </g>
   
   <!-- Title -->
-  <text x="200" y="40" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#1E1B4B" text-anchor="middle">Mental Models Unveiled</text>
+  <text x="200" y="40" font-family="Arial, sans-serif" font-size="18" class="title" text-anchor="middle">Mental Models Unveiled</text>
   
   <!-- Subtitle -->
-  <text x="200" y="280" font-family="Arial, sans-serif" font-size="12" fill="#6B7280" text-anchor="middle">You see with your models, not your eyes</text>
+  <text x="200" y="280" font-family="Arial, sans-serif" font-size="12" class="subtitle" text-anchor="middle">You see with your models, not your eyes</text>
 </svg>
